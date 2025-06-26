@@ -1,0 +1,27 @@
+# Node modules
+node_modules/
+
+# Python virtual environment
+venv/
+env/
+*.pyc
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build files
+dist/
+build/
+*.crx
+*.pem
+
+# Logs
+*.log
+npm-debug.log* 

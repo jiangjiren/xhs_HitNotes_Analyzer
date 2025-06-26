@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择导出文件夹</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    
+    .container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    h2 {
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #3e8e41;
+    }
+    
+    #selectedPath {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      word-break: break-all;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>选择导出文件夹</h2>
+    <p>请选择保存导出文件的文件夹位置。所有CSV和TXT文件将保存到此位置。</p>
+    
+    <button id="selectFolder">选择文件夹</button>
+    
+    <div id="selectedPath"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectFolderBtn = document.getElementById('selectFolder');
+      const selectedPathDiv = document.getElementById('selectedPath');
+      
+      // 检查浏览器是否支持showDirectoryPicker API
+      if ('showDirectoryPicker' in window) {
+        selectFolderBtn.addEventListener('click', async () => {
+          try {
+            // 打开文件夹选择器
+            const directoryHandle = await window.showDirectoryPicker();
+            
+            // 获取文件夹路径（注意：由于安全限制，实际上我们只能获取文件夹名称）
+            const folderName = directoryHandle.name;
+            
+            // 显示选择的文件夹路径
+            selectedPathDiv.textContent = `已选择: ${folderName}`;
+            selectedPathDiv.style.display = 'block';
+            
+            // 将选择的文件夹路径发送回background.js
+            chrome.runtime.sendMessage({
+              action: 'folderSelected',
+              path: folderName
+            });
+            
+            // 2秒后关闭窗口
+            setTimeout(() => {
+              window.close();
+            }, 2000);
+          } catch (error) {
+            console.error('选择文件夹时出错:', error);
+            selectedPathDiv.textContent = '选择文件夹时出错，请重试。';
+            selectedPathDiv.style.display = 'block';
+          }
+        });
+      } else {
+        // 浏览器不支持showDirectoryPicker API
+        selectFolderBtn.textContent = '您的浏览器不支持此功能';
+        selectFolderBtn.disabled = true;
+        
+        // 显示提示信息
+        selectedPathDiv.textContent = '请使用最新版Chrome浏览器。';
+        selectedPathDiv.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "小红书AI创作助手",
+  "version": "1.5",
+  "description": "自动采集小红书爆款笔记并进行AI分析",
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_title": "小红书AI创作助手",
+    "default_icon": "icon.png"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "permissions": [
+    "tabs",
+    "downloads",
+    "system.display",
+    "sidePanel",
+    "storage",
+    "scripting",
+    "alarms",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*.xiaohongshu.com/*",
+    "https://api.deepseek.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.xiaohongshu.com/*"],
+      "js": ["config.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["marked.js"],
+    "matches": ["*://*.xiaohongshu.com/*"]
+  }]
+}

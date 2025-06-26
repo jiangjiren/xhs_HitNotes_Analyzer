@@ -1,0 +1,1553 @@
+document.addEventListener('DOMContentLoaded', function() {
+  // 初始化时检查API密钥状态
+  checkApiKeyStatus();
+  
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const status = document.getElementById('status');
+  const maxNotesInput = document.getElementById('maxNotes');
+  const minLikesInput = document.getElementById('minLikes');
+  const messageInput = document.getElementById('messageInput');
+  const sendMessageBtn = document.getElementById('sendMessage');
+  const chatMessages = document.getElementById('chatMessages');
+  const fileInput = document.getElementById('fileInput');
+  const fileInfo = document.getElementById('fileInfo');
+  const newChatBtn = document.getElementById('newChatBtn'); // 添加新建对话按钮
+  const getPageContentBtn = document.getElementById('getPageContentBtn'); // 添加获取页面内容按钮
+  const historyBtn = document.getElementById('historyBtn'); // 添加历史按钮
+  const historyModal = document.getElementById('historyModal'); // 添加历史弹窗
+  const closeHistoryModal = document.getElementById('closeHistoryModal'); // 添加关闭历史弹窗按钮
+  const historyList = document.getElementById('historyList'); // 添加历史记录列表
+  
+  // 添加设置相关元素
+  const settingsIcon = document.getElementById('settingsIcon');
+  const settingsModal = document.getElementById('settingsModal');
+  const closeModal = settingsModal?.querySelector('.close-modal');
+  const saveSettingsBtn = document.getElementById('saveSettings');
+  const accessKeyIdInput = document.getElementById('accessKeyId');
+  const secretAccessKeyInput = document.getElementById('secretAccessKey');
+  
+  // 添加Tab页切换相关元素
+  const collectionTabBtn = document.getElementById('collectionTabBtn');
+  const aiAssistantTabBtn = document.getElementById('aiAssistantTabBtn');
+  const imageGeneratorTabBtn = document.getElementById('imageGeneratorTabBtn');
+  const collectionTab = document.getElementById('collectionTab');
+  const aiAssistantTab = document.getElementById('aiAssistantTab');
+  const imageGeneratorTab = document.getElementById('imageGeneratorTab');
+  
+  let currentXhsTab = null;
+  let hasCollectedData = false; // 标记是否已完成数据采集
+  let chatSessions = []; // 添加会话历史数组
+  let uploadedFileContent = null;
+  let hasShownOpenPageMessage = false; // 添加标志位
+  let isStreaming = false; // 添加流式输出状态标志
+  let shouldStopStreaming = false; // 添加停止流式输出的标志
+  let pageContentLoaded = false; // 添加页面内容加载标志
+  let currentPageContent = null; // 存储当前页面内容
+  
+  // 设置模态框相关功能
+  if (settingsIcon) {
+    // 加载已保存的设置
+    function loadSettings() {
+      // 加载DeepSeek API密钥
+      const apiKeyInput = document.getElementById('apiKey');
+      if (apiKeyInput) {
+        chrome.storage.local.get(['deepseekApiKey'], (result) => {
+          if (result.deepseekApiKey && result.deepseekApiKey.trim() !== '') {
+            // 显示为星号，保护密钥安全
+            apiKeyInput.value = '********';
+            apiKeyInput.setAttribute('data-has-value', 'true');
+          } else {
+            apiKeyInput.value = '';
+            apiKeyInput.removeAttribute('data-has-value');
+          }
+        });
+      }
+      
+      // 加载Access Key ID
+      if (accessKeyIdInput) {
+        const savedAK = localStorage.getItem('accessKeyId');
+        if (savedAK) {
+          // 显示为星号，保护密钥安全
+          accessKeyIdInput.value = '********';
+          accessKeyIdInput.setAttribute('data-has-value', 'true');
+        } else {
+          accessKeyIdInput.value = '';
+          accessKeyIdInput.removeAttribute('data-has-value');
+        }
+      }
+      
+      // 加载Secret Access Key
+      if (secretAccessKeyInput) {
+        const savedSK = localStorage.getItem('secretAccessKey');
+        if (savedSK) {
+          // 显示为星号，保护密钥安全
+          secretAccessKeyInput.value = '********';
+          secretAccessKeyInput.setAttribute('data-has-value', 'true');
+        } else {
+          secretAccessKeyInput.value = '';
+          secretAccessKeyInput.removeAttribute('data-has-value');
+        }
+      }
+    }
+    
+    // 打开设置模态框
+    settingsIcon.addEventListener('click', function() {
+      if (settingsModal) {
+        loadSettings(); // 加载已保存的设置
+        settingsModal.style.display = 'block';
+      }
+    });
+    
+    // 关闭设置模态框
+    if (closeModal) {
+      closeModal.addEventListener('click', function() {
+        settingsModal.style.display = 'none';
+      });
+    }
+    
+    // 点击模态框外部关闭
+    window.addEventListener('click', function(event) {
+      if (event.target == settingsModal) {
+        settingsModal.style.display = 'none';
+      }
+    });
+    
+    // 保存设置
+    if (saveSettingsBtn) {
+      saveSettingsBtn.addEventListener('click', function() {
+        // 保存DeepSeek API密钥
+        const apiKeyInput = document.getElementById('apiKey');
+        if (apiKeyInput) {
+          // 如果用户输入了新的密钥（不是星号），则保存
+          if (apiKeyInput.value.trim() !== '' && apiKeyInput.value !== '********') {
+            chrome.storage.local.set({ deepseekApiKey: apiKeyInput.value.trim() }, () => {
+              console.log('已将API密钥保存到chrome.storage.local');
+              // 保存后立即检查API密钥状态并更新UI
+              checkApiKeyStatus();
+            });
+          }
+          // 如果用户清空了密钥，则删除存储
+          else if (apiKeyInput.value.trim() === '') {
+            chrome.storage.local.remove('deepseekApiKey', () => {
+              console.log('已从 chrome.storage.local 中移除API密钥');
+              // 删除后立即检查API密钥状态并更新UI
+              checkApiKeyStatus();
+            });
+          }
+          // 如果是星号，不做任何操作，保留原始值
+        }
+
+        // 保存Access Key ID
+        if (accessKeyIdInput) {
+          // 如果用户输入了新的密钥（不是星号），则保存
+          if (accessKeyIdInput.value.trim() !== '' && accessKeyIdInput.value !== '********') {
+            const newAK = accessKeyIdInput.value.trim();
+            localStorage.setItem('accessKeyId', newAK);
+            // 直接更新图片生成模块中的AK变量
+            if (typeof AK !== 'undefined') {
+              AK = newAK;
+              console.log('已更新图片生成AK变量');
+            }
+          }
+          // 如果用户清空了密钥，则删除存储
+          else if (accessKeyIdInput.value.trim() === '') {
+            localStorage.removeItem('accessKeyId');
+            // 清空图片生成模块中的AK变量
+            if (typeof AK !== 'undefined') {
+              AK = null;
+              console.log('已清空图片生成AK变量');
+            }
+          }
+          // 如果是星号，不做任何操作，保留原始值
+        }
+        
+        // 保存Secret Access Key
+        if (secretAccessKeyInput) {
+          // 如果用户输入了新的密钥（不是星号），则保存
+          if (secretAccessKeyInput.value.trim() !== '' && secretAccessKeyInput.value !== '********') {
+            const newSK = secretAccessKeyInput.value.trim();
+            localStorage.setItem('secretAccessKey', newSK);
+            // 直接更新图片生成模块中的SK变量
+            if (typeof SK !== 'undefined') {
+              SK = newSK;
+              console.log('已更新图片生成SK变量');
+            }
+          }
+          // 如果用户清空了密钥，则删除存储
+          else if (secretAccessKeyInput.value.trim() === '') {
+            localStorage.removeItem('secretAccessKey');
+            // 清空图片生成模块中的SK变量
+            if (typeof SK !== 'undefined') {
+              SK = null;
+              console.log('已清空图片生成SK变量');
+            }
+          }
+          // 如果是星号，不做任何操作，保留原始值
+        }
+        
+        // 关闭模态框
+        settingsModal.style.display = 'none';
+        
+        // 显示Toast提示
+        showToast('设置成功', 1000); // 显示1秒
+      });
+    }
+  }
+  
+  // 显示Toast提示函数
+  function showToast(message, duration = 2000) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+      // 设置提示消息
+      toast.textContent = message;
+      
+      // 显示Toast
+      toast.classList.add('show');
+      
+      // 定时隐藏
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, duration);
+    }
+  }
+  
+  // Tab页切换功能
+  function switchTab(tabId) {
+    // 隐藏所有Tab内容
+    collectionTab.classList.remove('active');
+    aiAssistantTab.classList.remove('active');
+    imageGeneratorTab.classList.remove('active');
+    
+    // 移除所有Tab按钮的active类
+    collectionTabBtn.classList.remove('active');
+    aiAssistantTabBtn.classList.remove('active');
+    imageGeneratorTabBtn.classList.remove('active');
+    
+    // 显示选中的Tab内容
+    if (tabId === 'collection') {
+      collectionTab.classList.add('active');
+      collectionTabBtn.classList.add('active');
+    } else if (tabId === 'aiAssistant') {
+      aiAssistantTab.classList.add('active');
+      aiAssistantTabBtn.classList.add('active');
+    } else if (tabId === 'imageGenerator') {
+      imageGeneratorTab.classList.add('active');
+      imageGeneratorTabBtn.classList.add('active');
+      // 如果是第一次切换到图片生成Tab，初始化图片生成器
+      if (typeof window.imageGeneratorInitialized === 'undefined') {
+        window.imageGeneratorInitialized = true;
+        window.initImageGenerator();
+      }
+    }
+  }
+  
+  // 添加Tab按钮点击事件
+  collectionTabBtn.addEventListener('click', () => {
+    switchTab('collection');
+  });
+  
+  aiAssistantTabBtn.addEventListener('click', () => {
+    switchTab('aiAssistant');
+  });
+  
+  imageGeneratorTabBtn.addEventListener('click', () => {
+    switchTab('imageGenerator');
+  });
+  
+  // 加载历史会话
+  chrome.storage.local.get(['chatSessions'], (result) => {
+    let existingSessions = [];
+    if (result.chatSessions) {
+      existingSessions = result.chatSessions;
+    }
+    
+    // 每次打开插件时创建一个新会话
+    const now = new Date();
+    const newSession = {
+      id: 'session_' + now.getTime(),
+      title: now.toLocaleString(),
+      created: now.toLocaleString(),
+      messages: [{
+        role: 'assistant',
+        content: '欢迎使用AI助手，请输入您的问题。'
+      }],
+      hasUserMessage: false
+    };
+    
+    // 将新会话添加到会话列表的最前面
+    chatSessions = [newSession];
+    
+    // 将现有会话添加到新会话后面
+    if (existingSessions.length > 0) {
+      chatSessions = chatSessions.concat(existingSessions);
+    }
+    
+    // 保存会话列表
+    chrome.storage.local.set({ chatSessions: chatSessions });
+    
+    // 添加欢迎消息到UI（只在这里添加一次）
+    addMessage('欢迎使用AI助手，请输入您的问题。', false);
+    
+    // 清除其他状态
+    uploadedFileContent = null; // 清除上传的文件内容
+    clearUploadedFile(); // 清除文件上传状态
+    messageInput.value = ''; // 清空输入框
+    clearPageContent(); // 清除页面内容状态
+  });
+  
+  // 清理历史记录的函数
+  function clearChatHistory() {
+    chatSessions = [];
+    chatMessages.innerHTML = '';
+    chrome.storage.local.remove('chatSessions');
+    uploadedFileContent = null; // 清除上传的文件内容
+    clearUploadedFile(); // 清除文件上传状态
+    messageInput.value = ''; // 清空输入框
+    clearPageContent(); // 清除页面内容状态
+  }
+
+  // 添加清除页面内容的函数
+  function clearPageContent() {
+    pageContentLoaded = false;
+    currentPageContent = null;
+    getPageContentBtn.classList.remove('active');
+  }
+
+  // 添加创建新会话的函数
+  function createNewChatSession(title = null) {
+    // 确保切换到AI助手Tab
+    switchTab('aiAssistant');
+    
+    // 清空聊天框
+    chatMessages.innerHTML = '';
+    
+    // 添加欢迎消息到UI
+    addMessage('欢迎使用AI助手，请输入您的问题。', false);
+    
+    // 创建新会话
+    const now = new Date();
+    const newSession = {
+      id: 'session_' + now.getTime(),
+      title: title || now.toLocaleString(),
+      created: now.toLocaleString(),
+      messages: [{
+        role: 'assistant',
+        content: '欢迎使用AI助手，请输入您的问题。'
+      }],
+      hasUserMessage: false, // 标记是否有用户消息
+      currentSession: true, // 标记为当前活动会话
+      saveToHistory: true // 确保会话被保存
+    };
+    
+    // 清除所有现有会话的currentSession标记
+    if (chatSessions && chatSessions.length > 0) {
+      chatSessions.forEach(s => {
+        delete s.currentSession;
+      });
+    }
+    
+    // 更新本地变量，保留现有会话
+    chatSessions = [newSession, ...chatSessions];
+    
+    return newSession;
+  }
+
+  // 新建对话按钮点击事件
+  newChatBtn.addEventListener('click', () => {
+    // 调用创建新会话函数
+    createNewChatSession();
+    
+    // 清除其他状态
+    uploadedFileContent = null; // 清除上传的文件内容
+    clearUploadedFile(); // 清除文件上传状态
+    messageInput.value = ''; // 清空输入框
+    clearPageContent(); // 清除页面内容状态
+  });
+
+  // 在窗口关闭时保存会话历史
+  window.addEventListener('unload', () => {
+    // 只保存有用户消息的会话
+    saveSessionsToStorage();
+  });
+  
+  // 保存会话到存储的函数
+  function saveSessionsToStorage() {
+    // 获取现有会话
+    chrome.storage.local.get(['chatSessions'], (result) => {
+      const existingSessions = result.chatSessions || [];
+      
+      // 过滤当前会话：保存有用户消息的会话或有特殊标记的会话
+      const sessionsToSave = chatSessions.filter(session => {
+        // 有用户消息的会话
+        if (session.hasUserMessage) return true;
+        
+        // 有页面内容的会话
+        if (session.pageContent) return true;
+        
+        // 有saveToHistory标记的会话
+        if (session.saveToHistory) return true;
+        
+        // 有多条消息的会话（不只是欢迎消息）
+        if (session.messages && session.messages.length > 1) return true;
+        
+        // 默认不保存
+        return false;
+      }).map(session => {
+        // 创建会话的深拷贝，避免修改原始会话
+        const sessionCopy = JSON.parse(JSON.stringify(session));
+        
+        // 过滤掉欢迎语和"正在思考"的消息，但保留页面内容和一键总结等操作
+        if (sessionCopy.messages && sessionCopy.messages.length > 0) {
+          sessionCopy.messages = sessionCopy.messages.filter(msg => 
+            !(msg.role === 'assistant' && 
+              (msg.content === '欢迎使用AI助手，请输入您的问题。' || 
+               msg.content === '正在思考...' ||
+               msg.content === '正在总结内容...' ||
+               msg.content === '正在生成爆款标题，请稍候...' ||
+               msg.content === '正在将内容改写为小红书笔记，请稍候...'))
+          );
+        }
+        
+        // 确保页面内容对象被保存
+        if (session.pageContent) {
+          sessionCopy.pageContent = session.pageContent;
+        }
+        
+        return sessionCopy;
+      });
+      
+      if (sessionsToSave.length > 0) {
+        // 合并现有会话（排除当前会话的ID）和要保存的会话
+        const currentIds = sessionsToSave.map(s => s.id);
+        const filteredExisting = existingSessions.filter(s => !currentIds.includes(s.id));
+        const updatedSessions = [...sessionsToSave, ...filteredExisting];
+        
+        // 保存到存储
+        chrome.storage.local.set({ chatSessions: updatedSessions });
+        
+        // 添加日志，帮助调试
+        console.log('保存会话到历史记录:', updatedSessions);
+      }
+    });
+  }
+  
+  // 添加消息到聊天窗口
+  function addMessage(message, isUser) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+  
+    // Markdown/普通文本处理
+    if (!isUser) {
+      // 简化文本处理逻辑，保留基本的Markdown格式
+      const processedMessage = String(message)
+        .trim()
+        // 保留标题格式
+        .replace(/^###\s*/gm, '### ')
+        .replace(/^##\s*/gm, '## ')
+        .replace(/^#\s*/gm, '# ');
+      
+      // 保存原始内容用于复制
+      messageDiv.setAttribute('data-raw-content', message);
+      messageDiv.innerHTML = marked(processedMessage);
+      
+      // 添加AI回复到历史记录
+      if (!message.startsWith('笔记采集完成')) {
+        // 查找当前活动会话
+        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+        if (currentSessionIndex !== -1) {
+          // 如果找到当前活动会话，添加到该会话
+          chatSessions[currentSessionIndex].messages.push({ role: "assistant", content: message });
+        } else if (chatSessions.length > 0) {
+          // 如果没有找到当前活动会话，添加到第一个会话
+          chatSessions[0].messages.push({ role: "assistant", content: message });
+        }
+      }
+    } else {
+      messageDiv.textContent = message;
+      // 查找当前活动会话
+      const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+      if (currentSessionIndex !== -1) {
+        // 如果找到当前活动会话，添加到该会话
+        chatSessions[currentSessionIndex].messages.push({ role: "user", content: message });
+        chatSessions[currentSessionIndex].hasUserMessage = true; // 标记为有用户消息
+      } else if (chatSessions.length > 0) {
+        // 如果没有找到当前活动会话，添加到第一个会话
+        chatSessions[0].messages.push({ role: "user", content: message });
+        chatSessions[0].hasUserMessage = true; // 标记为有用户消息
+      }
+    }
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  
+  // 发送消息时保存到当前会话
+  function sendToAI(message) {
+    try {
+      // 立即将按钮切换为停止按钮
+      isStreaming = true;
+      toggleSendStopButton(true);
+      
+      // 确保至少有一个会话存在
+      if (!chatSessions || chatSessions.length === 0) {
+        const now = new Date();
+        chatSessions = [{
+          id: 'session_' + now.getTime(),
+          title: now.toLocaleString(),
+          created: now.toLocaleString(),
+          messages: [],
+          currentSession: true  // 标记为当前会话
+        }];
+        chrome.storage.local.set({ chatSessions: chatSessions });
+      }
+      
+      // 查找当前活动会话
+      const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+      let currentSession;
+      
+      if (currentSessionIndex !== -1) {
+        // 如果找到当前活动会话，使用它
+        currentSession = chatSessions[currentSessionIndex];
+      } else {
+        // 如果没有找到当前活动会话，使用第一个会话并标记为当前活动会话
+        currentSession = chatSessions[0];
+        currentSession.currentSession = true;
+      }
+      
+      // 添加用户消息到聊天窗口
+      const messageContainer = document.createElement('div');
+      messageContainer.className = 'message-container user-message-container';
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message user-message';
+      messageDiv.textContent = message;
+      
+      messageContainer.appendChild(messageDiv);
+      chatMessages.appendChild(messageContainer);
+      
+      // 添加用户消息到历史记录
+      currentSession.messages.push({ role: "user", content: message });
+      currentSession.hasUserMessage = true; // 标记为有用户消息
+      
+      // 更新会话标题为第一条用户消息（如果是从历史记录加载的会话，保留原标题）
+      if (!currentSession.isFromHistory && (!currentSession.title || currentSession.title === currentSession.created)) {
+        // 截取消息前20个字符作为标题
+        const titleText = message.length > 20 ? message.substring(0, 20) + '...' : message;
+        currentSession.title = titleText;
+      }
+      
+      // 保存会话到存储
+      saveSessionsToStorage();
+      
+      // 显示思考状态
+      addMessage('正在思考...', false);
+      
+      // 滚动到底部
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 清空输入框
+      messageInput.value = '';
+      
+      // 准备发送的内容
+      let content = '';
+      
+      // 如果有上传的文件内容，将其添加到消息中
+      if (uploadedFileContent) {
+        content = `===== 文件内容开始 =====\n${uploadedFileContent}\n===== 文件内容结束 =====\n\n用户问题：${message}`;
+      } else if (pageContentLoaded && currentPageContent) {
+        // 如果有页面内容，将其添加到消息中
+        if (currentPageContent) {
+          const pageInfo = `
+标题：${currentPageContent.title}
+来源：${currentPageContent.source || '未知来源'}
+作者：${currentPageContent.author || '未知作者'}
+链接：${currentPageContent.url || '未知'}
+
+内容：
+${currentPageContent.content}
+`;
+          content = `===== 网页内容开始 =====\n${pageInfo}\n===== 网页内容结束 =====\n\n用户问题：${message}`;
+        }
+      } else {
+        // 否则只使用用户消息
+        content = message;
+      }
+      
+      // 获取当前选择的模型
+      const selectedModel = document.querySelector('input[name="aiModel"]:checked')?.value || 'deepseek';
+      
+      // 发送消息和历史记录给background script
+      chrome.runtime.sendMessage({
+        action: 'analyzeContent',
+        content: content,
+        isChat: true,
+        isDataAnalysis: hasCollectedData,
+        chatHistory: currentSession.messages || [],
+        hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
+        model: selectedModel // 添加模型选择
+      }, (response) => {
+        // 处理响应（如果有）
+        if (chrome.runtime.lastError) {
+          console.error('发送消息时出错:', chrome.runtime.lastError);
+        }
+      });
+      
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      const thinkingMessages = document.querySelectorAll('.ai-message');
+      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
+      if (lastThinking && lastThinking.textContent === '正在思考...') {
+        lastThinking.remove();
+      }
+      addMessage('发送消息失败，请重试', false);
+      
+      // 查找当前活动会话
+      const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+      if (currentSessionIndex !== -1 && chatSessions[currentSessionIndex]?.messages) {
+        chatSessions[currentSessionIndex].messages.pop();
+      } else if (chatSessions.length > 0 && chatSessions[0]?.messages) {
+        chatSessions[0].messages.pop();
+      }
+    }
+  }
+  
+  // 处理发送按钮点击
+  sendMessageBtn.addEventListener('click', () => {
+    // 如果正在流式输出，则停止输出
+    if (isStreaming) {
+      shouldStopStreaming = true;
+      toggleSendStopButton(false); // 切换回发送图标
+      isStreaming = false;
+      
+      // 发送停止流式输出的消息给后台
+      chrome.runtime.sendMessage({
+        action: 'stopStreaming'
+      });
+      
+      return;
+    }
+    
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    // 发送消息
+    sendToAI(message);
+    messageInput.value = '';
+    // 不要清空 uploadedFileContent，让它保持到用户手动清除或上传新文件
+    
+    // 如果有用户消息，保存会话到历史记录
+    if (chatSessions.length > 0 && chatSessions[0].hasUserMessage) {
+      saveSessionsToStorage();
+    }
+  });
+  
+  // 切换发送/停止按钮状态
+  function toggleSendStopButton(isStop) {
+    const sendIcon = sendMessageBtn.querySelector('.send-icon');
+    const stopIcon = sendMessageBtn.querySelector('.stop-icon');
+    
+    if (isStop) {
+      sendIcon.style.display = 'none';
+      stopIcon.style.display = 'inline';
+      sendMessageBtn.classList.add('stop-mode');
+    } else {
+      sendIcon.style.display = 'inline';
+      stopIcon.style.display = 'none';
+      sendMessageBtn.classList.remove('stop-mode');
+    }
+  }
+  
+  // 添加回车键发送功能
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessageBtn.click();
+    }
+  });
+  
+  // 添加清除文件的功能
+  function clearUploadedFile() {
+    uploadedFileContent = null;
+    fileInput.value = '';
+    fileInfo.textContent = '支持TXT文件，最大10MB';
+    fileInfo.className = 'file-info show';
+    setTimeout(() => {
+      fileInfo.className = 'file-info';
+    }, 3000);
+  }
+  
+  // 处理文件上传
+  fileInput.addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) {
+      clearUploadedFile();
+      return;
+    }
+    
+    // 检查文件类型
+    if (file.type !== 'text/plain') {
+      clearUploadedFile();
+      fileInfo.textContent = '只支持TXT文件';
+      fileInfo.className = 'file-info file-error show';
+      setTimeout(() => {
+        fileInfo.className = 'file-info';
+      }, 3000);
+      return;
+    }
+    
+    // 检查文件大小（10MB = 10 * 1024 * 1024 bytes）
+    if (file.size > 10 * 1024 * 1024) {
+      clearUploadedFile();
+      fileInfo.textContent = '文件大小不能超过10MB';
+      fileInfo.className = 'file-info file-error show';
+      setTimeout(() => {
+        fileInfo.className = 'file-info';
+      }, 3000);
+      return;
+    }
+    
+    try {
+      // 读取文件内容
+      const content = await readFileContent(file);
+      uploadedFileContent = content;
+      
+      // 更新文件信息显示
+      fileInfo.textContent = `已上传: ${file.name} (${formatFileSize(file.size)})`;
+      fileInfo.className = 'file-info show';
+      setTimeout(() => {
+        fileInfo.className = 'file-info';
+      }, 3000);
+      
+    } catch (error) {
+      console.error('读取文件失败:', error);
+      clearUploadedFile();
+      fileInfo.textContent = '读取文件失败';
+      fileInfo.className = 'file-info file-error show';
+      setTimeout(() => {
+        fileInfo.className = 'file-info';
+      }, 3000);
+    }
+  });
+  
+  // 添加文件大小格式化函数
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + 'KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  }
+  
+  // 读取文件内容
+  function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      reader.readAsText(file);
+    });
+  }
+  
+  // 监听来自background的消息
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'apiKeyRequired') {
+      // 当收到API密钥缺失提示时，先检查当前密钥状态
+      chrome.storage.local.get(['deepseekApiKey'], (result) => {
+        // 如果密钥实际已经设置，则忽略这个提示
+        if (result.deepseekApiKey && result.deepseekApiKey.trim() !== '') {
+          console.log('已设置API密钥，忽略提示');
+          return;
+        }
+        
+        // 如果密钥确实未设置，显示提示消息
+        console.log('收到API密钥缺失提示:', message.message);
+        addMessage(message.message, false, 'system');
+        
+        // 弹出设置对话框，提示用户设置API密钥
+        if (settingsModal) {
+          loadSettings(); // 加载已保存的设置
+          settingsModal.style.display = 'block';
+        }
+      });
+    } else if (message.type === 'updateStatus') {
+      // 更新为苹果风格状态显示
+      const statusElement = document.getElementById('status');
+      const statusTextElement = statusElement.querySelector('span:last-child');
+      statusTextElement.textContent = message.text;
+      statusElement.style.display = 'flex';
+    } else if (message.type === 'streamResponse' && message.isChat === true) {
+      isStreaming = true;
+      toggleSendStopButton(true); // 切换为停止按钮
+      
+      // 如果需要创建新会话，先创建
+      if (message.createNewSession && message.content && !window.newSessionCreated) {
+        // 使用时间戳作为临时标题
+        const now = new Date();
+        const title = `采集分析 - ${now.toLocaleString()}`;
+        createNewChatSession(title);
+        // 设置标记，避免重复创建
+        window.newSessionCreated = true;
+      }
+      
+      // 移除"正在思考..."的消息
+      const thinkingMessages = document.querySelectorAll('.ai-message');
+      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
+      if (lastThinking && lastThinking.textContent.trim() === '正在思考...') {
+        lastThinking.remove();
+      }
+      
+      // 查找或创建AI消息容器
+      let aiMessageDiv = document.querySelector('.ai-message:last-child');
+      if (!aiMessageDiv || !aiMessageDiv.classList.contains('streaming')) {
+        aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message streaming';
+        aiMessageDiv.setAttribute('data-raw-content', '');
+        chatMessages.appendChild(aiMessageDiv);
+      }
+      
+      // 更新消息内容
+      const currentContent = aiMessageDiv.getAttribute('data-raw-content') + message.content;
+      aiMessageDiv.setAttribute('data-raw-content', currentContent);
+      
+      // 使用marked渲染Markdown
+      aiMessageDiv.innerHTML = marked(currentContent);
+      
+      // 滚动到底部
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 将AI回复添加到当前会话的消息中
+      if (chatSessions.length > 0) {
+        // 查找当前活动会话
+        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+        let currentSession;
+        
+        if (currentSessionIndex !== -1) {
+          // 如果找到当前活动会话，使用它
+          currentSession = chatSessions[currentSessionIndex];
+        } else {
+          // 如果没有找到当前活动会话，使用第一个会话
+          currentSession = chatSessions[0];
+        }
+        
+        // 检查是否已经有一个正在进行的AI回复
+        const lastMessage = currentSession.messages[currentSession.messages.length - 1];
+        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.streaming) {
+          // 更新现有的流式回复
+          lastMessage.content = currentContent;
+        } else {
+          // 添加新的AI回复，标记为流式输出
+          currentSession.messages.push({ 
+            role: 'assistant', 
+            content: currentContent,
+            streaming: true
+          });
+        }
+      }
+    } else if (message.type === 'streamSummaryResponse') {
+      // 处理一键总结的流式响应
+      isStreaming = true;
+      toggleSendStopButton(true); // 切换为停止按钮
+      
+      // 如果需要创建新会话，先创建
+      if (message.createNewSession && message.content && !window.newSessionCreated) {
+        // 使用时间戳作为临时标题
+        const now = new Date();
+        const title = `采集分析 - ${now.toLocaleString()}`;
+        createNewChatSession(title);
+        // 设置标记，避免重复创建
+        window.newSessionCreated = true;
+      }
+      
+      // 移除"正在总结内容..."消息
+      const thinkingMessages = document.querySelectorAll('.ai-message');
+      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
+      if (lastThinking && lastThinking.textContent.trim() === '正在总结内容...') {
+        lastThinking.remove();
+      }
+      
+      // 查找或创建AI消息容器
+      let aiMessageDiv = document.querySelector('.ai-message:last-child');
+      if (!aiMessageDiv || !aiMessageDiv.classList.contains('streaming')) {
+        aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message streaming summary-message';
+        aiMessageDiv.setAttribute('data-raw-content', '');
+        
+        // 添加总结标题
+        const summaryTitle = document.createElement('div');
+        summaryTitle.className = 'summary-title';
+        summaryTitle.innerHTML = '<span class="material-icons">summarize</span> 内容总结';
+        aiMessageDiv.appendChild(summaryTitle);
+        
+        // 创建内容容器
+        const summaryContent = document.createElement('div');
+        summaryContent.className = 'summary-content';
+        aiMessageDiv.appendChild(summaryContent);
+        
+        chatMessages.appendChild(aiMessageDiv);
+      }
+      
+      // 更新消息内容
+      const currentContent = aiMessageDiv.getAttribute('data-raw-content') + message.content;
+      aiMessageDiv.setAttribute('data-raw-content', currentContent);
+      
+      // 使用marked渲染Markdown
+      const summaryContent = aiMessageDiv.querySelector('.summary-content');
+      if (summaryContent) {
+        summaryContent.innerHTML = marked(currentContent);
+      }
+      
+      // 滚动到底部
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 将AI回复添加到当前会话的消息中
+      if (chatSessions.length > 0) {
+        // 查找当前活动会话
+        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+        let currentSession;
+        
+        if (currentSessionIndex !== -1) {
+          // 如果找到当前活动会话，使用它
+          currentSession = chatSessions[currentSessionIndex];
+        } else {
+          // 如果没有找到当前活动会话，使用第一个会话
+          currentSession = chatSessions[0];
+        }
+        
+        // 检查是否已经有一个正在进行的AI回复
+        const lastMessage = currentSession.messages[currentSession.messages.length - 1];
+        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.streaming) {
+          // 更新现有的流式回复
+          lastMessage.content = currentContent;
+        } else {
+          // 添加新的AI回复，标记为流式输出
+          currentSession.messages.push({ 
+            role: 'assistant', 
+            content: currentContent,
+            streaming: true
+          });
+        }
+        
+        // 确保会话被保存，即使没有用户消息
+        currentSession.saveToHistory = true;
+      }
+    } else if (message.type === 'analysisComplete') {
+      // 分析完成
+      isStreaming = false;
+      shouldStopStreaming = false;
+      
+      // 重置新会话创建标记
+      window.newSessionCreated = false;
+      
+      // 移除streaming类和标记
+      const streamingMessages = document.querySelectorAll('.streaming');
+      streamingMessages.forEach(msg => msg.classList.remove('streaming'));
+      
+      // 更新会话中的AI消息，移除streaming标记
+      if (chatSessions.length > 0) {
+        // 查找当前活动会话
+        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+        let currentSession;
+        
+        if (currentSessionIndex !== -1) {
+          // 如果找到当前活动会话，使用它
+          currentSession = chatSessions[currentSessionIndex];
+        } else {
+          // 如果没有找到当前活动会话，使用第一个会话
+          currentSession = chatSessions[0];
+        }
+        
+        // 清理streaming标记
+        currentSession.messages.forEach(msg => {
+          if (msg.role === 'assistant' && msg.streaming) {
+            delete msg.streaming;
+          }
+        });
+        
+        // 保存更新后的会话
+        saveSessionsToStorage();
+      }
+      
+      // 恢复发送按钮状态
+      toggleSendStopButton(false);
+      
+      // 为最后一条AI消息添加复制按钮
+      const aiMessages = document.querySelectorAll('.ai-message');
+      const lastAiMessage = aiMessages[aiMessages.length - 1];
+      
+      if (lastAiMessage && !lastAiMessage.querySelector('.copy-button')) {
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = '<span class="material-icons">content_copy</span> 复制';
+        copyButton.onclick = function() {
+          // 获取原始内容（未经HTML渲染的）
+          const content = lastAiMessage.getAttribute('data-raw-content');
+          
+          // 复制到剪贴板
+          navigator.clipboard.writeText(content).then(() => {
+            // 更新按钮状态
+            this.innerHTML = '<span class="material-icons">check</span> 已复制';
+            this.classList.add('copy-success');
+            
+            // 2秒后恢复
+            setTimeout(() => {
+              this.innerHTML = '<span class="material-icons">content_copy</span> 复制';
+              this.classList.remove('copy-success');
+            }, 2000);
+          }).catch(err => {
+            console.error('复制失败:', err);
+            this.innerHTML = '<span class="material-icons">error</span> 复制失败';
+            
+            // 2秒后恢复
+            setTimeout(() => {
+              this.innerHTML = '<span class="material-icons">content_copy</span> 复制';
+            }, 2000);
+          });
+        };
+        
+        lastAiMessage.appendChild(copyButton);
+      }
+      
+    } else if (message.type === 'error') {
+      // 移除"正在思考..."的消息
+      const thinkingMessages = document.querySelectorAll('.ai-message');
+      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
+      if (lastThinking && lastThinking.textContent === '正在思考...') {
+        lastThinking.remove();
+      }
+
+      // 显示错误消息
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'message ai-message error-message';
+      errorDiv.innerHTML = `
+        <div class="api-error-warning">
+          <span class="material-icons">error</span>
+          <p>${message.error}</p>
+        </div>
+      `;
+      chatMessages.appendChild(errorDiv);
+      
+      // 滚动到底部
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 移除最后一条用户消息从历史记录中
+      if (chatSessions.length > 0 && chatSessions[0]?.messages && chatSessions[0].messages.length > 0 && chatSessions[0].messages[chatSessions[0].messages.length - 1].role === 'user') {
+        chatSessions[0].messages.pop();
+      }
+    } else if (message.type === 'collectionComplete') {
+      // 更新为苹果风格状态显示
+      const statusElement = document.getElementById('status');
+      const statusTextElement = statusElement.querySelector('span:last-child');
+      statusTextElement.textContent = message.text;
+      statusElement.style.display = 'flex';
+      
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      hasCollectedData = true;
+
+      // 创建新会话
+      const now = new Date();
+      const newSession = {
+        id: 'session_' + now.getTime(),
+        title: '笔记采集分析 - ' + now.toLocaleString(),
+        created: now.toLocaleString(),
+        messages: [{
+          role: 'assistant',
+          content: '欢迎使用AI助手，请输入您的问题。'
+        }],
+        hasUserMessage: false,
+        currentSession: true,
+        saveToHistory: true  // 确保即使没有用户消息也能保存
+      };
+      
+      // 清除所有现有会话的currentSession标记
+      if (chatSessions && chatSessions.length > 0) {
+        chatSessions.forEach(s => {
+          delete s.currentSession;
+        });
+      }
+      
+      // 将新会话添加到会话列表的最前面
+      chatSessions = [newSession, ...chatSessions];
+      
+      // 清空聊天框
+      chatMessages.innerHTML = '';
+      
+      // 显示提示消息
+      addMessage('笔记采集完成，AI正在进行内容分析...', false);
+      
+      // 自动切换到AI助手Tab页
+      switchTab('aiAssistant');
+    } else if (message.type === 'apiKeyRequired') {
+      // 移除"正在思考..."的消息
+      const thinkingMessages = document.querySelectorAll('.ai-message');
+      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
+      if (lastThinking && lastThinking.textContent === '正在思考...') {
+        lastThinking.remove();
+      }
+      
+      // 显示API密钥设置提示
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message ai-message api-key-notice';
+      messageDiv.innerHTML = `
+        <div class="api-key-warning">
+          <span class="material-icons">warning</span>
+          <p>${message.message}</p>
+          <button id="openSettingsBtn" class="open-settings-btn">打开设置</button>
+        </div>
+      `;
+      chatMessages.appendChild(messageDiv);
+      
+      // 添加打开设置按钮的点击事件
+      const openSettingsBtn = messageDiv.querySelector('#openSettingsBtn');
+      openSettingsBtn.addEventListener('click', () => {
+        settingsModal.style.display = 'block';
+      });
+      
+      // 滚动到底部
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 移除最后一条用户消息从历史记录中
+      if (chatSessions.length > 0 && chatSessions[0]?.messages && chatSessions[0].messages.length > 0 && chatSessions[0].messages[chatSessions[0].messages.length - 1].role === 'user') {
+        chatSessions[0].messages.pop();
+      }
+    } else if (message.type === 'streamResponse' && message.isChat === false) {
+      // 说明是爆款标题AI返回
+      addMessage(formatHotTitleResult(message.content), false);
+    }
+  });
+  
+  // 移除聊天框中的API密钥提示消息
+  function removeApiKeyNotices() {
+    const chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) return;
+    
+    // 查找所有API密钥相关的提示消息
+    const apiKeyMessages = chatMessages.querySelectorAll('.message.system:not(.user)');
+    apiKeyMessages.forEach(msg => {
+      if (msg.textContent.includes('API密钥') || 
+          msg.textContent.includes('设置') || 
+          msg.textContent.includes('DeepSeek')) {
+        msg.remove();
+      }
+    });
+    
+    // 检查是否有消息，如果没有，添加欢迎消息
+    if (chatMessages.children.length === 0) {
+      addMessage('欢迎使用AI助手， 请输入您的问题。', false);
+    }
+  }
+
+  // 检查API密钥是否已设置，并更新UI状态
+  function checkApiKeyStatus() {
+    chrome.storage.local.get(['deepseekApiKey'], (result) => {
+      const hasApiKey = result.deepseekApiKey && result.deepseekApiKey.trim() !== '';
+      console.log('检查API密钥状态:', hasApiKey ? '已设置' : '未设置');
+      
+      // 如果已设置API密钥，移除提示消息
+      if (hasApiKey) {
+        removeApiKeyNotices();
+      }
+    });
+  }
+
+  // 定期检查标签页状态（移除小红书唯一性提示）
+  async function checkXhsTab() {
+    const tab = await findXhsTabs();
+    if (!tab) {
+      startBtn.disabled = true;
+      // 不再添加“请打开小红书页面”提示
+    } else {
+      hasShownOpenPageMessage = false;
+      try {
+        if (!status.textContent.includes('成功采集') && 
+            !status.textContent.includes('开始采集') && 
+            !status.textContent.includes('停止采集')) {
+          // 更新为苹果风格状态显示
+          const statusElement = document.getElementById('status');
+          const statusTextElement = statusElement.querySelector('span:last-child');
+          statusTextElement.textContent = '准备就绪';
+          statusElement.style.display = 'flex';
+        }
+        if (startBtn.disabled && !stopBtn.disabled) {
+          startBtn.disabled = false;
+        }
+      } catch (error) {
+        console.error('检查页面就绪状态时出错:', error);
+        if (!status.textContent.includes('成功采集')) {
+          // 更新为苹果风格状态显示
+          const statusElement = document.getElementById('status');
+          const statusTextElement = statusElement.querySelector('span:last-child');
+          statusTextElement.textContent = '请刷新页面';
+          statusElement.style.display = 'flex';
+        }
+        startBtn.disabled = true;
+      }
+    }
+  }
+  
+  // 查找所有目标标签页（移除小红书唯一性提示）
+  async function findXhsTabs() {
+    try {
+      // 支持小红书和常见在线文档
+      const tabs = await chrome.tabs.query({url: ["*://*.xiaohongshu.com/*", "*://docs.qq.com/*", "*://*.feishu.cn/*", "*://*.aliyun.com/*", "*://*.baidu.com/*"]});
+      if (tabs.length === 0) {
+        // 更新为苹果风格状态显示
+        const statusElement = document.getElementById('status');
+        const statusTextElement = statusElement.querySelector('span:last-child');
+        statusTextElement.textContent = '未检测到可用页面';
+        statusElement.style.display = 'flex';
+        startBtn.disabled = true;
+        currentXhsTab = null;
+        return null;
+      }
+      const activeTab = tabs.find(tab => tab.active);
+      if (activeTab) {
+        currentXhsTab = activeTab;
+        startBtn.disabled = !stopBtn.disabled;
+        return activeTab;
+      }
+      currentXhsTab = tabs[0];
+      startBtn.disabled = !stopBtn.disabled;
+      return tabs[0];
+    } catch (error) {
+      const errorMessage = '查找目标页面失败';
+      console.error(errorMessage + ':', error);
+      // 更新为苹果风格状态显示
+      const statusElement = document.getElementById('status');
+      const statusTextElement = statusElement.querySelector('span:last-child');
+      statusTextElement.textContent = errorMessage;
+      statusElement.style.display = 'flex';
+      startBtn.disabled = true;
+      currentXhsTab = null;
+      return null;
+    }
+  }
+  
+  // 等待页面准备好
+  async function waitForPageReady(tabId, maxAttempts = 5) {
+    for (let i = 0; i < maxAttempts; i++) {
+      if (await checkPageReady(tabId)) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    return false;
+  }
+
+  // 开始采集
+  startBtn.addEventListener('click', async () => {
+    const tab = await findXhsTabs();
+    if (!tab) {
+      // 更新为苹果风格状态显示
+      const statusElement = document.getElementById('status');
+      const statusTextElement = statusElement.querySelector('span:last-child');
+      statusTextElement.textContent = '请先打开小红书页面';
+      statusElement.style.display = 'flex';
+      return;
+    }
+    
+    currentXhsTab = tab;
+    const maxNotes = parseInt(maxNotesInput.value) || 10;
+    const minLikes = parseInt(minLikesInput.value) || 0;
+    
+    // 更新为苹果风格状态显示
+    const statusElement = document.getElementById('status');
+    const statusTextElement = statusElement.querySelector('span:last-child');
+    statusTextElement.textContent = '开始采集...';
+    statusElement.style.display = 'flex';
+    
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    
+    // 发送消息到content script
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'startCollecting',
+      maxNotes: maxNotes,
+      minLikes: minLikes
+    }, (response) => {
+      // 处理响应（如果有）
+      if (chrome.runtime.lastError) {
+        console.error('发送消息时出错:', chrome.runtime.lastError);
+      }
+    });
+  });
+  
+  // 停止采集
+  stopBtn.addEventListener('click', () => {
+    if (currentXhsTab) {
+      // 更新为苹果风格状态显示
+      const statusElement = document.getElementById('status');
+      const statusTextElement = statusElement.querySelector('span:last-child');
+      statusTextElement.textContent = '已停止采集';
+      statusElement.style.display = 'flex';
+      
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      
+      chrome.tabs.sendMessage(currentXhsTab.id, { action: 'stopCollecting' }, (response) => {
+        // 处理响应（如果有）
+        if (chrome.runtime.lastError) {
+          console.error('发送消息时出错:', chrome.runtime.lastError);
+        }
+      });
+    }
+  });
+  
+  // 每秒检查一次标签页状态
+  setInterval(checkXhsTab, 1000);
+});
+
+// 检查API密钥状态
+function checkApiKeyStatus() {
+  chrome.storage.local.get(['deepseekApiKey', 'geminiApiKey'], function(result) {
+    if (result.deepseekApiKey) {
+      document.getElementById('apiKey').value = result.deepseekApiKey;
+    }
+    if (result.geminiApiKey) {
+      document.getElementById('geminiApiKey').value = result.geminiApiKey;
+    }
+  });
+}
+
+// 打开设置弹窗
+settingsIcon.addEventListener('click', () => {
+  settingsModal.style.display = 'block';
+});
+
+// 保存设置
+saveSettingsBtn.addEventListener('click', () => {
+  // 获取API密钥值
+  const deepseekApiKey = document.getElementById('apiKey').value.trim();
+  const geminiApiKey = document.getElementById('geminiApiKey').value.trim();
+
+  // 保存设置到本地存储
+  chrome.storage.local.set({ 
+    deepseekApiKey: deepseekApiKey,
+    geminiApiKey: geminiApiKey 
+  }, () => {
+    // 通知background.js更新API密钥
+    chrome.runtime.sendMessage({ 
+      action: 'updateApiKey', 
+      apiKey: deepseekApiKey,
+      geminiApiKey: geminiApiKey
+    }, (response) => {
+      // 处理响应（如果有）
+      if (chrome.runtime.lastError) {
+        console.error('发送消息时出错:', chrome.runtime.lastError);
+      }
+    });
+
+    // 显示Toast浮窗提示
+    showToastNotification('设置已保存成功！');
+
+    // 显示保存成功提示并更新按钮状态
+    const saveBtn = document.getElementById('saveSettings');
+    saveBtn.textContent = '保存成功!';
+    saveBtn.style.backgroundColor = '#2E7D32';
+
+    // 立即关闭弹窗
+    settingsModal.style.display = 'none';
+
+    // 0.5秒后恢复按钮文本（为下次打开做准备）
+    setTimeout(() => {
+      saveBtn.textContent = '保存设置';
+      saveBtn.style.backgroundColor = '';
+    }, 500);
+
+    // 如果设置了API密钥，移除聊天框中的API密钥提示消息
+    if (deepseekApiKey) {
+      removeApiKeyNotices();
+    }
+  });
+});
+      
+      // 为写成笔记按钮添加点击事件
+      const noteBtn = contentPreview.querySelector('.note-btn');
+      if (noteBtn) {
+        noteBtn.addEventListener('click', () => {
+          // 如果正在流式输出，不处理
+          if (isStreaming) return;
+          
+          // 显示处理中状态
+          addMessage('正在将内容改写为小红书笔记，请稍候...', false);
+          
+          // 构建改写请求
+          const title = currentPageContent.title || '无标题';
+          const content = currentPageContent.content || '';
+          const rewriteRequest = `请将以下内容改写成1000字以内的小红书笔记格式，保留核心内容，使用小红书常见的轻松活泼风格，添加适当的emoji表情，分段清晰：\n\n标题：${title}\n\n${content}`;
+          
+          // 获取当前选择的模型
+          const selectedModel = document.querySelector('input[name="aiModel"]:checked')?.value || 'deepseek';
+          
+          // 发送消息给background script
+          chrome.runtime.sendMessage({
+            action: 'analyzeContent',
+            content: rewriteRequest,
+            isChat: true,
+            isDataAnalysis: false,
+            chatHistory: chatSessions[0]?.messages || [],
+            hasFile: false,
+            skipUserMessage: true, // 添加标记，表示不显示用户消息
+            model: selectedModel // 添加模型选择
+          }, (response) => {
+            // 处理响应（如果有）
+            if (chrome.runtime.lastError) {
+              console.error('发送消息时出错:', chrome.runtime.lastError);
+            }
+          });
+          
+          // 添加到历史记录但不显示在界面上
+          if (chatSessions.length > 0) {
+            // 添加写成笔记操作为用户消息
+            const noteMessage = `[写成笔记] ${title}`;
+            chatSessions[0].messages.push({ role: "user", content: noteMessage, hidden: true });
+            chatSessions[0].hasUserMessage = true; // 标记为有用户消息
+            saveSessionsToStorage(); // 保存到存储
+          }
+        });
+      }
+      
+      // 为生成爆款标题按钮添加点击事件
+      const hotTitleBtn = contentPreview.querySelector('.hot-title-btn');
+      if (hotTitleBtn) {
+        hotTitleBtn.addEventListener('click', () => {
+          // 如果正在流式输出，不处理
+          if (isStreaming) return;
+          
+          // 获取页面内容
+          const content = currentPageContent.content;
+          const title = currentPageContent.title || '';
+          
+          // 显示处理中状态
+          addMessage('正在生成爆款标题，请稍候...', false);
+          
+          // 构建生成标题请求
+          const titleRequest = `请根据以下内容，直接生成5个吸引人的小红书爆款标题，不要解释，只需列出5个标题：\n\n标题：${title}\n\n${content}`;
+          
+          // 发送消息给background script
+          chrome.runtime.sendMessage({
+            action: 'analyzeContent',
+            content: titleRequest,
+            isChat: true,
+            isDataAnalysis: false,
+            chatHistory: chatSessions[0]?.messages || [],
+            hasFile: false
+          }, (response) => {
+            // 处理响应（如果有）
+            if (chrome.runtime.lastError) {
+              console.error('发送消息时出错:', chrome.runtime.lastError);
+            }
+          });
+          
+          // 添加到历史记录但不显示在界面上
+          if (chatSessions.length > 0) {
+            // 添加生成爆款标题操作为用户消息
+            const titleMessage = `[生成爆款标题] ${title}`;
+            chatSessions[0].messages.push({ role: "user", content: titleMessage, hidden: true });
+            chatSessions[0].hasUserMessage = true; // 标记为有用户消息
+            saveSessionsToStorage(); // 保存到存储
+          }
+        });
+      }
+    }
+    
+    // 加载历史消息
+    session.messages.forEach(msg => {
+      // 处理隐藏的消息 - 保留在会话中但不显示在界面上
+      if (msg.hidden) {
+        // 检查是否是页面内容提取操作
+        if (msg.role === 'user' && msg.content.startsWith('[提取页面内容]')) {
+          // 不在UI中显示，但保留在会话中
+          return;
+        }
+        // 检查是否是一键总结操作
+        if (msg.role === 'user' && msg.content.startsWith('[一键总结]')) {
+          // 不在UI中显示，但保留在会话中
+          return;
+        }
+        // 检查是否是写成笔记操作
+        if (msg.role === 'user' && msg.content.startsWith('[写成笔记]')) {
+          // 不在UI中显示，但保留在会话中;
+          return;
+        }
+        // 检查是否是生成爆款标题操作
+        if (msg.role === 'user' && msg.content.startsWith('[生成爆款标题]')) {
+          // 不在UI中显示，但保留在会话中;
+          return;
+        }
+        return;
+      }
+      
+      if (msg.role === 'user') {
+        // 用户消息
+        const messageContainer = document.createElement('div');
+        messageContainer.className = 'message-container user-message-container';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user-message';
+        messageDiv.textContent = msg.content;
+        
+        messageContainer.appendChild(messageDiv);
+        chatMessages.appendChild(messageContainer);
+      } else if (msg.role === 'assistant') {
+        // AI消息
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message ai-message';
+        messageDiv.setAttribute('data-raw-content', msg.content);
+        messageDiv.innerHTML = marked(msg.content);
+        
+        // 添加复制按钮
+        if (msg.content.length > 10) {
+          const copyButton = document.createElement('button');
+          copyButton.className = 'copy-button';
+          copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
+          copyButton.onclick = function() {
+            // 获取原始内容（未经HTML渲染的）
+            const content = msg.content;
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(content).then(() => {
+              // 更新按钮状态
+              this.innerHTML = '<span class="material-icons">check</span>已复制';
+              this.classList.add('copy-success');
+              
+              // 2秒后恢复
+              setTimeout(() => {
+                this.innerHTML = '<span class="material-icons">content_copy</span>复制';
+                this.classList.remove('copy-success');
+              }, 2000);
+            }).catch(err => {
+              console.error('复制失败:', err);
+              this.innerHTML = '<span class="material-icons">error</span>复制失败';
+              
+              // 2秒后恢复
+              setTimeout(() => {
+                this.innerHTML = '<span class="material-icons">content_copy</span>复制';
+              }, 2000);
+            });
+          };
+          messageDiv.appendChild(copyButton);
+        }
+        
+        chatMessages.appendChild(messageDiv);
+      }
+    });
+    
+    // 滚动到底部
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // 清除其他状态
+    uploadedFileContent = null;
+    clearUploadedFile();
+    messageInput.value = '';
+    
+    // 关闭历史记录弹窗
+    historyModal.style.display = 'none';
+    
+    // 保存到存储
+    chrome.storage.local.set({ chatSessions: chatSessions });
+    
+    // 添加日志，帮助调试
+    console.log('已加载会话:', session.id);
+  }
+});
+
