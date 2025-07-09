@@ -5,8 +5,7 @@ console.log('📅 当前时间:', new Date().toLocaleString());
 document.addEventListener('DOMContentLoaded', function() {
 
   
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
+  const collectBtn = document.getElementById('collectBtn');
   const status = document.getElementById('status');
   const maxNotesInput = document.getElementById('maxNotes');
   const minLikesInput = document.getElementById('minLikes');
@@ -42,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
   let isStreaming = false; 
   let shouldStopStreaming = false; 
   let pageContentLoaded = false; 
-  let currentPageContent = null; 
+  let currentPageContent = null;
+  let isCollecting = false; // 新增：是否正在采集的状态 
   
   const settingsIcon = document.getElementById('settingsIcon');
   const settingsModal = document.getElementById('settingsModal');
@@ -193,6 +193,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // 更新采集按钮状态
+  function updateCollectButtonState(collecting) {
+    if (!collectBtn) return;
+    
+    isCollecting = collecting;
+    const iconElement = collectBtn.querySelector('.material-icons');
+    
+    if (collecting) {
+      // 采集中状态
+      collectBtn.className = 'apple-btn apple-btn-collecting';
+      iconElement.textContent = 'stop_circle';
+      // 更新按钮文本，保留图标
+      collectBtn.innerHTML = '<span class="material-icons">stop_circle</span>停止采集';
+    } else {
+      // 未采集状态
+      collectBtn.className = 'apple-btn apple-btn-primary';
+      iconElement.textContent = 'play_circle';
+      // 更新按钮文本，保留图标
+      collectBtn.innerHTML = '<span class="material-icons">play_circle</span>开始采集';
+    }
+  }
+  
   // 测试复制功能
   function testClipboard() {
     const testText = "测试复制功能";
@@ -272,22 +294,24 @@ document.addEventListener('DOMContentLoaded', function() {
       id: 'session_' + now.getTime(),
       title: now.toLocaleString(),
       created: now.toLocaleString(),
-      messages: [{
-        role: 'assistant',
-        content: '欢迎使用AI助手，请输入您的问题。'
-      }],
-      hasUserMessage: false
+      messages: [], // 空消息数组，不包含欢迎消息
+      hasUserMessage: false,
+      currentSession: true,
+      isTemporary: true // 标记为临时会话
     };
     
+    // 将新会话和历史会话合并，新会话在前
     chatSessions = [newSession];
     
     if (existingSessions.length > 0) {
       chatSessions = chatSessions.concat(existingSessions);
     }
     
-    chrome.storage.local.set({ chatSessions: chatSessions });
+    // 不立即保存到storage，等有实际对话内容时再保存
+    console.log('[DEBUG] 初始化加载chatSessions（不保存）:', chatSessions.length, chatSessions.map(s => ({id: s.id, messages: s.messages.length, isTemporary: s.isTemporary})));
     
-    addMessage('欢迎使用AI助手，请输入您的问题。', false);
+    // 只在UI上显示欢迎消息，不加入会话历史
+    addMessage('欢迎使用AI助手，请输入您的问题。', false, true);
     
     uploadedFileContent = null; 
     clearUploadedFile(); 
@@ -324,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function() {
       created: now.toLocaleString(),
       messages: [], // 新会话从空的消息数组开始
       hasUserMessage: false,
-      currentSession: true,
-      saveToHistory: true
+      currentSession: true
+      // 不再默认加saveToHistory: true
     };
     
     // 确保所有旧会话都不是当前会话
@@ -733,6 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // 重新加载历史记录列表
           refreshHistoryList();
           showToast('聊天记录已删除');
+          console.log('[DEBUG] 删除会话后写入chatSessions:', updatedSessions.length, updatedSessions.map(s => ({id: s.id, messages: s.messages.length})));
         });
       });
     }
@@ -902,16 +927,18 @@ document.addEventListener('DOMContentLoaded', function() {
                               session.pageContent.content && 
                               session.pageContent.content.trim();
         
-        // 检查是否被明确标记为需要保存
-        const markedForSave = session.saveToHistory === true;
+        // 如果是临时会话且没有内容，不保存
+        if (session.isTemporary && !hasValidConversation && !hasPageContent) {
+          return false;
+        }
         
-        // 只有满足以下条件之一才保存：
-        // 1. 有有效的对话内容
-        // 2. 有页面内容
-        // 3. 被明确标记为需要保存
-        return hasValidConversation || hasPageContent || markedForSave;
+        // 只保留有内容的会话，不再因为saveToHistory为true而保存
+        return hasValidConversation || hasPageContent;
       }).map(session => {
         const sessionCopy = JSON.parse(JSON.stringify(session));
+        
+        // 移除临时标记，因为一旦保存就不再是临时会话了
+        delete sessionCopy.isTemporary;
         
         // 清理消息数组，移除系统提示
         if (sessionCopy.messages && sessionCopy.messages.length > 0) {
@@ -950,6 +977,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const updatedSessions = [...finalSessionsToSave, ...filteredExisting];
         
         chrome.storage.local.set({ chatSessions: updatedSessions });
+        console.log('[DEBUG] saveSessionsToStorage写入chatSessions:', updatedSessions.length, updatedSessions.map(s => ({id: s.id, messages: s.messages.length})));
         
         console.log('保存会话到历史记录:', finalSessionsToSave.length, '个有效会话');
       } else {
@@ -1084,9 +1112,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentSessionIndex !== -1) {
           chatSessions[currentSessionIndex].messages.push({ role: "user", content: message });
           chatSessions[currentSessionIndex].hasUserMessage = true;
+          // 如果是临时会话，移除临时标记
+          if (chatSessions[currentSessionIndex].isTemporary) {
+            delete chatSessions[currentSessionIndex].isTemporary;
+          }
         } else if (chatSessions.length > 0) {
           chatSessions[0].messages.push({ role: "user", content: message });
           chatSessions[0].hasUserMessage = true;
+          // 如果是临时会话，移除临时标记
+          if (chatSessions[0].isTemporary) {
+            delete chatSessions[0].isTemporary;
+          }
         }
       }
     }
@@ -1527,6 +1563,9 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (message.type === 'collectionComplete') {
       console.log('收到采集完成消息:', message.text, '数据条数:', message.data?.length || 0);
       
+      // 重置采集按钮状态
+      updateCollectButtonState(false);
+      
       // 自动切换到AI助手界面
       switchTab('aiAssistant');
       
@@ -1574,6 +1613,9 @@ document.addEventListener('DOMContentLoaded', function() {
       
       return false;
     } else if (message.type === 'error') {
+      // 重置采集按钮状态（在错误情况下）
+      updateCollectButtonState(false);
+      
       // 移除思考动画消息
       const thinkingMessage = document.querySelector('.thinking-message');
       if (thinkingMessage) {
@@ -1629,9 +1671,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 定期检查标签页状态
   async function checkXhsTab() {
+    // 如果正在采集，保持 currentXhsTab 不变，避免停止指令发错目标
+    if (isCollecting) {
+      return;
+    }
     const tab = await findXhsTabs();
     if (!tab) {
-      startBtn.disabled = true;
+      collectBtn.disabled = true;
     } else {
       hasShownOpenPageMessage = false;
       try {
@@ -1643,8 +1689,8 @@ document.addEventListener('DOMContentLoaded', function() {
           statusTextElement.textContent = '准备就绪';
           statusElement.style.display = 'flex';
         }
-        if (startBtn.disabled && !stopBtn.disabled) {
-          startBtn.disabled = false;
+        if (collectBtn.disabled && !isCollecting) {
+          collectBtn.disabled = false;
         }
       } catch (error) {
         console.error('检查页面就绪状态时出错:', error);
@@ -1654,7 +1700,7 @@ document.addEventListener('DOMContentLoaded', function() {
           statusTextElement.textContent = '请刷新页面';
           statusElement.style.display = 'flex';
         }
-        startBtn.disabled = true;
+        collectBtn.disabled = true;
       }
     }
   }
@@ -1668,18 +1714,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusTextElement = statusElement.querySelector('span:last-child');
         statusTextElement.textContent = '未检测到可用页面';
         statusElement.style.display = 'flex';
-        startBtn.disabled = true;
+        collectBtn.disabled = true;
         currentXhsTab = null;
         return null;
       }
       const activeTab = tabs.find(tab => tab.active);
       if (activeTab) {
         currentXhsTab = activeTab;
-        startBtn.disabled = !stopBtn.disabled;
+        collectBtn.disabled = isCollecting;
         return activeTab;
       }
       currentXhsTab = tabs[0];
-      startBtn.disabled = !stopBtn.disabled;
+      collectBtn.disabled = isCollecting;
       return tabs[0];
     } catch (error) {
       const errorMessage = '查找目标页面失败';
@@ -1688,7 +1734,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const statusTextElement = statusElement.querySelector('span:last-child');
       statusTextElement.textContent = errorMessage;
       statusElement.style.display = 'flex';
-      startBtn.disabled = true;
+      collectBtn.disabled = true;
       currentXhsTab = null;
       return null;
     }
@@ -1748,100 +1794,85 @@ document.addEventListener('DOMContentLoaded', function() {
     return false;
   }
 
-  // 开始采集
-  startBtn.addEventListener('click', async () => {
-    console.log('开始采集按钮被点击');
+  // 采集按钮点击事件处理
+  collectBtn.addEventListener('click', async () => {
+    console.log('🔄 采集按钮点击，当前状态:', isCollecting);
     
-    const tab = await findXhsTabs();
-    if (!tab) {
-      const statusElement = document.getElementById('status');
-      const statusTextElement = statusElement.querySelector('span:last-child');
-      statusTextElement.textContent = '请先打开小红书页面';
-      statusElement.style.display = 'flex';
-      console.log('未找到小红书页面');
-      return;
-    }
-    
-    console.log('找到小红书页面:', tab.url);
-    
-    // 等待页面准备就绪
-    const statusElement = document.getElementById('status');
-    const statusTextElement = statusElement.querySelector('span:last-child');
-    statusTextElement.textContent = '检查页面状态...';
-    statusElement.style.display = 'flex';
-    
-    // 等待页面准备好
-    let isReady = await waitForPageReady(tab.id);
-    if (!isReady) {
-      console.log('页面未准备好，尝试动态注入content script');
-      statusTextElement.textContent = '正在注入采集脚本...';
+    if (isCollecting) {
+      // 停止采集
+      console.log('🛑 执行停止采集');
       
-      // 尝试动态注入content script
-      const injected = await injectContentScript(tab.id);
-      if (!injected) {
-        statusTextElement.textContent = '注入采集脚本失败，请刷新页面后重试';
-        console.log('动态注入失败');
+      if (currentXhsTab) {
+        const statusElement = document.getElementById('status');
+        const statusTextElement = statusElement.querySelector('span:last-child');
+        statusTextElement.textContent = '正在停止采集...';
+        statusElement.style.display = 'flex';
+        
+        // 先更新UI状态
+        updateCollectButtonState(false);
+        
+        // 发送停止消息
+        chrome.tabs.sendMessage(currentXhsTab.id, {
+          type: 'stopCollecting'
+        }, (response) => {
+          console.log('🛑 停止采集响应:', response);
+          if (chrome.runtime.lastError) {
+            console.error('停止采集失败:', chrome.runtime.lastError);
+          }
+        });
+      }
+    } else {
+      // 开始采集
+      console.log('🚀 执行开始采集');
+      
+      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+      const tab = tabs[0];
+      
+      if (!tab.url.includes('xiaohongshu.com')) {
+        alert('请在小红书页面使用此功能');
         return;
       }
       
-      // 再次检查页面是否准备好
-      isReady = await waitForPageReady(tab.id);
-      if (!isReady) {
-        statusTextElement.textContent = '页面仍未准备好，请刷新页面后重试';
-        console.log('注入后页面仍未准备好');
-        return;
-      }
-    }
-    
-    console.log('页面准备就绪，开始采集');
-    
-    currentXhsTab = tab;
-    const maxNotes = parseInt(maxNotesInput.value) || 10;
-    const minLikes = parseInt(minLikesInput.value) || 0;
-    
-    console.log('采集参数:', { maxNotes, minLikes });
-    
-    statusTextElement.textContent = '开始采集...';
-    statusElement.style.display = 'flex';
-    
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    
-    try {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'startCollecting',
-        maxNotes: maxNotes,
-        minLikes: minLikes
-      }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('发送采集命令失败:', chrome.runtime.lastError);
-          statusTextElement.textContent = '发送采集命令失败，请重试';
-          startBtn.disabled = false;
-          stopBtn.disabled = true;
-        } else {
-          console.log('采集命令发送成功:', response);
+      currentXhsTab = tab;
+      
+      // 检查页面是否准备好
+      let pageReady = false;
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (!pageReady && attempts < maxAttempts) {
+        try {
+          const response = await chrome.tabs.sendMessage(tab.id, {type: 'ping'});
+          pageReady = true;
+        } catch (error) {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            console.log('页面未准备好，动态注入content script');
+            await injectContentScript(tab.id);
+            pageReady = true;
+          }
         }
-      });
-    } catch (error) {
-      console.error('发送采集命令时出错:', error);
-      statusTextElement.textContent = '发送采集命令失败，请重试';
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-    }
-  });
-  
-  // 停止采集
-  stopBtn.addEventListener('click', () => {
-    if (currentXhsTab) {
-      const statusElement = document.getElementById('status');
-      const statusTextElement = statusElement.querySelector('span:last-child');
-      statusTextElement.textContent = '已停止采集';
-      statusElement.style.display = 'flex';
+      }
       
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      
-      chrome.tabs.sendMessage(currentXhsTab.id, { action: 'stopCollecting' });
+      if (pageReady) {
+        console.log('页面准备就绪，开始采集');
+        
+        // 获取采集参数
+        const maxNotes = parseInt(document.getElementById('maxNotes').value) || 10;
+        const minLikes = parseInt(document.getElementById('minLikes').value) || 0;
+        
+        // 更新UI状态
+        updateCollectButtonState(true);
+        
+        // 发送采集命令
+        const result = await chrome.tabs.sendMessage(tab.id, {
+          type: 'startCollecting',
+          maxNotes: maxNotes,
+          minLikes: minLikes
+        });
+        
+        console.log('采集命令发送结果:', result);
+      }
     }
   });
   

@@ -59,38 +59,56 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 // 下载文本文件的辅助函数
 function downloadTextFile(content, filename) {
-    try {
-        // 处理中文字符
-        const encoder = new TextEncoder();
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
-        const contentBytes = encoder.encode(content);
-        
-        // 合并BOM和内容
-        const fileData = new Uint8Array(bom.length + contentBytes.length);
-        fileData.set(bom);
-        fileData.set(contentBytes, bom.length);
-        
-        // 转换为base64
-        let binary = '';
-        fileData.forEach(byte => binary += String.fromCharCode(byte));
-        const base64Content = btoa(binary);
-        
-        // 创建data URL
-        const mimeType = filename.endsWith('.csv') ? 'text/csv' : 'text/plain';
-        const dataUrl = `data:${mimeType};charset=utf-8;base64,${base64Content}`;
-        
-        // 构建保存路径
-        let savePath = `小红书爆款采集/${filename}`;
-        
-        // 下载文件
-        chrome.downloads.download({
-            url: dataUrl,
-            filename: savePath,
-            saveAs: false
-        });
-    } catch (error) {
-        console.error('下载文件时出错:', error);
-    }
+    console.log('📤 downloadTextFile开始执行:', {
+        contentLength: content.length,
+        filename: filename
+    });
+    
+    return new Promise((resolve, reject) => {
+        try {
+            // 处理中文字符
+            const encoder = new TextEncoder();
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
+            const contentBytes = encoder.encode(content);
+            
+            // 合并BOM和内容
+            const fileData = new Uint8Array(bom.length + contentBytes.length);
+            fileData.set(bom);
+            fileData.set(contentBytes, bom.length);
+            
+            // 转换为base64
+            let binary = '';
+            fileData.forEach(byte => binary += String.fromCharCode(byte));
+            const base64Content = btoa(binary);
+            
+            // 创建data URL
+            const mimeType = filename.endsWith('.csv') ? 'text/csv' : 'text/plain';
+            const dataUrl = `data:${mimeType};charset=utf-8;base64,${base64Content}`;
+            
+            // 构建保存路径
+            let savePath = `小红书爆款采集/${filename}`;
+            
+            console.log('📤 开始下载文件:', savePath);
+            
+            // 下载文件
+            chrome.downloads.download({
+                url: dataUrl,
+                filename: savePath,
+                saveAs: false
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.error('📤 下载失败:', chrome.runtime.lastError);
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    console.log('📤 下载成功，ID:', downloadId);
+                    resolve(downloadId);
+                }
+            });
+        } catch (error) {
+            console.error('📤 下载文件时出错:', error);
+            reject(error);
+        }
+    });
 }
 
 // 生成Excel文件的辅助函数
@@ -146,12 +164,24 @@ function generateExcel(headers, data, filename, rowHeight = 20) {
             // 获取base64数据
             const base64data = e.target.result;
             
+            console.log('📤 开始下载Excel文件:', `小红书爆款采集/${filename}`);
+            
             // 下载文件
             chrome.downloads.download({
                 url: base64data,
                 filename: `小红书爆款采集/${filename}`,
                 saveAs: false
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.error('📤 Excel下载失败:', chrome.runtime.lastError);
+                } else {
+                    console.log('📤 Excel下载成功，ID:', downloadId);
+                }
             });
+        };
+        
+        reader.onerror = function(error) {
+            console.error('📤 读取Excel文件失败:', error);
         };
         
         // 读取Blob为DataURL (base64)
@@ -834,14 +864,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({status: 'success'});
         return false;
     } else if (request.action === 'downloadFile') {
-        try {
-            downloadTextFile(request.content, request.filename);
-            sendResponse({ status: 'success' });
-        } catch (error) {
-            console.error('下载文件时出错:', error);
-            sendResponse({ status: 'error', message: error.message });
-        }
-        return false;
+        console.log('📤 收到下载文件请求:', request.filename);
+        downloadTextFile(request.content, request.filename)
+            .then(() => {
+                console.log('📤 文件下载成功');
+                sendResponse({ status: 'success' });
+            })
+            .catch(error => {
+                console.error('📤 下载文件时出错:', error);
+                sendResponse({ status: 'error', message: error.message });
+            });
+        return true; // 保持消息通道开放以进行异步响应
     } else if (request.action === 'generateExcel') {
         try {
             const result = generateExcel(

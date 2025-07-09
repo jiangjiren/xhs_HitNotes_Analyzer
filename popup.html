@@ -65,12 +65,12 @@
       flex-direction: column;
       overflow: hidden;
       padding: 15px 15px 2px 15px;
-      max-width: calc(100% - 60px); /* 确保主内容区域不会超过除导航栏外的宽度 */
+      max-width: calc(100% - 50px); /* 确保主内容区域不会超过除导航栏外的宽度 */
     }
     
     /* 右侧导航栏 */
     .sidebar {
-      width: 60px;
+      width: 50px;
       height: 100vh;
       background-color: #f8f8f8;
       border-left: 1px solid #e0e0e0;
@@ -82,8 +82,8 @@
     }
     
     .sidebar-icon {
-      width: 50px;
-      height: 50px;
+      width: 40px;
+      height: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -347,6 +347,29 @@
     
     .apple-btn-danger:hover {
       background-color: #dc3545;
+    }
+    
+    /* 采集按钮的采集中状态样式 */
+    .apple-btn-collecting {
+      background-color: #ff3b30;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .apple-btn-collecting:hover {
+      background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 6px rgba(255, 59, 48, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 59, 48, 0);
+      }
     }
     
     /* 状态显示 - 苹果风格 */
@@ -1537,7 +1560,7 @@
     .generate-btn {
       width: 100%;
       padding: 12px;
-      background-color: #4CAF50;
+      background-color: #007aff;
       color: white;
       border: none;
       border-radius: 4px;
@@ -1548,7 +1571,7 @@
     }
     
     .generate-btn:hover {
-      background-color: #45a049;
+      background-color: #0069d9;
     }
     
     .generate-btn:disabled {
@@ -1784,6 +1807,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 1; /* 允许左侧内容压缩 */
+      min-width: 0; /* 允许内容收缩 */
     }
     
     .monica-model-select {
@@ -1796,6 +1821,11 @@
       padding: 4px 8px;
       border-radius: 6px;
       transition: background-color 0.2s;
+      min-width: 100px; /* 设置最小宽度 */
+      max-width: 150px; /* 设置最大宽度，防止过长 */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     .monica-model-select:hover {
@@ -1806,6 +1836,8 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      flex-shrink: 0; /* 防止按钮被压缩 */
+      min-width: fit-content; /* 确保有足够空间显示所有按钮 */
     }
     
     .monica-tool-btn {
@@ -1868,7 +1900,7 @@
 
     
     .monica-send-btn {
-      background: #8b5cf6;
+      background: #007aff;
       color: white;
       border: none;
       padding: 6px;
@@ -1883,7 +1915,7 @@
     }
     
     .monica-send-btn:hover {
-      background: #7c3aed;
+      background: #0069d9;
     }
     
     .monica-send-btn.stop-mode {
@@ -1927,6 +1959,32 @@
     
     .monica-remove-file .material-icons {
       font-size: 16px;
+    }
+
+    /* 响应式设计：在极小宽度时优化布局 */
+    @media (max-width: 320px) {
+      .monica-toolbar-left {
+        gap: 8px;
+      }
+      
+      .monica-model-select {
+        min-width: 80px;
+        max-width: 100px;
+        font-size: 12px;
+        padding: 3px 6px;
+      }
+      
+      .monica-toolbar-right {
+        gap: 2px;
+      }
+      
+      .monica-tool-btn {
+        padding: 4px;
+      }
+      
+      .monica-tool-btn .material-icons {
+        font-size: 16px;
+      }
     }
     
     /* 更新消息样式以适配Monica风格 */
@@ -2056,13 +2114,9 @@
               </div>
             </div>
             <div class="button-group">
-              <button id="startBtn" class="apple-btn apple-btn-primary">
+              <button id="collectBtn" class="apple-btn apple-btn-primary">
                 <span class="material-icons">play_circle</span>
                 开始采集
-              </button>
-              <button id="stopBtn" class="apple-btn apple-btn-danger">
-                <span class="material-icons">stop_circle</span>
-                停止采集
               </button>
             </div>
             <div id="status" class="status-display" style="display: none;">
