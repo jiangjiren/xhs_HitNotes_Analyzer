@@ -843,7 +843,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         request.hasFile || false // 传递hasFile参数
                     );
                 }
-                // 这里不需要 sendResponse，流式响应由后台主动推送
+                // 发送确认响应，表示已开始处理
+                sendResponse({status: 'processing'});
             } else {
                 console.error('无法获取当前标签页');
                 sendResponse({error: '无法获取当前标签页'});

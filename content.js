@@ -123,10 +123,12 @@ if (!window.messageListenerAdded) {
         return true; // 异步响应，需要保持通道开放
         
         default:
-          return true;  // 默认保持通道开放，以防有异步响应
+          console.log('🔥 未处理的消息类型:', message.type || message.action);
+          sendResponse({success: false, error: '未知的消息类型'});
+          return false;  // 同步响应，不保持通道开放
       }
       
-      return true;  // 默认保持通道开放，以防有异步响应
+      return false;  // 默认同步响应，不保持通道开放
     } catch (error) {
       console.error('Content script处理消息时出错:', error);
       sendResponse({ success: false, error: error.message });
@@ -1487,3 +1489,80 @@ window.quickDiagnosis = function() {
 };
 
 console.log('🔥 可以执行 quickDiagnosis() 进行快速问题诊断');
+
+
+// --- 自定义指令注入逻辑 ---
+
+// 使用 sessionStorage 来跟踪会话状态，确保只在每个新对话的第一次发送时注入指令
+// 当标签页关闭时，这个状态会自动清除
+function isNewConversation() {
+    return sessionStorage.getItem('instruction_sent') !== 'true';
+}
+
+function markInstructionSent() {
+    sessionStorage.setItem('instruction_sent', 'true');
+}
+
+// 监听URL变化，如果URL变了，很可能是一个新的对话开始了，重置状态
+let lastUrl = location.href;
+new MutationObserver(() => {
+  const url = location.href;
+  if (url !== lastUrl) {
+    lastUrl = url;
+    sessionStorage.removeItem('instruction_sent');
+  }
+}).observe(document.body, { subtree: true, childList: true });
+
+
+// 主要注入函数
+function injectInstructionOnSend() {
+    // !! 注意：这些选择器需要根据你使用的具体网站进行调整 !!
+    // 例如，对于ChatGPT，可能是:
+    // const chatTextarea = document.getElementById('prompt-textarea');
+    // const sendButton = document.querySelector('[data-testid="send-button"]');
+    const chatTextarea = document.querySelector('textarea'); // 这是一个通用的选择器，可能需要更具体
+    const sendButton = document.querySelector('button[send-adapter]'); // 根据小红书的实现
+
+    if (!chatTextarea || !sendButton) {
+        // 如果找不到元素，稍后重试
+        setTimeout(injectInstructionOnSend, 500);
+        return;
+    }
+    
+    // 使用 mousedown 而不是 click，因为它通常在 click 事件之前触发
+    // 这给了我们一个机会在原始点击事件处理程序运行前修改文本区域
+    sendButton.addEventListener('mousedown', (e) => {
+        if (isNewConversation() && chatTextarea.value.trim().length > 0) {
+            chrome.storage.local.get(['activeInstructionId', 'customInstructions'], (data) => {
+                if (data.activeInstructionId && data.customInstructions) {
+                    const activeInstruction = data.customInstructions.find(
+                        (instr) => instr.id === data.activeInstructionId
+                    );
+
+                    if (activeInstruction && activeInstruction.prompt) {
+                        const originalMessage = chatTextarea.value;
+                        const newContent = `${activeInstruction.prompt}\n\n---\n\n${originalMessage}`;
+                        
+                        // 更新文本区域的值
+                        chatTextarea.value = newContent;
+
+                        // 创建并分派一个 input 事件，以确保网站的React/Vue等框架能识别到值的变化
+                        const inputEvent = new Event('input', { bubbles: true });
+                        chatTextarea.dispatchEvent(inputEvent);
+                        
+                        markInstructionSent(); // 标记指令已发送
+                    }
+                }
+            });
+        }
+    }, true); // 使用捕获阶段以确保我们的监听器先于页面上任何其他的监听器执行
+
+    console.log('自定义指令功能已准备就绪。');
+}
+
+// 页面加载完成后开始执行
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectInstructionOnSend);
+} else {
+    injectInstructionOnSend();
+}

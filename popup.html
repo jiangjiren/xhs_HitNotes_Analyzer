@@ -69,7 +69,7 @@
     }
     
     /* 右侧导航栏 */
-    .sidebar {
+    .sidebar, .right-sidebar {
       width: 50px;
       height: 100vh;
       background-color: #f8f8f8;
@@ -77,8 +77,26 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-top: 20px;
       flex-shrink: 0; /* 防止侧边栏被挤压 */
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 1001;
+      justify-content: space-between; /* 核心：将顶部和底部分开 */
+      padding: 10px 0;
+    }
+
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px; /* 添加间距 */
+    }
+
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     
     .sidebar-icon {
@@ -107,6 +125,10 @@
       width: 18px;
       height: 18px;
       margin-bottom: 2px;
+    }
+    
+    #aiAssistantTabBtn svg path {
+      fill: #666;
     }
     
     .sidebar-icon.active svg {
@@ -461,7 +483,10 @@
       margin-bottom: 10px;
       padding: 8px;
       border-radius: 4px;
-      width: calc(100% - 16px); /* 考虑padding的宽度 */
+      /* 让消息气泡宽度根据内容自动伸缩，且不会超出容器 */
+      box-sizing: border-box;
+      width: auto;
+      max-width: calc(100% - 16px); /* 预留内边距宽度，避免超出 */
       word-wrap: break-word; /* 允许长单词换行 */
       word-break: break-word; /* 强制长单词换行 */
       overflow-wrap: break-word; /* 现代浏览器的换行属性 */
@@ -477,9 +502,9 @@
     
     .ai-message {
       background-color: #f5f5f5;
-      margin-left: 10px;
+      margin-left: 0;
       position: relative;
-      max-width: calc(100% - 10px); /* 确保不超过容器宽度 */
+      max-width: 100%; /* 确保不超过容器宽度 */
     }
     
     .copy-button {
@@ -2008,7 +2033,7 @@
       background: #f9fafb;
       padding: 12px 16px;
       border-radius: 16px 16px 16px 4px;
-      margin-right: 20%;
+      margin-right: 0;
       margin-left: 0;
       border: 1px solid #f3f4f6;
     }
@@ -2091,6 +2116,254 @@
       font-style: italic;
     }
   </style>
+  <style>
+    .hidden {
+      display: none;
+    }
+
+    /* 自定义指令弹窗样式 */
+    #instructions-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: calc(100% - 50px); /* 减去导航栏宽度 */
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      transition: background-color 0.3s ease;
+    }
+
+    #instructions-modal-overlay.hidden {
+      background-color: transparent;
+      pointer-events: none;
+    }
+
+    #instructions-modal-overlay #instructions-container {
+      background-color: #fff;
+      width: 100%;
+      /* 修改：最大宽度继承父级，确保与主区域一致 */
+      max-width: 100%;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      padding: 16px;
+      padding-bottom: 24px;
+      box-shadow: 0 -4px R20px rgba(0, 0, 0, 0.1);
+      transform: translateY(0);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #instructions-modal-overlay.hidden #instructions-container {
+      transform: translateY(100%);
+    }
+
+    .instructions-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .instructions-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    /* 自定义指令说明文字 */
+    .instructions-description {
+      font-size: 12px;
+      color: #666;
+      margin: 4px 0 8px 0;
+    }
+
+    #close-instructions-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #999;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    
+    #add-instruction-form {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #add-instruction-form input,
+    #add-instruction-form textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    #add-instruction-form textarea {
+      height: 120px;
+      resize: vertical;
+    }
+    .instruction-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    .instruction-item label {
+      flex-grow: 1;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+    .instruction-item .delete-btn {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      padding: 0 5px;
+      background: none;
+      border: none;
+      font-size: 16px; /* 统一图标大小 */
+    }
+    .instruction-buttons {
+      display: flex;
+      gap: 5px;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+    }
+    .instruction-item:hover .instruction-buttons {
+      visibility: visible;
+      opacity: 1;
+    }
+    /* 确保"无指令"选项不显示操作按钮 */
+    .instruction-item:not([data-id]) .instruction-buttons {
+      display: none;
+    }
+    .instruction-item .edit-btn {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
+      padding: 0 5px;
+    }
+
+    /* 自定义指令按钮激活状态 */
+    #show-hide-instructions-btn {
+      position: relative; /* 为状态点定位 */
+    }
+
+    #show-hide-instructions-btn.active .material-icons {
+      color: #007aff; /* 主题蓝 */
+    }
+
+    #show-hide-instructions-btn.active::after {
+      content: '';
+      position: absolute;
+      top: 2px; /* 微调位置 */
+      right: 2px; /* 微调位置 */
+      width: 8px;
+      height: 8px;
+      background-color: #34c759; /* 绿色 */
+      border-radius: 50%;
+      border: 1px solid white;
+      box-shadow: 0 0 3px rgba(0,0,0,0.3); /* 加一点阴影使其更明显 */
+    }
+
+    /* 添加指令按钮样式 */
+    #add-new-instruction-btn {
+      background-color: #007aff;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    /* 设置页面样式 */
+    #settings-container {
+      width: 100%;
+      background-color: #ffffff;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      padding: 16px;
+      padding-bottom: 24px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      transform: translateY(0);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #settings-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: calc(100% - 50px); /* 不覆盖导航栏 */
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      transition: background-color 0.3s ease;
+    }
+
+    #settings-modal-overlay.hidden {
+      background-color: transparent;
+      pointer-events: none;
+    }
+
+    #settings-modal-overlay.hidden #settings-container {
+      transform: translateY(100%);
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .settings-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #close-settings-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #999;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .settings-body {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    /* =============================== */
+    /* 聊天历史记录弹窗样式（保持与设置弹窗一致） */
+    /* =============================== */
+    #historyModal {
+      display: none; /* 默认隐藏，避免插件打开即展示 */
+    }
+
+    /* 隐藏状态下的历史记录弹窗 */
+    #historyModal.hidden {
+      background-color: transparent;
+      pointer-events: none;
+    }
+
+    /* 抽屉容器 */
+    .history-modal-content {
+      position: static !important;  /* 取消绝对定位，防止偏移 */
+      bottom: auto !important;      /* 取消 bottom，确保与 flex 布局兼容 */
+    }
+  </style>
 </head>
 <body>
   <!-- 主内容区域 -->
@@ -2139,6 +2412,8 @@
           
           <!-- 底部输入区域 -->
           <div class="monica-input-container">
+            <!-- 自定义指令管理区域 -->
+            
             <!-- 顶部工具栏 -->
             <div class="monica-toolbar">
               <div class="monica-toolbar-left">
@@ -2149,6 +2424,9 @@
                 </select>
               </div>
               <div class="monica-toolbar-right">
+                <button id="show-hide-instructions-btn" class="monica-tool-btn" title="自定义指令">
+                    <span class="material-icons">auto_awesome</span>
+                </button>
                 <label for="fileInput" class="monica-tool-btn" title="上传文件">
                   <span class="material-icons">attach_file</span>
                 </label>
@@ -2249,25 +2527,123 @@
     <div id="toast" class="toast">设置成功</div>
   </div>
   
+  <!-- 自定义指令弹窗 -->
+  <div id="instructions-modal-overlay" class="hidden">
+    <div id="instructions-container">
+      <div class="instructions-header">
+        <h3>自定义指令</h3>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button id="add-new-instruction-btn" class="apple-btn">+ 添加指令</button>
+          <button id="close-instructions-btn" title="关闭">&times;</button>
+        </div>
+      </div>
+      <div class="instructions-description">AI大模型将根据自定义指令的要求进行回复</div>
+      <div id="instructions-list" style="max-height: 250px; overflow-y: auto;">
+        <!-- 指令将通过 JS 动态插入这里 -->
+      </div>
+      <div id="add-instruction-form" class="hidden">
+        <input type="hidden" id="instruction-edit-id">
+        <input type="text" id="instruction-name" placeholder="指令名称" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box;" />
+        <textarea id="instruction-prompt" placeholder="提示词指令 (最多10000字)" maxlength="10000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; resize: vertical; min-height: 80px;"></textarea>
+        <div style="display: flex; gap: 8px;">
+          <button id="save-instruction-btn" class="apple-btn apple-btn-primary" style="flex: 1;">保存</button>
+          <button id="cancel-add-btn" class="apple-btn" style="flex: 1;">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <div id="settings-modal-overlay" class="hidden">
+    <div id="settings-container">
+      <div class="settings-header">
+        <h3>API 设置</h3>
+        <button id="close-settings-btn" title="关闭">&times;</button>
+      </div>
+      <div class="settings-body">
+        <div class="setting-item">
+          <label for="apiKey">DeepSeek API密钥：</label>
+          <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
+          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+        </div>
+        <div class="setting-item">
+          <label for="geminiApiKey">Gemini API密钥：</label>
+          <input type="password" id="geminiApiKey" placeholder="输入您的Gemini API密钥" autocomplete="off">
+          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+        </div>
+        <h4 style="margin:15px 0 10px 0;">图片生成API设置</h4>
+        <div class="setting-item">
+          <label for="accessKeyId">Access Key ID：</label>
+          <input type="text" id="accessKeyId" placeholder="输入您的Access Key ID" autocomplete="off">
+        </div>
+        <div class="setting-item">
+          <label for="secretAccessKey">Secret Access Key：</label>
+          <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
+        </div>
+        <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+      </div>
+    </div>
+  </div>
+
   <!-- 右侧导航栏 -->
-  <div class="sidebar">
-    <div class="sidebar-icon active" id="collectionTabBtn" title="采集笔记">
-      <span class="material-icons">bug_report</span>
-      <span class="sidebar-label">采集</span>
+  <div class="right-sidebar">
+    <!-- 将主要图标和设置图标分开 -->
+    <div class="sidebar-top">
+      <div class="sidebar-icon active" id="collectionTabBtn" title="采集笔记">
+        <span class="material-icons">bug_report</span>
+        <span class="sidebar-label">采集</span>
+      </div>
+      <div class="sidebar-icon" id="aiAssistantTabBtn" title="AI助手">
+        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M786.7392 205.4656A333.6704 333.6704 0 0 0 543.1296 102.4h-23.9616a340.6848 340.6848 0 0 0-319.7952 356.5568c-1.1264 1.0752-28.8256 37.376-50.5344 65.8432l-24.7296 32.3584a83.6608 83.6608 0 0 0-21.7088 50.8416c0.6656 44.0832 28.416 63.8464 84.0704 75.9808l20.8896 4.352 7.68 157.7984v3.7888a77.5168 77.5168 0 0 0 76.8 71.68c4.3008 0 128-15.36 187.5456-26.0096V812.032c-40.96 5.7344-132.4032 18.7392-185.4976 27.392l-9.3696-190.7712v-1.536a61.44 61.44 0 0 0-0.9216-8.6016 26.7264 26.7264 0 0 0-4.0448-10.6496 20.48 20.48 0 0 0-16.3328-9.9328Q240.64 614.4 218.112 610.56l-5.376-1.024-1.9968-0.4608a16.5888 16.5888 0 0 1-7.9872-26.2656q58.5216-71.68 65.536-78.848a43.008 43.008 0 0 0 11.9808-35.84 57.088 57.088 0 0 0-0.3584-6.6048 24.4224 24.4224 0 0 0-0.3072-3.8912A271.9232 271.9232 0 0 1 352.512 265.728a252.6208 252.6208 0 0 1 186.6752-82.6368h10.24a263.8848 263.8848 0 0 1 255.488 271.9232V460.8h81.4592v-6.656a362.8544 362.8544 0 0 0-99.5328-248.832z m54.4256 655.36l-116.0192-339.8656H655.36l-115.5584 339.6608h66.56l23.8592-80.5376h119.2448l23.808 80.5376h67.7376zM921.6 521.1648v339.6608h-60.3136v-339.8656H921.6z m-271.36 199.68q37.7344-133.8368 39.1168-139.8784 1.3824 5.9904 39.9872 139.8784z"></path></svg>
+        <span class="sidebar-label">助手</span>
+      </div>
+      <div class="sidebar-icon" id="imageGeneratorTabBtn" title="图片生成">
+        <span class="material-icons">image</span>
+        <span class="sidebar-label">画图</span>
+      </div>
     </div>
-    <div class="sidebar-icon" id="aiAssistantTabBtn" title="AI助手">
-      <!-- 新SVG图标替换Material Icons -->
-      <svg t="1745393225698" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="18766" width="24" height="24"><path d="M550.015656 0.00064c158.527901 0 297.855814 102.399936 341.311787 250.879843H804.479497a262.719836 262.719836 0 0 0-61.119962-93.055942 276.607827 276.607827 0 0 0-193.279879-77.759951H465.087709a275.583828 275.583828 0 0 0-193.407879 77.823951 261.759836 261.759836 0 0 0-79.93595 188.415883v59.007963a40.383975 40.383975 0 0 1-3.519998 15.74399L98.431938 625.536249l86.399946 16.895989c19.199988 3.647998 33.087979 20.031987 33.08798 39.039976v106.943933c0 23.551985 4.223997 39.807975 10.175993 51.391968 4.991997 10.303994 12.735992 19.199988 22.463986 25.855984 18.175989 12.927992 46.911971 18.431988 71.871955 18.239989 12.991992 0.128 26.047984-1.151999 38.847976-3.903998 31.67998-8.319995 78.271951-20.671987 126.975921-33.727979l42.047974-11.263993 41.215974-11.135993c73.983954-19.967988 135.295915-36.543977 135.423915-36.671977l22.079986 76.799952s-245.759846 66.943958-346.751783 93.247942c-14.527991 3.391998-34.815978 6.399996-59.967962 6.527996-26.431983 0-57.599964-3.455998-88.575945-16.31999a150.719906 150.719906 0 0 1-79.67995-72.831955c-12.031992-24.255985-18.303989-53.119967-18.303989-86.207946v-74.239953l-102.783936-19.903988a41.087974 41.087974 0 0 1-28.159982-20.671987 39.167976 39.167976 0 0 1-1.535999-34.303979l106.495933-242.239848v-50.623969a341.503787 341.503787 0 0 1 103.935935-244.927846A360.319775 360.319775 0 0 1 465.087709 0.00064h84.927947z m205.631872 335.48779l130.559918 396.799752h-98.047939l-24.959984-88.959944h-127.99992l-28.095982 88.959944h-92.159943l135.615915-396.799752h105.087935zM1023.99936 335.29643v396.671753h-95.74394V335.23243H1023.99936l-0.064 0.064z m-321.471799 76.159953h-1.279999l-48.63997 164.735897h91.775943l-41.855974-164.799897v0.064z" p-id="18767"></path></svg>
-      <span class="sidebar-label">聊天</span>
+    <div class="sidebar-bottom">
+      <div class="sidebar-icon" id="settingsTabBtn" title="设置">
+        <span class="material-icons">settings</span>
+        <span class="sidebar-label">设置</span>
+      </div>
     </div>
-    <div class="sidebar-icon" id="imageGeneratorTabBtn" title="生成图片">
-      <span class="material-icons">image</span>
-      <span class="sidebar-label">画图</span>
-    </div>
-    <div class="sidebar-spacer"></div>
-    <div class="sidebar-icon" id="settingsIcon" title="设置">
-      <span class="material-icons">settings</span>
-      <span class="sidebar-label">设置</span>
+  </div>
+  
+  <!-- 设置Tab页 -->
+  <div id="settingsTab" class="tab-content">
+    <div class="settings-container">
+      <div class="settings-section">
+        <div class="section-header">
+          <span class="section-title">API设置</span>
+        </div>
+        <div class="section-content">
+          <div class="setting-item">
+            <label for="apiKey">DeepSeek API密钥：</label>
+            <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
+            <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+          </div>
+          
+          <div class="setting-item">
+            <label for="geminiApiKey">Gemini API密钥：</label>
+            <input type="password" id="geminiApiKey" placeholder="输入您的Gemini API密钥" autocomplete="off">
+            <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+          </div>
+          
+          <div class="setting-section">
+            <h4>图片生成API设置</h4>
+            <div class="setting-item">
+              <label for="accessKeyId">Access Key ID：</label>
+              <input type="text" id="accessKeyId" placeholder="输入您的Access Key ID" autocomplete="off">
+            </div>
+            <div class="setting-item">
+              <label for="secretAccessKey">Secret Access Key：</label>
+              <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
+            </div>
+            <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -2284,51 +2660,12 @@
     </div>
   </div>
   
-  <!-- 设置模态框 -->
-  <div id="settingsModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>API设置</h3>
-        <span class="close-modal">&times;</span>
-      </div>
-      <div class="modal-body">
-        <!-- DeepSeek API设置 -->
-        <div class="setting-item">
-          <label for="apiKey">DeepSeek API密钥：</label>
-          <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
-          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-        </div>
-        
-        <!-- Gemini API设置 -->
-        <div class="setting-item">
-          <label for="geminiApiKey">Gemini API密钥：</label>
-          <input type="password" id="geminiApiKey" placeholder="输入您的Gemini API密钥" autocomplete="off">
-          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-        </div>
-        
-        <!-- 图片生成API设置 -->
-        <div class="setting-section">
-          <h4>图片生成API设置</h4>
-          <div class="setting-item">
-            <label for="accessKeyId">Access Key ID：</label>
-            <input type="text" id="accessKeyId" placeholder="输入您的Access Key ID" autocomplete="off">
-          </div>
-          <div class="setting-item">
-            <label for="secretAccessKey">Secret Access Key：</label>
-            <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
-          </div>
-          <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="saveSettings" class="save-btn">保存设置</button>
-      </div>
-    </div>
-  </div>
-  
   <!-- 引入CryptoJS库，用于生成API签名 -->  
   <script src="crypto-js-core.js"></script>
   <script src="image_generator.js"></script>
   <script src="popup.js"></script>
+
+  <script src="crypto-js-core.js"></script>
+  <script src="fixed_function.js"></script>
 </body>
 </html>

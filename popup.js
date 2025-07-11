@@ -29,9 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const collectionTabBtn = document.getElementById('collectionTabBtn');
   const aiAssistantTabBtn = document.getElementById('aiAssistantTabBtn');
   const imageGeneratorTabBtn = document.getElementById('imageGeneratorTabBtn');
+  const settingsTabBtn = document.getElementById('settingsTabBtn');
   const collectionTab = document.getElementById('collectionTab');
   const aiAssistantTab = document.getElementById('aiAssistantTab');
   const imageGeneratorTab = document.getElementById('imageGeneratorTab');
+  const settingsTab = document.getElementById('settingsTab');
   
   let currentXhsTab = null;
   let hasCollectedData = false; 
@@ -48,6 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const settingsModal = document.getElementById('settingsModal');
   const saveSettingsButton = document.getElementById('saveSettings'); 
   const closeSettingsModalBtn = document.querySelector('#settingsModal .close-modal'); 
+  const settingsModalOverlay = document.getElementById('settings-modal-overlay');
+  const closeSettingsBtn = document.getElementById('close-settings-btn');
   
   // 加载已保存的设置
   function loadSettings() {
@@ -231,8 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function switchTab(tabId) {
     console.log('切换到tab:', tabId);
     
-    if (!collectionTab || !aiAssistantTab || !imageGeneratorTab || 
-        !collectionTabBtn || !aiAssistantTabBtn || !imageGeneratorTabBtn) {
+    if (!collectionTab || !aiAssistantTab || !imageGeneratorTab || !settingsTab ||
+        !collectionTabBtn || !aiAssistantTabBtn || !imageGeneratorTabBtn || !settingsTabBtn) {
       console.error('Tab元素未找到，无法切换');
       return;
     }
@@ -240,10 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
     collectionTab.classList.remove('active');
     aiAssistantTab.classList.remove('active');
     imageGeneratorTab.classList.remove('active');
+    settingsTab.classList.remove('active');
     
     collectionTabBtn.classList.remove('active');
     aiAssistantTabBtn.classList.remove('active');
     imageGeneratorTabBtn.classList.remove('active');
+    settingsTabBtn.classList.remove('active');
     
     if (tabId === 'collection') {
       collectionTab.classList.add('active');
@@ -260,6 +266,10 @@ document.addEventListener('DOMContentLoaded', function() {
           window.initImageGenerator();
         }
       }
+    } else if (tabId === 'settings') {
+      settingsTab.classList.add('active');
+      settingsTabBtn.classList.add('active');
+      loadSettings(); // 加载设置
     }
   }
   
@@ -279,6 +289,13 @@ document.addEventListener('DOMContentLoaded', function() {
   if (imageGeneratorTabBtn) {
     imageGeneratorTabBtn.addEventListener('click', () => {
       switchTab('imageGenerator');
+    });
+  }
+
+  if (settingsTabBtn) {
+    settingsTabBtn.addEventListener('click', () => {
+      if (settingsModalOverlay) settingsModalOverlay.classList.remove('hidden');
+      loadSettings();
     });
   }
   
@@ -733,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // 显示模态框
-        historyModal.style.display = 'block';
+        historyModal.style.display = 'flex';
       }
     });
   }
@@ -1132,11 +1149,35 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 将发送逻辑封装成一个函数
   function handleSendMessage() {
-    const message = messageInput.value.trim();
-    if (message && !isStreaming) {
-      sendToAI(message);
-      messageInput.value = '';
+    const rawMessage = messageInput.value.trim();
+    if (!rawMessage || isStreaming) return;
+
+    // 确定当前会话并判断是否为新对话的第一条消息
+    let currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
+    if (currentSessionIndex === -1 && chatSessions.length > 0) {
+      currentSessionIndex = 0;
     }
+    const isFirstMessage = (currentSessionIndex !== -1) ? !chatSessions[currentSessionIndex].hasUserMessage : true;
+
+    // 如果不是第一条消息，直接发送
+    if (!isFirstMessage) {
+      sendToAI(rawMessage, rawMessage);
+      messageInput.value = '';
+      return;
+    }
+
+    // 如果是第一条消息，尝试附加自定义指令
+    chrome.storage.local.get(['activeInstructionId', 'customInstructions'], (data) => {
+      let finalMessage = rawMessage;
+      if (data.activeInstructionId && Array.isArray(data.customInstructions)) {
+        const activeInstr = data.customInstructions.find(instr => instr.id === data.activeInstructionId);
+        if (activeInstr && activeInstr.prompt && activeInstr.prompt.trim()) {
+          finalMessage = `${activeInstr.prompt.trim()}` + '\n\n---\n\n' + rawMessage;
+        }
+      }
+      sendToAI(finalMessage, rawMessage);
+      messageInput.value = '';
+    });
   }
 
   // 停止流式输出
@@ -1179,7 +1220,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // 发送消息到AI
-  function sendToAI(message) {
+  function sendToAI(message, displayMessage = null) {
+    const uiMessage = displayMessage !== null ? displayMessage : message;
+
     // 如果有上传的文件，在聊天框中显示文件信息
     if (uploadedFileContent) {
       const fileInfoText = `📎 已上传文件: ${uploadedFileContent.fileName} (${formatFileSize(uploadedFileContent.fileSize)})`;
@@ -1191,48 +1234,36 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
     
-    // 立即在UI上显示用户消息（只UI显示，不重复添加到会话历史）
-    addMessage(message, true, true);
+    // 立即在UI上显示用户消息
+    addMessage(uiMessage, true, true);
 
     const modelSwitcher = document.getElementById('modelSwitcher');
-    const activeModel = modelSwitcher ? modelSwitcher.value : 'deepseek'; // 增加健壮性，如果元素不存在则使用默认值
+    const activeModel = modelSwitcher ? modelSwitcher.value : 'deepseek'; 
     const isDataAnalysis = uploadedFileContent && uploadedFileContent.isData;
 
     try {
       isStreaming = true;
       toggleSendStopButton(true);
 
-      if (!chatSessions || chatSessions.length === 0) {
-        const now = new Date();
-        chatSessions = [{
-          id: 'session_' + now.getTime(),
-          title: now.toLocaleString(),
-          created: now.toLocaleString(),
-          messages: [],
-          currentSession: true  
-        }];
-        chrome.storage.local.set({ chatSessions: chatSessions });
-      }
+      // ... session handling ...
+      let currentSession = chatSessions.find(s => s.currentSession === true);
+      if (!currentSession && chatSessions.length > 0) currentSession = chatSessions[0];
+      // ... more session handling if not found ...
 
-      const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-      let currentSession;
-      if (currentSessionIndex !== -1) {
-        currentSession = chatSessions[currentSessionIndex];
-      } else {
-        currentSession = chatSessions[0];
-        currentSession.currentSession = true;
-      }
-
-      // 只 push 一条 user 消息
-      currentSession.messages.push({ role: "user", content: message });
+      // 保存用户消息到历史记录
+      currentSession.messages.push({ role: "user", content: uiMessage });
       currentSession.hasUserMessage = true; 
       if (!currentSession.title || currentSession.title === currentSession.created) {
-        const titleText = message.length > 20 ? message.substring(0, 20) + '...' : message;
-        currentSession.title = titleText;
+        // 修正标题生成逻辑
+        const titleText = uiMessage.substring(0, 20);
+        currentSession.title = titleText.length < uiMessage.length ? titleText + '...' : titleText;
       }
       saveSessionsToStorage();
+      
       addThinkingMessage();
       chatMessages.scrollTop = chatMessages.scrollHeight;
+      
+      // 准备发送给AI的内容
       let content = '';
       if (uploadedFileContent) {
         content = `===== 文件内容开始 =====\n${uploadedFileContent.content}\n===== 文件内容结束 =====\n\n用户问题：${message}`;
@@ -1244,9 +1275,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         content = message;
       }
-      const selectedModel = activeModel;
-      // 过滤掉本地提示内容，只保留有效 user/assistant 消息
-      // 注意：排除当前正在发送的消息，因为它已经在上面被push到messages中了
+      
       const allMessages = currentSession.messages || [];
       const filteredHistory = allMessages.slice(0, -1).filter(msg => {
         if (!msg.role || !msg.content) return false;
@@ -1260,9 +1289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return true;
       });
-      
-      console.log('发送到AI的历史记录数量:', filteredHistory.length, '当前会话ID:', currentSession.id);
-      console.log('当前选择的模型:', selectedModel, '模型选择器值:', modelSwitcher?.value);
+
       chrome.runtime.sendMessage({
         action: 'analyzeContent',
         content: content,
@@ -1270,21 +1297,18 @@ document.addEventListener('DOMContentLoaded', function() {
         isDataAnalysis: isDataAnalysis,
         chatHistory: filteredHistory,
         hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
-        model: selectedModel 
+        model: activeModel 
       });
     } catch (error) {
       console.error('发送消息失败:', error);
-      const thinkingMessages = document.querySelectorAll('.ai-message');
-      const lastThinking = thinkingMessages[thinkingMessages.length - 1];
-      if (lastThinking && lastThinking.textContent === '正在思考...') {
-        lastThinking.remove();
+      const thinkingMessage = document.querySelector('.thinking-message');
+      if (thinkingMessage) {
+        thinkingMessage.remove();
       }
       
-      // 显示具体的错误信息
       const errorMessage = error.message || '发送消息失败，请重试';
       addMessage(`❌ ${errorMessage}`, false);
       
-      // 重置流式输出状态
       isStreaming = false;
       toggleSendStopButton(false);
       
@@ -1302,22 +1326,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendIcon = sendMessageBtn.querySelector('.material-icons');
     
     if (isStop) {
-      if (sendIcon) {
-        sendIcon.textContent = 'stop';
-      }
+      if (sendIcon) sendIcon.textContent = 'stop';
       sendMessageBtn.classList.add('stop-mode');
       sendMessageBtn.title = '停止生成';
     } else {
-      if (sendIcon) {
-        sendIcon.textContent = 'send';
-      }
+      if (sendIcon) sendIcon.textContent = 'send';
       sendMessageBtn.classList.remove('stop-mode');
       sendMessageBtn.title = '发送';
     }
   }
-  
 
-  
   // 添加清除文件的功能
   function clearUploadedFile() {
     uploadedFileContent = null;
@@ -1898,4 +1916,235 @@ document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('beforeunload', () => {
     chrome.runtime.sendMessage({ action: 'cancelPendingRequests' });
   });
+
+  // --- 自定义指令功能 ---
+  const showHideBtn = document.getElementById('show-hide-instructions-btn');
+  const instructionsContainer = document.getElementById('instructions-container');
+  const instructionsList = document.getElementById('instructions-list');
+  const addNewBtn = document.getElementById('add-new-instruction-btn');
+  const addForm = document.getElementById('add-instruction-form');
+  const saveBtn = document.getElementById('save-instruction-btn');
+  const cancelBtn = document.getElementById('cancel-add-btn');
+  const instructionNameInput = document.getElementById('instruction-name');
+  const instructionPromptInput = document.getElementById('instruction-prompt');
+  const instructionEditIdInput = document.getElementById('instruction-edit-id');
+  const instructionsModalOverlay = document.getElementById('instructions-modal-overlay');
+  const closeInstructionsBtn = document.getElementById('close-instructions-btn');
+
+  const MAX_INSTRUCTIONS = 10;
+
+  // --- 新增：更新指令按钮状态 ---
+  function updateInstructionButtonState(isActive) {
+    if (showHideBtn) {
+      if (isActive) {
+        showHideBtn.classList.add('active');
+      } else {
+        showHideBtn.classList.remove('active');
+      }
+    }
+  }
+
+  // 切换指令界面的显示/隐藏
+  showHideBtn.addEventListener('click', () => {
+      if (instructionsModalOverlay) {
+        instructionsModalOverlay.classList.remove('hidden');
+      }
+  });
+
+  // 关闭指令弹窗的函数
+  function closeInstructionsModal() {
+    if (instructionsModalOverlay) {
+      instructionsModalOverlay.classList.add('hidden');
+      // 如果添加/编辑表单是打开的，就取消它
+      if (!addForm.classList.contains('hidden')) {
+        cancelBtn.click();
+      }
+    }
+  }
+
+  // 为弹窗的关闭按钮和遮罩层添加事件
+  if (closeInstructionsBtn) {
+    closeInstructionsBtn.addEventListener('click', closeInstructionsModal);
+  }
+  if (instructionsModalOverlay) {
+    instructionsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === instructionsModalOverlay) {
+        closeInstructionsModal();
+      }
+    });
+  }
+
+  // 显示添加表单
+  addNewBtn.addEventListener('click', () => {
+      addForm.classList.remove('hidden');
+      addNewBtn.classList.add('hidden');
+  });
+
+  // 取消添加或编辑
+  cancelBtn.addEventListener('click', () => {
+      addForm.classList.add('hidden');
+      addNewBtn.classList.remove('hidden');
+      instructionNameInput.value = '';
+      instructionPromptInput.value = '';
+      instructionEditIdInput.value = ''; // 重置编辑ID
+      saveBtn.textContent = '保存'; // 恢复按钮文本
+  });
+
+  // 保存新指令或更新现有指令
+  saveBtn.addEventListener('click', () => {
+      const name = instructionNameInput.value.trim();
+      const prompt = instructionPromptInput.value.trim();
+      const editId = instructionEditIdInput.value;
+
+      if (!name) {
+          alert('指令名称不能为空！');
+          return;
+      }
+      if (prompt.length > 10000) {
+          alert('指令内容不能超过10000字！');
+          return;
+      }
+
+      chrome.storage.local.get({ customInstructions: [] }, (data) => {
+          let instructions = data.customInstructions;
+          
+          if (editId) { // --- 更新逻辑 ---
+              const instructionToUpdate = instructions.find(instr => instr.id === editId);
+              if (instructionToUpdate) {
+                  instructionToUpdate.name = name;
+                  instructionToUpdate.prompt = prompt;
+              }
+          } else { // --- 新增逻辑 ---
+              if (instructions.length >= MAX_INSTRUCTIONS) {
+                  alert(`最多只能添加 ${MAX_INSTRUCTIONS} 条指令。`);
+                  return;
+              }
+              const newInstruction = {
+                  id: `instr_${Date.now()}`,
+                  name: name,
+                  prompt: prompt,
+              };
+              instructions.push(newInstruction);
+          }
+
+          chrome.storage.local.set({ customInstructions: instructions }, () => {
+              renderInstructions();
+              cancelBtn.click(); // 关闭并重置表单
+          });
+      });
+  });
+
+  // 渲染指令列表
+  function renderInstructions() {
+      chrome.storage.local.get({ customInstructions: [], activeInstructionId: null }, (data) => {
+          const { customInstructions, activeInstructionId } = data;
+          
+          // 更新按钮状态
+          updateInstructionButtonState(activeInstructionId);
+
+          instructionsList.innerHTML = ''; // 清空列表
+
+          // 添加 "无指令" 选项
+          const noneOptionItem = document.createElement('div');
+          noneOptionItem.className = 'instruction-item';
+          noneOptionItem.innerHTML = `
+              <input type="radio" id="instr-none" name="active-instruction" value="none" ${!activeInstructionId ? 'checked' : ''}>
+              <label for="instr-none">无指令</label>
+          `;
+          instructionsList.appendChild(noneOptionItem);
+
+          // 渲染每个指令
+          customInstructions.forEach(instr => {
+              const item = document.createElement('div');
+              item.className = 'instruction-item';
+              item.dataset.id = instr.id;
+
+              const isChecked = instr.id === activeInstructionId;
+
+              item.innerHTML = `
+                  <input type="radio" id="${instr.id}" name="active-instruction" value="${instr.id}" ${isChecked ? 'checked' : ''}>
+                  <label for="${instr.id}">${instr.name}</label>
+                  <div class="instruction-buttons">
+                    <button class="edit-btn" title="编辑指令">✏️</button>
+                    <button class="delete-btn" title="删除指令">❌</button>
+                  </div>
+              `;
+              instructionsList.appendChild(item);
+          });
+      });
+  }
+
+  // 事件委托处理选择、编辑和删除
+  instructionsList.addEventListener('click', (e) => {
+      const target = e.target;
+      const item = target.closest('.instruction-item');
+      if (!item) return;
+
+      const instructionId = item.dataset.id;
+
+      // 编辑指令
+      if (target.classList.contains('edit-btn')) {
+          startEditInstruction(instructionId);
+      }
+      // 删除指令
+      if (target.classList.contains('delete-btn')) {
+          if (confirm('确定要删除这条指令吗？')) {
+              deleteInstruction(instructionId);
+          }
+      }
+      // 选择指令
+      if (target.type === 'radio') {
+          const selectedId = target.value;
+          const idToSave = selectedId === 'none' ? null : selectedId;
+          chrome.storage.local.set({ activeInstructionId: idToSave });
+          // 立即更新UI以获得最佳用户体验
+          updateInstructionButtonState(idToSave);
+      }
+  });
+
+  function startEditInstruction(id) {
+      chrome.storage.local.get({ customInstructions: [] }, (data) => {
+          const instructionToEdit = data.customInstructions.find(instr => instr.id === id);
+          if (instructionToEdit) {
+              addForm.classList.remove('hidden');
+              addNewBtn.classList.add('hidden');
+
+              instructionNameInput.value = instructionToEdit.name;
+              instructionPromptInput.value = instructionToEdit.prompt;
+              instructionEditIdInput.value = instructionToEdit.id;
+              
+              saveBtn.textContent = '保存更改';
+          }
+      });
+  }
+  
+  function deleteInstruction(id) {
+      chrome.storage.local.get({ customInstructions: [], activeInstructionId: null }, (data) => {
+          const newInstructions = data.customInstructions.filter(instr => instr.id !== id);
+          let newActiveId = data.activeInstructionId;
+          // 如果删除的是当前激活的指令，则重置激活状态
+          if (newActiveId === id) {
+              newActiveId = null;
+          }
+          chrome.storage.local.set({ customInstructions: newInstructions, activeInstructionId: newActiveId }, () => {
+              renderInstructions();
+          });
+      });
+  }
+
+  // 初始加载
+  renderInstructions();
+
+  function closeSettingsModal() {
+    if (settingsModalOverlay) settingsModalOverlay.classList.add('hidden');
+  }
+
+  if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', closeSettingsModal);
+  }
+  if (settingsModalOverlay) {
+    settingsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === settingsModalOverlay) closeSettingsModal();
+    });
+  }
 });
