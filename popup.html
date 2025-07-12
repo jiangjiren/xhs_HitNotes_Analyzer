@@ -2219,12 +2219,29 @@
     }
     .instruction-item .delete-btn {
       cursor: pointer;
-      color: red;
+      color: #f44336; /* 使用与历史记录删除按钮相同的红色 */
       font-weight: bold;
-      padding: 0 5px;
+      padding: 4px; /* 调整为圆形按钮大小 */
       background: none;
       border: none;
       font-size: 16px; /* 统一图标大小 */
+      opacity: 1; /* 覆盖通用.delete-btn的opacity: 0 */
+      border-radius: 50%; /* 添加圆角以匹配通用样式 */
+      display: flex; /* 使用flex布局以适应Material Icons */
+      align-items: center;
+      justify-content: center;
+      min-width: 28px; /* 设置最小宽度 */
+      height: 28px; /* 设置高度 */
+      transition: background-color 0.2s;
+    }
+    
+    .instruction-item .delete-btn:hover {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #d32f2f;
+    }
+    
+    .instruction-item .delete-btn .material-icons {
+      font-size: 16px; /* 垃圾桶图标大小 */
     }
     .instruction-buttons {
       display: flex;
