@@ -868,26 +868,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 加载聊天会话
   function loadChatSession(session) {
+    // 先在chatSessions里查找
+    let targetSession = chatSessions.find(s => s.id === session.id);
+    if (!targetSession) {
+      // 没有就插入
+      chatSessions.unshift(session);
+      targetSession = session;
+    }
+    // 所有会话currentSession设为false
+    chatSessions.forEach(s => s.currentSession = false);
+    // 只给目标会话设为true
+    targetSession.currentSession = true;
+
     // 清空当前聊天
     chatMessages.innerHTML = '';
-    
     // 加载历史消息
-    if (session.messages && session.messages.length > 0) {
-      session.messages.forEach(msg => {
+    if (targetSession.messages && targetSession.messages.length > 0) {
+      targetSession.messages.forEach(msg => {
         addMessage(msg.content, msg.role === 'user', true);
       });
     }
-    
-    // 设置为当前活动会话
-    chatSessions.forEach(s => delete s.currentSession);
-    session.currentSession = true;
-    
-    // 更新会话列表
-    const existingIndex = chatSessions.findIndex(s => s.id === session.id);
-    if (existingIndex === -1) {
-      chatSessions.unshift(session);
-    }
-    
     showToast('历史对话已加载');
   }
 
@@ -1628,7 +1628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showToast(`笔记采集完成，正在分析${message.data.length}篇笔记...`, 3000);
             
             // 有采集数据，进行数据分析
-            const analysisPrompt = `请帮我分析刚才采集的${message.data.length}篇小红书笔记，总结主要信息、热门话题和内容亮点。`;
+            const analysisPrompt = `作为一个小红书运营专家，请分析采集的小红书爆款笔记的共同点。先写100字左右的总结，然后从以下几个维度进行拆解：\n1. 选题角度与用户痛点：这个选题切中了用户的什么需求或痛点？\n2. 标题特点：标题使用了哪些技巧来吸引点击？（例如：数字、夸张、提问、制造反差、身份带入等）\n3. 根据以上内容给我推荐5个爆款选题`;
             
             // 创建新的会话用于分析采集数据
             createNewChatSession(`笔记分析 - ${new Date().toLocaleString()}`);
