@@ -1474,6 +1474,38 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       chatMessages.scrollTop = chatMessages.scrollHeight;
       return false;
+    } else if (message.type === 'streamSummaryResponse') {
+      // 处理一键总结/爆款标题等跳过用户消息的流式输出
+      isStreaming = true;
+      toggleSendStopButton(true);
+      // 移除思考动画消息
+      const thinkingMessage = document.querySelector('.thinking-message');
+      if (thinkingMessage) {
+        thinkingMessage.remove();
+      }
+      let aiMessageDiv = document.querySelector('.ai-message.streaming');
+      if (!aiMessageDiv) {
+        aiMessageDiv = document.createElement('div');
+        aiMessageDiv.className = 'message ai-message streaming';
+        aiMessageDiv.setAttribute('data-raw-content', '');
+        chatMessages.appendChild(aiMessageDiv);
+      }
+      streamingBuffer += message.content || '';
+      aiMessageDiv.setAttribute('data-raw-content', streamingBuffer);
+      // 使用改进的markdown解析函数处理流式内容
+      if (typeof window.parseMarkdown === 'function') {
+        aiMessageDiv.innerHTML = window.parseMarkdown(streamingBuffer, true);
+      } else {
+        // 降级方案：使用基本的marked函数
+        const processedBuffer = String(streamingBuffer).trim()
+          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 修复标题格式
+          .replace(/^([+-])\s*([^\s])/gm, '$1 $2') // 修复 + 和 - 列表
+          .replace(/^(\*)\s*([^\s*])/gm, '$1 $2') // 修复 * 列表，同时避免破坏 **bold** 语法
+          .replace(/^(\d+)\.\s*([^\s])/gm, '$1. $2'); // 修复数字列表格式
+        aiMessageDiv.innerHTML = marked(processedBuffer);
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return false;
     } else if (message.type === 'analysisComplete') {
       isStreaming = false;
       shouldStopStreaming = false;
@@ -2049,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', function() {
           noneOptionItem.className = 'instruction-item';
           noneOptionItem.innerHTML = `
               <input type="radio" id="instr-none" name="active-instruction" value="none" ${!activeInstructionId ? 'checked' : ''}>
-              <label for="instr-none">无指令</label>
+              <label for="instr-none">无预设指令</label>
           `;
           instructionsList.appendChild(noneOptionItem);
 
@@ -2066,7 +2098,9 @@ document.addEventListener('DOMContentLoaded', function() {
                   <label for="${instr.id}">${instr.name}</label>
                   <div class="instruction-buttons">
                     <button class="edit-btn" title="编辑指令">✏️</button>
-                    <button class="delete-btn" title="删除指令">❌</button>
+                    <button class="delete-btn" title="删除指令">
+                      <span class="material-icons">delete</span>
+                    </button>
                   </div>
               `;
               instructionsList.appendChild(item);
@@ -2086,8 +2120,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (target.classList.contains('edit-btn')) {
           startEditInstruction(instructionId);
       }
-      // 删除指令
-      if (target.classList.contains('delete-btn')) {
+      // 删除指令 - 检查点击的是删除按钮或其子元素
+      if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
           if (confirm('确定要删除这条指令吗？')) {
               deleteInstruction(instructionId);
           }
@@ -2099,6 +2133,8 @@ document.addEventListener('DOMContentLoaded', function() {
           chrome.storage.local.set({ activeInstructionId: idToSave });
           // 立即更新UI以获得最佳用户体验
           updateInstructionButtonState(idToSave);
+          // 选择指令后自动关闭弹窗
+          closeInstructionsModal();
       }
   });
 
