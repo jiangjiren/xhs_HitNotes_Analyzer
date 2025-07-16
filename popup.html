@@ -2629,7 +2629,7 @@
         <h3>API 设置</h3>
         <button id="close-settings-btn" title="关闭">&times;</button>
       </div>
-      <div class="settings-body">
+      <div class="settings-body" style="max-height: 400px; overflow-y: auto;">
         <div class="setting-item">
           <label for="apiKey">DeepSeek API密钥：</label>
           <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
@@ -2650,6 +2650,10 @@
           <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
         </div>
         <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
+      </div>
+      <div class="settings-footer" style="display: flex; justify-content: center; gap: 10px; padding-top: 15px;">
+        <button id="cancel-settings-btn" class="apple-btn">取消</button>
+        <button id="save-settings-btn" class="apple-btn apple-btn-primary">保存</button>
       </div>
     </div>
   </div>

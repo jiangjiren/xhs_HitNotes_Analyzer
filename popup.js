@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const closeSettingsModalBtn = document.querySelector('#settingsModal .close-modal'); 
   const settingsModalOverlay = document.getElementById('settings-modal-overlay');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
+  const saveSettingsBtn = document.getElementById('save-settings-btn');
+  const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
   
   // 加载已保存的设置
   function loadSettings() {
@@ -111,61 +113,78 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // 打开设置模态框
-  if (settingsIcon && settingsModal) {
-    settingsIcon.addEventListener('click', function() {
+  if (settingsTabBtn && settingsModalOverlay) {
+    settingsTabBtn.addEventListener('click', function() {
       loadSettings(); 
-      settingsModal.style.display = 'block';
+      settingsModalOverlay.classList.remove('hidden');
     });
   }
 
   // 关闭设置模态框
-  if (settingsModal) {
-    const closeModalBtn = settingsModal.querySelector('.close-modal');
-    if (closeModalBtn) {
-      closeModalBtn.addEventListener('click', function() {
-        settingsModal.style.display = 'none';
-      });
-    }
-    
-    settingsModal.addEventListener('click', function(e) {
-      if (e.target === settingsModal) {
-        settingsModal.style.display = 'none';
+  if (closeSettingsBtn && settingsModalOverlay) {
+    closeSettingsBtn.addEventListener('click', function() {
+      settingsModalOverlay.classList.add('hidden');
+    });
+  }
+  
+    // 点击模态框外部关闭
+  if (settingsModalOverlay) {
+    settingsModalOverlay.addEventListener('click', function(e) {
+      if (e.target === settingsModalOverlay) {
+        settingsModalOverlay.classList.add('hidden');
       }
     });
   }
 
   // 保存设置
-  if (saveSettingsButton && settingsModal) {
-    saveSettingsButton.addEventListener('click', function() {
-      const deepseekApiKey = (document.getElementById('apiKey') || { value: '' }).value.trim();
-      const geminiApiKey = (document.getElementById('geminiApiKey') || { value: '' }).value.trim();
-      const imageGenApiKey = (document.getElementById('accessKeyId') || { value: '' }).value.trim();
-      const imageGenApiSecret = (document.getElementById('secretAccessKey') || { value: '' }).value.trim();
-      const imageWidth = (document.getElementById('widthInput') || { value: '' }).value;
-      const imageHeight = (document.getElementById('heightInput') || { value: '' }).value;
+  if (saveSettingsBtn && settingsModalOverlay) {
+    saveSettingsBtn.addEventListener('click', function() {
+      const apiKeyInput = document.getElementById('apiKey');
+      const geminiApiKeyInput = document.getElementById('geminiApiKey');
+      const accessKeyIdInput = document.getElementById('accessKeyId');
+      const secretAccessKeyInput = document.getElementById('secretAccessKey');
 
-      chrome.storage.local.set({
-        deepseekApiKey: deepseekApiKey,
-        geminiApiKey: geminiApiKey,
-        imageGenApiKey: imageGenApiKey,
-        imageGenApiSecret: imageGenApiSecret,
-        imageWidth: imageWidth,
-        imageHeight: imageHeight
-      }, function() {
-        settingsModal.style.display = 'none';
-        showToast('设置已保存！');
-        checkApiKeyStatus();
-        chrome.runtime.sendMessage({
-          type: 'updateApiKey',
-          deepseekApiKey: deepseekApiKey,
-          geminiApiKey: geminiApiKey,
-          imageGenAK: imageGenApiKey, 
-          imageGenSK: imageGenApiSecret 
+      const settingsToSave = {};
+
+      if (apiKeyInput.value.trim() && !apiKeyInput.hasAttribute('data-has-value')) {
+        settingsToSave.deepseekApiKey = apiKeyInput.value.trim();
+      }
+
+      if (geminiApiKeyInput.value.trim() && !geminiApiKeyInput.hasAttribute('data-has-value')) {
+        settingsToSave.geminiApiKey = geminiApiKeyInput.value.trim();
+      }
+      
+      if (accessKeyIdInput.value.trim() && !accessKeyIdInput.hasAttribute('data-has-value')) {
+        settingsToSave.imageGenApiKey = accessKeyIdInput.value.trim();
+      }
+
+      if (secretAccessKeyInput.value.trim() && !secretAccessKeyInput.hasAttribute('data-has-value')) {
+        settingsToSave.imageGenApiSecret = secretAccessKeyInput.value.trim();
+      }
+
+      if (Object.keys(settingsToSave).length > 0) {
+        chrome.storage.local.set(settingsToSave, function() {
+          settingsModalOverlay.classList.add('hidden');
+          showToast('设置已保存！');
+          loadSettings(); // 重新加载以更新状态
+          checkApiKeyStatus(); 
+          
+          // 如果有更新，发送消息到background.js
+          const message = { type: 'updateApiKey' };
+          if(settingsToSave.deepseekApiKey) message.deepseekApiKey = settingsToSave.deepseekApiKey;
+          if(settingsToSave.geminiApiKey) message.geminiApiKey = settingsToSave.geminiApiKey;
+          if(settingsToSave.imageGenApiKey) message.imageGenAK = settingsToSave.imageGenApiKey;
+          if(settingsToSave.imageGenApiSecret) message.imageGenSK = settingsToSave.imageGenApiSecret;
+
+          chrome.runtime.sendMessage(message);
+          
+          if (typeof window.updateImageGenCredentials === 'function') {
+              window.updateImageGenCredentials(settingsToSave.imageGenApiKey, settingsToSave.imageGenApiSecret);
+          }
         });
-        if (typeof window.updateImageGenCredentials === 'function') {
-            window.updateImageGenCredentials(imageGenApiKey, imageGenApiSecret);
-        }
-      });
+      } else {
+        settingsModalOverlay.classList.add('hidden');
+      }
     });
   }
   
@@ -2181,6 +2200,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (settingsModalOverlay) {
     settingsModalOverlay.addEventListener('click', (e) => {
       if (e.target === settingsModalOverlay) closeSettingsModal();
+    });
+  }
+
+  if (cancelSettingsBtn) {
+    cancelSettingsBtn.addEventListener('click', function() {
+      settingsModalOverlay.classList.add('hidden');
     });
   }
 });
