@@ -597,16 +597,17 @@ document.addEventListener('DOMContentLoaded', function() {
          const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
         
         // 发送消息给background script
-                 chrome.runtime.sendMessage({
-           action: 'analyzeContent',
-           content: summaryRequest,
-           isChat: true,
-           isDataAnalysis: false,
-           chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-           hasFile: false,
-           skipUserMessage: true, // 添加标记，表示不显示用户消息
-           model: selectedModel
-         }, (response) => {
+        chrome.runtime.sendMessage({
+          action: 'analyzeContent',
+          content: summaryRequest,
+          isChat: true,
+          isDataAnalysis: false,
+          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
+          hasFile: false,
+          skipUserMessage: true, // 添加标记，表示不显示用户消息
+          model: selectedModel,
+          customInstructionPrompt: '' // 页面功能不使用自定义指令，保持为空
+        }, (response) => {
           if (chrome.runtime.lastError) {
             console.error('发送消息时出错:', chrome.runtime.lastError);
           }
@@ -643,16 +644,17 @@ document.addEventListener('DOMContentLoaded', function() {
          const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
         
         // 发送消息给background script
-                 chrome.runtime.sendMessage({
-           action: 'analyzeContent',
-           content: rewriteRequest,
-           isChat: true,
-           isDataAnalysis: false,
-           chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-           hasFile: false,
-           skipUserMessage: true,
-           model: selectedModel
-         }, (response) => {
+        chrome.runtime.sendMessage({
+          action: 'analyzeContent',
+          content: rewriteRequest,
+          isChat: true,
+          isDataAnalysis: false,
+          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
+          hasFile: false,
+          skipUserMessage: true,
+          model: selectedModel,
+          customInstructionPrompt: '' // 页面功能不使用自定义指令，保持为空
+        }, (response) => {
           if (chrome.runtime.lastError) {
             console.error('发送消息时出错:', chrome.runtime.lastError);
           }
@@ -689,16 +691,17 @@ document.addEventListener('DOMContentLoaded', function() {
          const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
         
         // 发送消息给background script
-                 chrome.runtime.sendMessage({
-           action: 'analyzeContent',
-           content: titleRequest,
-           isChat: true,
-           isDataAnalysis: false,
-           chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-           hasFile: false,
-           skipUserMessage: true,
-           model: selectedModel
-         }, (response) => {
+        chrome.runtime.sendMessage({
+          action: 'analyzeContent',
+          content: titleRequest,
+          isChat: true,
+          isDataAnalysis: false,
+          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
+          hasFile: false,
+          skipUserMessage: true,
+          model: selectedModel,
+          customInstructionPrompt: '' // 页面功能不使用自定义指令，保持为空
+        }, (response) => {
           if (chrome.runtime.lastError) {
             console.error('发送消息时出错:', chrome.runtime.lastError);
           }
@@ -1178,23 +1181,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const isFirstMessage = (currentSessionIndex !== -1) ? !chatSessions[currentSessionIndex].hasUserMessage : true;
 
-    // 如果不是第一条消息，直接发送
-    if (!isFirstMessage) {
-      sendToAI(rawMessage, rawMessage);
-      messageInput.value = '';
-      return;
-    }
-
-    // 如果是第一条消息，尝试附加自定义指令
+    // 无论第几条消息，都需要获取自定义指令并传递给AI
     chrome.storage.local.get(['activeInstructionId', 'customInstructions'], (data) => {
       let finalMessage = rawMessage;
+      let customInstructionPrompt = '';
+
+      console.log('📋 从storage读取自定义指令数据:', {
+        activeInstructionId: data.activeInstructionId,
+        customInstructionsCount: data.customInstructions ? data.customInstructions.length : 0
+      });
+
+      // 获取激活的自定义指令
       if (data.activeInstructionId && Array.isArray(data.customInstructions)) {
         const activeInstr = data.customInstructions.find(instr => instr.id === data.activeInstructionId);
         if (activeInstr && activeInstr.prompt && activeInstr.prompt.trim()) {
-          finalMessage = `${activeInstr.prompt.trim()}` + '\n\n---\n\n' + rawMessage;
+          customInstructionPrompt = activeInstr.prompt.trim();
+          console.log('✅ 找到激活的自定义指令:', activeInstr.name, '| 指令长度:', customInstructionPrompt.length);
+          console.log('📝 自定义指令内容预览:', customInstructionPrompt.substring(0, 100) + (customInstructionPrompt.length > 100 ? '...' : ''));
+        } else {
+          console.log('⚠️ activeInstructionId存在但未找到对应的指令:', data.activeInstructionId);
+        }
+      } else {
+        if (!data.activeInstructionId) {
+          console.log('ℹ️ 未设置自定义指令(activeInstructionId为空)，使用默认系统提示');
+        } else if (!Array.isArray(data.customInstructions)) {
+          console.log('⚠️ customInstructions不是数组:', typeof data.customInstructions);
         }
       }
-      sendToAI(finalMessage, rawMessage);
+
+      console.log('🚀 准备发送消息给AI，customInstructionPrompt长度:', customInstructionPrompt.length);
+      sendToAI(finalMessage, rawMessage, customInstructionPrompt);
       messageInput.value = '';
     });
   }
@@ -1239,8 +1255,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // 发送消息到AI
-  function sendToAI(message, displayMessage = null) {
+  function sendToAI(message, displayMessage = null, customInstructionPrompt = '') {
     const uiMessage = displayMessage !== null ? displayMessage : message;
+
+    console.log('📨 sendToAI函数被调用，参数:', {
+      messageLength: message.length,
+      hasDisplayMessage: displayMessage !== null,
+      customInstructionPromptLength: customInstructionPrompt.length
+    });
 
     // 如果有上传的文件，在聊天框中显示文件信息
     if (uploadedFileContent) {
@@ -1309,6 +1331,18 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
       });
 
+      console.log('✉️ 即将发送消息给background.js:', {
+        action: 'analyzeContent',
+        contentLength: content.length,
+        isChat: true,
+        isDataAnalysis: isDataAnalysis,
+        chatHistoryLength: filteredHistory.length,
+        hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
+        model: activeModel,
+        customInstructionPromptLength: customInstructionPrompt.length,
+        customInstructionPromptPreview: customInstructionPrompt ? customInstructionPrompt.substring(0, 50) + '...' : '(empty)'
+      });
+
       chrome.runtime.sendMessage({
         action: 'analyzeContent',
         content: content,
@@ -1316,7 +1350,8 @@ document.addEventListener('DOMContentLoaded', function() {
         isDataAnalysis: isDataAnalysis,
         chatHistory: filteredHistory,
         hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
-        model: activeModel 
+        model: activeModel,
+        customInstructionPrompt: customInstructionPrompt
       });
     } catch (error) {
       console.error('发送消息失败:', error);
@@ -2149,7 +2184,33 @@ document.addEventListener('DOMContentLoaded', function() {
       if (target.type === 'radio') {
           const selectedId = target.value;
           const idToSave = selectedId === 'none' ? null : selectedId;
-          chrome.storage.local.set({ activeInstructionId: idToSave });
+
+          // 获取指令名称用于日志
+          let instructionName = '无预设指令';
+          if (idToSave) {
+              chrome.storage.local.get({ customInstructions: [] }, (data) => {
+                  const selectedInstr = data.customInstructions.find(instr => instr.id === idToSave);
+                  if (selectedInstr) {
+                      instructionName = selectedInstr.name;
+                  }
+                  console.log(`🎯 正在保存激活的自定义指令: ${instructionName} (ID: ${idToSave})`);
+              });
+          } else {
+              console.log('🎯 正在清除激活的自定义指令');
+          }
+
+          chrome.storage.local.set({ activeInstructionId: idToSave }, () => {
+              if (chrome.runtime.lastError) {
+                  console.error('❌ 保存自定义指令ID失败:', chrome.runtime.lastError);
+              } else {
+                  console.log('✅ 自定义指令ID已成功保存到storage:', idToSave);
+                  // 立即验证保存结果
+                  chrome.storage.local.get(['activeInstructionId'], (verifyData) => {
+                      console.log('🔍 验证storage中的activeInstructionId:', verifyData.activeInstructionId);
+                  });
+              }
+          });
+
           // 立即更新UI以获得最佳用户体验
           updateInstructionButtonState(idToSave);
           // 选择指令后自动关闭弹窗

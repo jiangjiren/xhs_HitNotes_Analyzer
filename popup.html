@@ -65,6 +65,10 @@
       flex-direction: column;
       overflow: hidden;
       padding: 15px 15px 2px 15px;
+      /* 为了避免被右侧固定导航栏遮挡，给主内容区域设置明确宽度 */
+      width: calc(100% - 50px);
+      /* 给右侧预留与侧边栏相同的间距，确保不会被固定导航栏遮挡 */
+      margin-right: 50px;
       max-width: calc(100% - 50px); /* 确保主内容区域不会超过除导航栏外的宽度 */
     }
     

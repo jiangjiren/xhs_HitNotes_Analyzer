@@ -280,7 +280,7 @@ function getFriendlyErrorMessage(error) {
 }
 
 // 使用DeepSeek API分析内容
-async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, hasFile = false) {
+async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, hasFile = false, customInstructionPrompt = '') {
     // 重置停止流式输出标志
     shouldStopStreaming = false;
     
@@ -326,18 +326,31 @@ async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysi
         historyLength: chatHistory.length,
         apiKey: config.DEEPSEEK_API_KEY ? '已设置' : '未设置',
         skipUserMessage: skipUserMessage,
-        createNewSession: createNewSession
+        createNewSession: createNewSession,
+        customInstructionPrompt: customInstructionPrompt ? `已设置 (${customInstructionPrompt.length}字符)` : '未设置'
     });
     
     try {
         // 构建系统消息
-        const systemMessage = isChat ? 
-            (isDataAnalysis ? 
-                "你是一个专业的小红书数据分析师，擅长分析小红书笔记数据，提供专业的数据洞察和建议。" : 
-                (hasFile ? 
+        let systemMessage = isChat ?
+            (isDataAnalysis ?
+                "你是一个专业的小红书数据分析师，擅长分析小红书笔记数据，提供专业的数据洞察和建议。" :
+                (hasFile ?
                     "你是一个资深的内容分析专家，擅长分析文本内容并回答相关问题。请仔细阅读用户上传的文件内容，并针对性地回答用户的问题。" :
                     "你是一个资深的内容分析专家，擅长分析文本内容并回答相关问题。")) :
             "你是一个专业的小红书内容分析师，擅长分析笔记内容特点和趋势。";
+
+        // 如果有自定义指令，将其合并到系统消息中
+        if (customInstructionPrompt && customInstructionPrompt.trim()) {
+            systemMessage = customInstructionPrompt.trim() + '\n\n' + systemMessage;
+            console.log('✅ DeepSeek: 自定义指令已合并到系统消息中');
+            console.log('📝 DeepSeek: 自定义指令长度:', customInstructionPrompt.trim().length);
+            console.log('📝 DeepSeek: 自定义指令预览:', customInstructionPrompt.trim().substring(0, 100) + '...');
+            console.log('📋 DeepSeek: 最终系统消息长度:', systemMessage.length);
+        } else {
+            console.log('ℹ️ DeepSeek: 未设置自定义指令或自定义指令为空，使用默认系统消息');
+            console.log('📝 DeepSeek: customInstructionPrompt值:', customInstructionPrompt);
+        }
 
         // 构建完整的消息数组
         const messages = [
@@ -523,7 +536,7 @@ ${content}
 }
 
 // 使用Gemini API分析内容（流式输出）
-async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-2.5-flash', hasFile = false) {
+async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-2.5-flash', hasFile = false, customInstructionPrompt = '') {
     shouldStopStreaming = false;
     const apiKeyResult = await chrome.storage.local.get(['geminiApiKey']);
     if (apiKeyResult.geminiApiKey && apiKeyResult.geminiApiKey.trim() !== '') {
@@ -540,13 +553,26 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
 
     // 构建多轮对话历史，转换为Gemini REST API格式
     let contents = [];
-    const systemMessage = isChat ? 
+    let systemMessage = isChat ?
         (isDataAnalysis ?
             "你是一个专业的小红书数据分析师，擅长分析小红书笔记数据，提供专业的数据洞察和建议。" :
-            (hasFile ? 
+            (hasFile ?
                 "你是一个资深的内容分析专家，擅长分析文本内容并回答相关问题。请仔细阅读用户上传的文件内容，并针对性地回答用户的问题。" :
                 "你是一个资深的内容分析专家，擅长分析文本内容并回答相关问题。")) :
         "你是一个专业的小红书内容分析师，擅长分析笔记内容特点和趋势。";
+
+    // 如果有自定义指令，将其合并到系统消息中
+    if (customInstructionPrompt && customInstructionPrompt.trim()) {
+        systemMessage = customInstructionPrompt.trim() + '\n\n' + systemMessage;
+        console.log('✅ Gemini: 自定义指令已合并到系统消息中');
+        console.log('📝 Gemini: 自定义指令长度:', customInstructionPrompt.trim().length);
+        console.log('📝 Gemini: 自定义指令预览:', customInstructionPrompt.trim().substring(0, 100) + '...');
+        console.log('📋 Gemini: 最终系统消息长度:', systemMessage.length);
+    } else {
+        console.log('ℹ️ Gemini: 未设置自定义指令或自定义指令为空，使用默认系统消息');
+        console.log('📝 Gemini: customInstructionPrompt值:', customInstructionPrompt);
+    }
+
     contents.push({ role: "user", parts: [{ text: systemMessage }] });
     for (const msg of chatHistory) {
         if (msg.role && msg.content) {
@@ -571,6 +597,7 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
     console.log('Gemini 流式API请求:', JSON.stringify(payload));
     console.log('Gemini API端点:', endpoint);
     console.log('Gemini API密钥长度:', config.GEMINI_API_KEY ? config.GEMINI_API_KEY.length : 0);
+    console.log('Gemini自定义指令状态:', customInstructionPrompt ? `已设置 (${customInstructionPrompt.length}字符)` : '未设置');
     
     let reader = null;
     try {
@@ -828,7 +855,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         request.skipUserMessage || false,
                         request.createNewSession || false,
                         request.model, // 传递具体的模型名称
-                        request.hasFile || false // 传递hasFile参数
+                        request.hasFile || false, // 传递hasFile参数
+                        request.customInstructionPrompt || ''
                     );
                 } else {
                     console.log('调用DeepSeek API，模型:', request.model);
@@ -840,7 +868,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         request.chatHistory || [],
                         request.skipUserMessage || false,
                         request.createNewSession || false,
-                        request.hasFile || false // 传递hasFile参数
+                        request.hasFile || false, // 传递hasFile参数
+                        request.customInstructionPrompt || ''
                     );
                 }
                 // 发送确认响应，表示已开始处理
