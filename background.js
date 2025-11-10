@@ -63,33 +63,33 @@ function downloadTextFile(content, filename) {
         contentLength: content.length,
         filename: filename
     });
-    
+
     return new Promise((resolve, reject) => {
         try {
             // 处理中文字符
             const encoder = new TextEncoder();
             const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
             const contentBytes = encoder.encode(content);
-            
+
             // 合并BOM和内容
             const fileData = new Uint8Array(bom.length + contentBytes.length);
             fileData.set(bom);
             fileData.set(contentBytes, bom.length);
-            
+
             // 转换为base64
             let binary = '';
             fileData.forEach(byte => binary += String.fromCharCode(byte));
             const base64Content = btoa(binary);
-            
+
             // 创建data URL
             const mimeType = filename.endsWith('.csv') ? 'text/csv' : 'text/plain';
             const dataUrl = `data:${mimeType};charset=utf-8;base64,${base64Content}`;
-            
+
             // 构建保存路径
             let savePath = `小红书爆款采集/${filename}`;
-            
+
             console.log('📤 开始下载文件:', savePath);
-            
+
             // 下载文件
             chrome.downloads.download({
                 url: dataUrl,
@@ -106,6 +106,53 @@ function downloadTextFile(content, filename) {
             });
         } catch (error) {
             console.error('📤 下载文件时出错:', error);
+            reject(error);
+        }
+    });
+}
+
+// 下载图片的辅助函数
+function downloadImage(imageUrl, filename, timestamp) {
+    console.log('📷 downloadImage开始执行:', {
+        imageUrl: imageUrl,
+        filename: filename,
+        timestamp: timestamp
+    });
+
+    return new Promise((resolve, reject) => {
+        try {
+            // 清理文件名，移除非法字符
+            const sanitizedFilename = filename.replace(/[<>:"/\\|?*]/g, '_').substring(0, 100);
+
+            // 从URL中提取文件扩展名，如果没有则默认使用 .jpg
+            let extension = '.jpg';
+            const urlParts = imageUrl.split('.');
+            const lastPart = urlParts[urlParts.length - 1].split('?')[0].toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(lastPart)) {
+                extension = '.' + lastPart;
+            }
+
+            // 构建保存路径：小红书爆款采集/封面图_时间戳/文件名.扩展名
+            const savePath = `小红书爆款采集/封面图_${timestamp}/${sanitizedFilename}${extension}`;
+
+            console.log('📷 开始下载图片:', savePath);
+
+            // 下载图片
+            chrome.downloads.download({
+                url: imageUrl,
+                filename: savePath,
+                saveAs: false
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.error('📷 图片下载失败:', chrome.runtime.lastError);
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    console.log('📷 图片下载成功，ID:', downloadId);
+                    resolve(downloadId);
+                }
+            });
+        } catch (error) {
+            console.error('📷 下载图片时出错:', error);
             reject(error);
         }
     });
@@ -944,6 +991,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         abortController.abort();
         sendResponse({status: 'cancelled'});
         return false;
+    } else if (request.action === 'downloadImage') {
+        console.log('📷 收到下载图片请求:', request.filename);
+        downloadImage(request.imageUrl, request.filename, request.timestamp)
+            .then(() => {
+                console.log('📷 图片下载成功');
+                sendResponse({ status: 'success' });
+            })
+            .catch(error => {
+                console.error('📷 下载图片时出错:', error);
+                sendResponse({ status: 'error', message: error.message });
+            });
+        return true; // 保持消息通道开放以进行异步响应
     }
 });
 

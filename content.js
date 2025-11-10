@@ -23,26 +23,33 @@ if (!window.messageListenerAdded) {
         
       case 'startCollecting':
         console.log('🚀 开始采集');
-        
+
         // 清除之前的定时器
         if (window.autoScrollTimer) {
             clearTimeout(window.autoScrollTimer);
             window.autoScrollTimer = null;
         }
-        
+
         // 重置所有状态标志
         isCollecting = true;
         window.forceStop = false;
-        
+
         collectedData = []; // 重置已采集数据
         lastScrollHeight = 0;
         currentNoteIndex = 0;
         successCount = 0;
         maxNotesToCollect = message.maxNotes || 100;
         minLikes = message.minLikes !== undefined ? message.minLikes : 0;
+        shouldDownloadCover = message.downloadCover || false; // 获取是否下载封面图的设置
         // 重置采集完成标志，确保新的采集过程可以正常发送完成消息
         window.collectionCompleteSent = false;
         window.dataExported = false;
+
+        // 生成本次采集的时间戳，用于封面图文件夹命名
+        const now = new Date();
+        collectionTimestamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}${now.getSeconds().toString().padStart(2,'0')}`;
+        console.log('📷 本次采集时间戳:', collectionTimestamp);
+        console.log('📷 是否下载封面图:', shouldDownloadCover);
         
         console.log('🚀 采集参数设置完成:', {
             maxNotes: maxNotesToCollect,
@@ -144,6 +151,8 @@ let maxNotesToCollect = 10;
 let minLikes = 500;
 let successCount = 0;
 let currentNoteIndex = 0;
+let collectionTimestamp = ''; // 用于封面图文件夹命名的时间戳
+let shouldDownloadCover = false; // 是否下载封面图
 
 // 页面加载时的初始化日志
 console.log('小红书采集助手Content Script已加载');
@@ -285,34 +294,13 @@ function exportData() {
         }
     });
 
-    // 导出TXT - 修改格式，添加点赞、收藏、评论数量到标题下面一行
-    const txtContent = collectedData.map(data => 
+    // 格式化文本内容供AI分析使用
+    const txtContent = collectedData.map(data =>
         `标题：${data.title}\n点赞：${data.likes} | 收藏：${data.collects} | 评论：${data.comments}\n\n${data.content}\n\n----------------------------------------\n\n`
     ).join('');
 
-    // 不再在这里发送AI分析请求，改为在popup.js中统一处理
-    // 将格式化的文本内容保存到全局变量，供后续分析使用
+    // 将格式化的文本内容保存到全局变量，供后续AI分析使用
     window.formattedAnalysisContent = txtContent;
-
-    // 下载TXT文件
-    console.log('📤 发送TXT文件下载请求到background.js');
-    console.log('📤 TXT数据:', {
-        contentLength: txtContent.length,
-        filename: `小红书爆款笔记内容_${timestamp}.txt`
-    });
-    
-    chrome.runtime.sendMessage({
-        action: 'downloadFile',
-        content: txtContent,
-        filename: `小红书爆款笔记内容_${timestamp}.txt`
-    }, response => {
-        console.log('📤 TXT下载响应:', response);
-        if (response && response.status === 'success') {
-            console.log('✅ TXT文件下载成功');
-        } else {
-            console.log('❌ TXT文件下载失败:', response);
-        }
-    });
     
     // 更新状态
     chrome.runtime.sendMessage({
@@ -323,7 +311,6 @@ function exportData() {
     console.log('✅ 数据导出完成，已设置导出状态标志');
     console.log('📁 文件保存位置: 下载文件夹/小红书爆款采集/');
     console.log(`📊 Excel文件: 小红书爆款笔记数据_${timestamp}.xlsx`);
-    console.log(`📄 TXT文件: 小红书爆款笔记内容_${timestamp}.txt`);
 }
 
 // 修改：处理笔记详情 - 恢复弹窗处理逻辑，但优化关闭机制
@@ -991,27 +978,60 @@ async function parseNoteData() {
             title: titleElement ? titleElement.textContent : '未知标题'
         });
         
+        // 提取封面图URL
+        const coverImg = note.querySelector('img[data-xhs-img]') ||
+                        note.querySelector('a.cover img') ||
+                        note.querySelector('img[src*="xhscdn.com"]') ||
+                        note.querySelector('img');
+        const coverImageUrl = coverImg ? coverImg.src : '';
+        console.log('📷 笔记封面图URL:', coverImageUrl);
+
         // 获取详情数据并等待完成
         const detailData = await processNoteDetail(note);
-        
+
         // 只有当详情数据采集成功时才保存
         if (detailData) {
             const finalLikes = detailData.likes !== undefined ? detailData.likes : likesCount;
-            
+
             const data = {
                 id: noteId,
                 title: titleElement ? titleElement.textContent.trim() : '未知标题',
                 author: authorElement ? authorElement.textContent.trim() : '未知作者',
                 likes: finalLikes,
                 link: linkElement.href,
+                coverImage: coverImageUrl, // 添加封面图URL
                 ...detailData
             };
-            
+
             collectedData.push(data);
             successCount++;
-            
+
             console.log('✅ 成功采集笔记:', noteId, '当前总数:', successCount);
-            
+
+            // 下载封面图（仅在用户勾选时）
+            if (shouldDownloadCover && coverImageUrl && coverImageUrl.trim() !== '') {
+                try {
+                    chrome.runtime.sendMessage({
+                        action: 'downloadImage',
+                        imageUrl: coverImageUrl,
+                        filename: data.title,
+                        timestamp: collectionTimestamp
+                    }, response => {
+                        if (response && response.status === 'success') {
+                            console.log('📷 封面图下载请求已发送:', data.title);
+                        } else {
+                            console.error('📷 封面图下载请求失败:', response);
+                        }
+                    });
+                } catch (error) {
+                    console.error('📷 发送封面图下载请求时出错:', error);
+                }
+            } else if (!shouldDownloadCover) {
+                console.log('📷 用户未勾选下载封面图，跳过');
+            } else {
+                console.log('📷 该笔记没有封面图或封面图URL为空');
+            }
+
             try {
                 chrome.runtime.sendMessage({
                     type: 'updateStatus',

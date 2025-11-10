@@ -1964,15 +1964,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // 获取采集参数
         const maxNotes = parseInt(document.getElementById('maxNotes').value) || 10;
         const minLikes = parseInt(document.getElementById('minLikes').value) || 0;
-        
+        const downloadCover = document.getElementById('downloadCover').checked;
+
+        console.log('📷 是否下载封面图:', downloadCover);
+
         // 更新UI状态
         updateCollectButtonState(true);
-        
+
         // 发送采集命令
         const result = await chrome.tabs.sendMessage(tab.id, {
           type: 'startCollecting',
           maxNotes: maxNotes,
-          minLikes: minLikes
+          minLikes: minLikes,
+          downloadCover: downloadCover
         });
         
         console.log('采集命令发送结果:', result);

@@ -301,69 +301,84 @@
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
-      margin-bottom: 15px;
+      margin-bottom: 0;
     }
-    
+
     .input-control {
       flex: 1;
-      min-width: 120px;
+      min-width: 140px;
     }
-    
+
     .input-control label {
       display: block;
       margin-bottom: 6px;
       font-size: 13px;
-      color: #666;
+      color: #555;
       font-weight: 500;
     }
-    
+
     .input-control input {
       width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #ddd;
+      padding: 10px 12px;
+      border: 1.5px solid #d1d5db;
       border-radius: 8px;
       font-size: 14px;
-      background-color: #f9f9f9;
-      transition: all 0.2s;
+      background-color: #fafafa;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
     }
-    
+
+    .input-control input:hover {
+      border-color: #9ca3af;
+    }
+
     .input-control input:focus {
       outline: none;
       border-color: #007aff;
       background-color: #fff;
-      box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
     }
     
     /* 按钮组 - 苹果风格 */
     .button-group {
       display: flex;
       gap: 10px;
+      margin-top: 16px;
     }
-    
+
     .apple-btn {
-      padding: 8px 16px;
+      padding: 12px 20px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: 500;
-      font-size: 14px;
+      font-weight: 600;
+      font-size: 15px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
     }
-    
+
     .apple-btn .material-icons {
-      font-size: 18px;
+      font-size: 20px;
     }
-    
+
     .apple-btn-primary {
-      background-color: #007aff;
+      background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
       color: white;
     }
-    
+
     .apple-btn-primary:hover {
-      background-color: #0069d9;
+      background: linear-gradient(135deg, #0069d9 0%, #0040a8 100%);
+      box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .apple-btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
     }
     
     .apple-btn-danger {
@@ -401,21 +416,79 @@
     /* 状态显示 - 苹果风格 */
     .status-display {
       margin-top: 12px;
-      padding: 10px;
+      padding: 10px 12px;
       border-radius: 8px;
-      background-color: #f5f5f7;
+      background-color: #e8f4fd;
+      border-left: 3px solid #007aff;
       font-size: 13px;
-      color: #666;
+      color: #555;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    
+
     .status-display .material-icons {
-      font-size: 16px;
+      font-size: 18px;
       color: #007aff;
     }
-    
+
+    /* 复选框组 - 苹果风格 */
+    .checkbox-group {
+      margin: 12px 0;
+      padding: 10px 12px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #e5e5e5;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .custom-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d1d5db;
+      border-radius: 5px;
+      margin-right: 10px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .custom-checkbox:checked {
+      background-color: #007aff;
+      border-color: #007aff;
+    }
+
+    .custom-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 5px;
+      height: 10px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .custom-checkbox:hover {
+      border-color: #007aff;
+    }
+
+    .checkbox-text {
+      font-size: 14px;
+      color: #333;
+      font-weight: 400;
+    }
+
     /* 聊天界面样式 */
     .chat-container {
       flex: 1;
@@ -2458,6 +2531,15 @@
                 <input type="number" id="minLikes" value="500" min="0">
               </div>
             </div>
+
+            <!-- 复选框区域 -->
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="downloadCover" class="custom-checkbox">
+                <span class="checkbox-text">同时下载封面图</span>
+              </label>
+            </div>
+
             <div class="button-group">
               <button id="collectBtn" class="apple-btn apple-btn-primary">
                 <span class="material-icons">play_circle</span>
