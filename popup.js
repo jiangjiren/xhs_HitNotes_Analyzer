@@ -1059,12 +1059,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof window.parseMarkdown === 'function') {
         messageDiv.innerHTML = window.parseMarkdown(message);
       } else {
-        // 降级方案：使用基本的marked函数
-        const processedMessage = String(message).trim()
-          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 修复标题格式
-          .replace(/^(\*|\+|-)\s*([^\s])/gm, '$1 $2') // 修复列表格式
-          .replace(/^(\d+)\.?\s*([^\s])/gm, '$1. $2'); // 修复数字列表格式
-        messageDiv.innerHTML = marked(processedMessage);
+        // 降级方案：直接使用marked
+        messageDiv.innerHTML = marked(String(message).trim());
       }
       
       // 为AI消息添加复制按钮（排除系统提示消息）
@@ -1518,13 +1514,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof window.parseMarkdown === 'function') {
         aiMessageDiv.innerHTML = window.parseMarkdown(streamingBuffer, true);
       } else {
-        // 降级方案：使用基本的marked函数
-        const processedBuffer = String(streamingBuffer).trim()
-          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 修复标题格式
-          .replace(/^([+-])\s*([^\s])/gm, '$1 $2') // 修复 + 和 - 列表
-          .replace(/^(\*)\s*([^\s*])/gm, '$1 $2') // 修复 * 列表，同时避免破坏 **bold** 语法
-          .replace(/^(\d+)\.?\s*([^\s])/gm, '$1. $2'); // 修复数字列表格式
-        aiMessageDiv.innerHTML = marked(processedBuffer);
+        // 降级方案：直接使用marked
+        aiMessageDiv.innerHTML = marked(String(streamingBuffer).trim());
       }
       chatMessages.scrollTop = chatMessages.scrollHeight;
       return false;
@@ -1550,13 +1541,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof window.parseMarkdown === 'function') {
         aiMessageDiv.innerHTML = window.parseMarkdown(streamingBuffer, true);
       } else {
-        // 降级方案：使用基本的marked函数
-        const processedBuffer = String(streamingBuffer).trim()
-          .replace(/^(#{1,6})([^#\s])/gm, '$1 $2') // 修复标题格式
-          .replace(/^([+-])\s*([^\s])/gm, '$1 $2') // 修复 + 和 - 列表
-          .replace(/^(\*)\s*([^\s*])/gm, '$1 $2') // 修复 * 列表，同时避免破坏 **bold** 语法
-          .replace(/^(\d+)\.\s*([^\s])/gm, '$1. $2'); // 修复数字列表格式
-        aiMessageDiv.innerHTML = marked(processedBuffer);
+        // 降级方案：直接使用marked
+        aiMessageDiv.innerHTML = marked(String(streamingBuffer).trim());
       }
       chatMessages.scrollTop = chatMessages.scrollHeight;
       return false;

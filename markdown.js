@@ -41,19 +41,20 @@ function parseMarkdown(text, isStream = false) {
     }
 
     console.log('🔍 parseMarkdown 输入文本前50字符:', text.substring(0, 50));
-    
+
     // 预处理文本
     const processedText = preprocessText(text);
     console.log('🔧 预处理后文本前50字符:', processedText.substring(0, 50));
-    
+
     // 使用marked解析Markdown
     const html = marked(processedText);
+
     console.log('✅ marked解析后HTML前100字符:', html.substring(0, 100));
-    
+
     // 包装在markdown-body中并添加样式类
     const result = `<div class="markdown-body">${html}</div>`;
     console.log('📦 最终结果前100字符:', result.substring(0, 100));
-    
+
     return result;
   } catch (error) {
     console.error('Markdown parsing error:', error);

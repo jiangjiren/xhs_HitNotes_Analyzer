@@ -4,20 +4,66 @@
 
   function marked(src) {
     if (!src) return '';
-    
+
     // 预处理：确保换行符统一
     src = src.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
+
     const lines = src.split('\n');
     let html = '';
     let inList = false;
     let listType = ''; // 'ul' or 'ol'
+    let inTable = false;
+    let tableHeaderParsed = false;
 
     function closeList() {
       if (inList) {
         html += (listType === 'ul' ? '</ul>' : '</ol>');
         inList = false;
       }
+    }
+
+    function closeTable() {
+      if (inTable) {
+        html += '</table>';
+        inTable = false;
+        tableHeaderParsed = false;
+      }
+    }
+
+    function parseTableRow(line, isHeader = false) {
+      // 移除首尾的 | 符号
+      const trimmed = line.trim();
+      const cells = trimmed.split('|')
+        .map(cell => cell.trim())
+        .filter(cell => cell.length > 0);
+
+      const cellTag = isHeader ? 'th' : 'td';
+      let row = '<tr>';
+
+      cells.forEach(cell => {
+        const content = inlineFormat(cell);
+        row += `<${cellTag}>${content}</${cellTag}>`;
+      });
+
+      row += '</tr>';
+      return row;
+    }
+
+    function isTableSeparator(line) {
+      // 检查是否是表格分隔符行，如: |---|---| 或 | - | - |
+      const trimmed = line.trim();
+      const cells = trimmed.split('|')
+        .map(cell => cell.trim())
+        .filter(cell => cell.length > 0);
+
+      // 检查每个单元格是否只包含 - 和空格
+      return cells.every(cell => /^[-\s]+$/.test(cell));
+    }
+
+    function isTableRow(line) {
+      // 检查是否是表格行（以 | 开头和结尾）
+      const trimmed = line.trim();
+      return trimmed.startsWith('|') && trimmed.endsWith('|');
     }
 
     function inlineFormat(text) {
@@ -52,10 +98,44 @@
       const headerMatch = line.match(/^(#{1,6})\s+(.*)/);
       if (headerMatch) {
         closeList();
+        closeTable();
         const level = headerMatch[1].length;
         const content = inlineFormat(headerMatch[2].trim());
         html += `<h${level}>${content}</h${level}>`;
         continue;
+      }
+
+      // 表格
+      if (isTableRow(line)) {
+        closeList();
+
+        // 如果不在表格中，开始新表格
+        if (!inTable) {
+          html += '<table>';
+          inTable = true;
+          tableHeaderParsed = false;
+        }
+
+        // 如果是分隔符行（|---|---|），跳过并标记表头已解析
+        if (isTableSeparator(line)) {
+          tableHeaderParsed = true;
+          continue;
+        }
+
+        // 解析表格行
+        html += parseTableRow(line, !tableHeaderParsed);
+
+        // 如果这是第一行内容（表头），标记表头已解析
+        if (!tableHeaderParsed) {
+          tableHeaderParsed = true;
+        }
+
+        continue;
+      } else {
+        // 如果不是表格行且当前在表格中，关闭表格
+        if (inTable) {
+          closeTable();
+        }
       }
 
       // 列表项
@@ -99,6 +179,7 @@
     }
 
     closeList(); // 确保文件末尾的列表被关闭
+    closeTable(); // 确保文件末尾的表格被关闭
     return html;
   }
 
