@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "小红书AI创作助手",
+  "name": "AI创作助手",
   "version": "1.5",
   "description": "自动采集小红书爆款笔记并进行AI分析",
   "icons": {
@@ -9,7 +9,7 @@
     "128": "icon.png"
   },
   "action": {
-    "default_title": "小红书AI创作助手",
+    "default_title": "AI创作助手",
     "default_icon": "icon.png"
   },
   "side_panel": {
@@ -32,6 +32,9 @@
   ],
   "background": {
     "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:;"
   },
   "content_scripts": [
     {

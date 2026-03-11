@@ -5,6 +5,24 @@
   function marked(src) {
     if (!src) return '';
 
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeUrl(url) {
+      const trimmed = String(url || '').trim();
+      if (!trimmed) return '';
+      if (/^(https?:\/\/|mailto:)/i.test(trimmed)) {
+        return trimmed;
+      }
+      return '';
+    }
+
     // 预处理：确保换行符统一
     src = src.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
@@ -68,13 +86,26 @@
 
     function inlineFormat(text) {
       if (!text) return '';
-      return text
-        .replace(/!\[(.*?)\]\((.*?)\)/g, '<img alt="$1" src="$2">') // 图片
-        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>') // 链接
+      const escapedText = escapeHtml(text);
+      return escapedText
+        .replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+          const safeUrl = sanitizeUrl(url);
+          if (!safeUrl) return alt;
+          return `<img alt="${alt}" src="${safeUrl}">`;
+        }) // 图片
+        .replace(/\[(.*?)\]\((.*?)\)/g, (match, label, url) => {
+          const safeUrl = sanitizeUrl(url);
+          if (!safeUrl) return label;
+          return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        }) // 链接
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/(\s|^)(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank">$2</a>'); // 自动链接
+        .replace(/(\s|^)(https?:\/\/[^\s<]+)/g, (match, prefix, url) => {
+          const safeUrl = sanitizeUrl(url);
+          if (!safeUrl) return `${prefix}${url}`;
+          return `${prefix}<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeUrl}</a>`;
+        }); // 自动链接
     }
 
     for (let i = 0; i < lines.length; i++) {

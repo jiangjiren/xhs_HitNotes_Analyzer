@@ -583,7 +583,7 @@ ${content}
 }
 
 // 使用Gemini API分析内容（流式输出）
-async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-2.5-flash', hasFile = false, customInstructionPrompt = '') {
+async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-3-flash-preview', hasFile = false, customInstructionPrompt = '') {
     shouldStopStreaming = false;
     const apiKeyResult = await chrome.storage.local.get(['geminiApiKey']);
     if (apiKeyResult.geminiApiKey && apiKeyResult.geminiApiKey.trim() !== '') {
@@ -891,7 +891,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             if (tabs.length > 0) {
                 console.log('background.js 收到的模型参数:', request.model);
-                if (request.model === 'gemini-2.5-flash' || request.model === 'gemini-2.5-pro') {
+      if (request.model === 'gemini-3-flash-preview' || request.model === 'gemini-3.1-pro-preview') {
                     console.log('调用Gemini API，模型:', request.model);
                     analyzeWithGemini(
                         request.content,

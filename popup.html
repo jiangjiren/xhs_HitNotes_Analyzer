@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>小红书AI创作助手</title>
-  <script src="marked.js"></script>
-  <script src="markdown.js"></script>
-  <script src="xlsx.full.min.js"></script>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <title>AI创作助手</title>
+  <script src="marked.js" defer></script>
+  <script src="markdown.js" defer></script>
+  <script src="xlsx.full.min.js" defer></script>
+  <link rel="stylesheet" href="material-icons.css">
   <style>
-    /* 模型选择样式 */
+    /* 妯″瀷閫夋嫨鏍峰紡 */
     .model-selection {
       display: flex;
       align-items: center;
@@ -43,7 +43,7 @@
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     }
     
-    /* 全局样式 */
+    /* 鍏ㄥ眬鏍峰紡 */
     body {
       width: 100%;
       height: 100vh;
@@ -53,11 +53,11 @@
       box-sizing: border-box;
       overflow: hidden;
       display: flex;
-      flex-direction: row; /* 修改为row，因为main-content和sidebar是水平排列 */
+      flex-direction: row; /* 淇敼涓簉ow锛屽洜涓簃ain-content鍜宻idebar鏄按骞虫帓鍒?*/
       background-color: #f5f5f7;
     }
     
-    /* 主内容区域 */
+    /* 涓诲唴瀹瑰尯鍩?*/
     .main-content {
       flex: 1;
       height: 100vh;
@@ -65,14 +65,14 @@
       flex-direction: column;
       overflow: hidden;
       padding: 15px 15px 2px 15px;
-      /* 为了避免被右侧固定导航栏遮挡，给主内容区域设置明确宽度 */
+      /* 涓轰簡閬垮厤琚彸渚у浐瀹氬鑸爮閬尅锛岀粰涓诲唴瀹瑰尯鍩熻缃槑纭搴?*/
       width: calc(100% - 50px);
-      /* 给右侧预留与侧边栏相同的间距，确保不会被固定导航栏遮挡 */
+      /* 缁欏彸渚ч鐣欎笌渚ц竟鏍忕浉鍚岀殑闂磋窛锛岀‘淇濅笉浼氳鍥哄畾瀵艰埅鏍忛伄鎸?*/
       margin-right: 50px;
-      max-width: calc(100% - 50px); /* 确保主内容区域不会超过除导航栏外的宽度 */
+      max-width: calc(100% - 50px); /* 纭繚涓诲唴瀹瑰尯鍩熶笉浼氳秴杩囬櫎瀵艰埅鏍忓鐨勫搴?*/
     }
     
-    /* 右侧导航栏 */
+    /* 鍙充晶瀵艰埅鏍?*/
     .sidebar, .right-sidebar {
       width: 50px;
       height: 100vh;
@@ -81,12 +81,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      flex-shrink: 0; /* 防止侧边栏被挤压 */
+      flex-shrink: 0; /* 闃叉渚ц竟鏍忚鎸ゅ帇 */
       position: fixed;
       right: 0;
       top: 0;
       z-index: 1001;
-      justify-content: space-between; /* 核心：将顶部和底部分开 */
+      justify-content: space-between; /* 鏍稿績锛氬皢椤堕儴鍜屽簳閮ㄥ垎寮€ */
       padding: 10px 0;
     }
 
@@ -94,7 +94,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 5px; /* 添加间距 */
+      gap: 5px; /* 娣诲姞闂磋窛 */
     }
 
     .sidebar-bottom {
@@ -136,7 +136,7 @@
     }
     
     .sidebar-icon.active svg {
-      /* 让SVG主色变为蓝色 */
+      /* 璁㏒VG涓昏壊鍙樹负钃濊壊 */
       filter: drop-shadow(0 0 0 #1976d2) brightness(0) saturate(100%) invert(33%) sepia(77%) saturate(7493%) hue-rotate(191deg) brightness(93%) contrast(101%);
     }
     
@@ -168,7 +168,7 @@
       min-height: 20px;
     }
     
-    /* Tab页样式 */
+    /* Tab椤垫牱寮?*/
     .tab-container {
       flex: 1;
       display: flex;
@@ -242,7 +242,7 @@
       background-color: #f5f5f5;
     }
     
-    /* 采集控制区域样式 - 苹果风格 */
+    /* 閲囬泦鎺у埗鍖哄煙鏍峰紡 - 鑻规灉椋庢牸 */
     .collection-section {
       background-color: #ffffff;
       border-radius: 12px;
@@ -296,7 +296,7 @@
       padding: 0 15px;
     }
     
-    /* 输入控制组 - 苹果风格 */
+    /* 杈撳叆鎺у埗缁?- 鑻规灉椋庢牸 */
     .input-group {
       display: flex;
       flex-wrap: wrap;
@@ -339,7 +339,7 @@
       box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
     }
     
-    /* 按钮组 - 苹果风格 */
+    /* 鎸夐挳缁?- 鑻规灉椋庢牸 */
     .button-group {
       display: flex;
       gap: 10px;
@@ -390,7 +390,7 @@
       background-color: #dc3545;
     }
     
-    /* 采集按钮的采集中状态样式 */
+    /* 閲囬泦鎸夐挳鐨勯噰闆嗕腑鐘舵€佹牱寮?*/
     .apple-btn-collecting {
       background-color: #ff3b30;
       color: white;
@@ -413,7 +413,7 @@
       }
     }
     
-    /* 状态显示 - 苹果风格 */
+    /* 鐘舵€佹樉绀?- 鑻规灉椋庢牸 */
     .status-display {
       margin-top: 12px;
       padding: 10px 12px;
@@ -432,7 +432,7 @@
       color: #007aff;
     }
 
-    /* 复选框组 - 苹果风格 */
+    /* 澶嶉€夋缁?- 鑻规灉椋庢牸 */
     .checkbox-group {
       margin: 12px 0;
       padding: 10px 12px;
@@ -489,7 +489,7 @@
       font-weight: 400;
     }
 
-    /* 聊天界面样式 */
+    /* 鑱婂ぉ鐣岄潰鏍峰紡 */
     .chat-container {
       flex: 1;
       display: flex;
@@ -497,7 +497,7 @@
       min-height: 0;
       transition: all 0.3s ease;
       margin-top: 0;
-      width: 100%; /* 确保占据全部宽度 */
+      width: 100%; /* 纭繚鍗犳嵁鍏ㄩ儴瀹藉害 */
     }
     
     .chat-title-container {
@@ -546,42 +546,42 @@
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      overflow-x: hidden; /* 隐藏水平滚动条 */
+      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
       border: 1px solid #ddd;
       border-radius: 4px;
       padding: 10px;
       margin-bottom: 10px;
       background-color: #fff;
       min-height: 0;
-      width: calc(100% - 22px); /* 考虑padding和border的宽度 */
+      width: calc(100% - 22px); /* 鑰冭檻padding鍜宐order鐨勫搴?*/
     }
     
     .message {
       margin-bottom: 10px;
       padding: 8px;
       border-radius: 4px;
-      /* 让消息气泡宽度根据内容自动伸缩，且不会超出容器 */
+      /* 璁╂秷鎭皵娉″搴︽牴鎹唴瀹硅嚜鍔ㄤ几缂╋紝涓斾笉浼氳秴鍑哄鍣?*/
       box-sizing: border-box;
       width: auto;
-      max-width: calc(100% - 16px); /* 预留内边距宽度，避免超出 */
-      word-wrap: break-word; /* 允许长单词换行 */
-      word-break: break-word; /* 强制长单词换行 */
-      overflow-wrap: break-word; /* 现代浏览器的换行属性 */
-      white-space: pre-wrap; /* 保留换行符，同时允许自动换行 */
-      overflow-x: hidden; /* 隐藏水平滚动条 */
+      max-width: calc(100% - 16px); /* 棰勭暀鍐呰竟璺濆搴︼紝閬垮厤瓒呭嚭 */
+      word-wrap: break-word; /* 鍏佽闀垮崟璇嶆崲琛?*/
+      word-break: break-word; /* 寮哄埗闀垮崟璇嶆崲琛?*/
+      overflow-wrap: break-word; /* 鐜颁唬娴忚鍣ㄧ殑鎹㈣灞炴€?*/
+      white-space: pre-wrap; /* 淇濈暀鎹㈣绗︼紝鍚屾椂鍏佽鑷姩鎹㈣ */
+      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
     }
     
     .user-message {
       background-color: #e3f2fd;
       margin-left: 20px;
-      max-width: calc(100% - 20px); /* 确保不超过容器宽度 */
+      max-width: calc(100% - 20px); /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
     }
     
     .ai-message {
       background-color: #f5f5f5;
       margin-left: 0;
       position: relative;
-      max-width: 100%; /* 确保不超过容器宽度 */
+      max-width: 100%; /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
     }
     
     .copy-button {
@@ -611,7 +611,7 @@
       font-size: 16px;
     }
     
-    /* 思考动画样式 */
+    /* 鎬濊€冨姩鐢绘牱寮?*/
     .thinking-message {
       background-color: #f0f8ff !important;
       border-left: 3px solid #8b5cf6;
@@ -797,7 +797,7 @@
     }
     
     .chat-input button.stop-mode {
-      background-color: #f44336; /* 红色背景 */
+      background-color: #f44336; /* 绾㈣壊鑳屾櫙 */
       transition: background-color 0.3s ease;
     }
     
@@ -854,7 +854,7 @@
       display: block;
     }
     
-    /* 模态窗口样式 */
+    /* 妯℃€佺獥鍙ｆ牱寮?*/
     .modal {
       display: none;
       position: fixed;
@@ -941,7 +941,7 @@
       background-color: #45a049;
     }
     
-    /* 折叠区域样式 */
+    /* 鎶樺彔鍖哄煙鏍峰紡 */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -975,7 +975,7 @@
       max-height: 0;
     }
     
-    /* 设置图标样式 */
+    /* 璁剧疆鍥炬爣鏍峰紡 */
     .settings-icon {
       position: relative;
       width: 36px;
@@ -1002,7 +1002,7 @@
       background-color: rgba(0, 0, 0, 0.05);
     }
     
-    /* 获取页面内容按钮样式 */
+    /* 鑾峰彇椤甸潰鍐呭鎸夐挳鏍峰紡 */
     .page-content-btn {
       position: relative;
       width: 36px;
@@ -1039,14 +1039,14 @@
       height: 24px !important;
     }
     
-    /* 发送按钮样式 */
+    /* 鍙戦€佹寜閽牱寮?*/
     .send-icon, .stop-icon {
       font-size: 20px !important;
     }
     
-    /* 发送按钮停止模式样式 */
+    /* 鍙戦€佹寜閽仠姝㈡ā寮忔牱寮?*/
     #sendMessage.stop-mode {
-      background-color: #f44336; /* 红色背景 */
+      background-color: #f44336; /* 绾㈣壊鑳屾櫙 */
       transition: background-color 0.3s ease;
     }
     
@@ -1054,7 +1054,7 @@
       color: white;
     }
     
-    /* 加载动画 */
+    /* 鍔犺浇鍔ㄧ敾 */
     .loading-dots {
       display: inline-flex;
       align-items: center;
@@ -1084,7 +1084,7 @@
       40% { transform: scale(1); }
     }
     
-    /* Toast浮窗提示样式 */
+    /* Toast娴獥鎻愮ず鏍峰紡 */
     .toast-notification {
       position: fixed;
       bottom: 30px;
@@ -1106,7 +1106,7 @@
       transform: translateX(-50%) translateY(0);
     }
     
-    /* 临时通知样式 */
+    /* 涓存椂閫氱煡鏍峰紡 */
     .temp-notification {
       position: fixed;
       top: -50px;
@@ -1125,7 +1125,7 @@
       top: 20px;
     }
     
-    /* API错误警告样式 */
+    /* API閿欒璀﹀憡鏍峰紡 */
     .api-error-warning {
       display: flex;
       flex-direction: column;
@@ -1151,7 +1151,7 @@
       margin-top: 10px;
     }
     
-    /* API密钥缺失警告样式 */
+    /* API瀵嗛挜缂哄け璀﹀憡鏍峰紡 */
     .api-key-missing {
       display: flex;
       flex-direction: column;
@@ -1177,21 +1177,21 @@
       margin-top: 10px;
     }
     
-    /* 页面操作按钮样式 */
+    /* 椤甸潰鎿嶄綔鎸夐挳鏍峰紡 */
     .page-actions {
       display: flex;
       gap: 10px;
       margin-top: 5px;
     }
     
-    /* 页面内容预览样式 */
+    /* 椤甸潰鍐呭棰勮鏍峰紡 */
     .page-content-preview {
       background-color: #f5f9ff;
       border: 1px solid #d0e1fd;
       border-radius: 8px;
       margin-bottom: 15px;
       padding: 10px;
-      width: calc(100% - 22px); /* 考虑padding和border的宽度 */
+      width: calc(100% - 22px); /* 鑰冭檻padding鍜宐order鐨勫搴?*/
     }
     
     .page-preview-header {
@@ -1217,13 +1217,13 @@
     .page-title {
       font-weight: bold;
       color: #333;
-      word-break: break-word; /* 允许长标题换行 */
+      word-break: break-word; /* 鍏佽闀挎爣棰樻崲琛?*/
     }
     
     .page-title-link {
       font-weight: bold;
       color: #1976d2;
-      word-break: break-word; /* 允许长标题换行 */
+      word-break: break-word; /* 鍏佽闀挎爣棰樻崲琛?*/
       cursor: pointer;
       text-decoration: none;
     }
@@ -1235,7 +1235,7 @@
     .page-source, .page-author {
       color: #666;
       font-size: 12px;
-      word-break: break-word; /* 允许长URL换行 */
+      word-break: break-word; /* 鍏佽闀縐RL鎹㈣ */
     }
     
     .page-link {
@@ -1268,7 +1268,7 @@
       background-color: #45a049;
     }
     
-    /* 添加写成笔记和生成爆款标题按钮样式 */
+    /* 娣诲姞鍐欐垚绗旇鍜岀敓鎴愮垎娆炬爣棰樻寜閽牱寮?*/
     .note-btn {
       background-color: #FF5722;
       color: white;
@@ -1301,14 +1301,14 @@
       background-color: #1976D2;
     }
     
-    /* 系统消息样式 */
+    /* 绯荤粺娑堟伅鏍峰紡 */
     .system-message {
       background-color: #f5f9ff;
       border-left: 3px solid #1976d2;
-      width: calc(100% - 22px); /* 确保占据全部宽度 */
+      width: calc(100% - 22px); /* 纭繚鍗犳嵁鍏ㄩ儴瀹藉害 */
     }
     
-    /* 总结区域样式 */
+    /* 鎬荤粨鍖哄煙鏍峰紡 */
     .summary-section {
       margin-top: 10px;
       padding: 10px;
@@ -1339,7 +1339,7 @@
       margin: 0.5em 0;
     }
     
-    /* 联系信息样式 */
+    /* 鑱旂郴淇℃伅鏍峰紡 */
     .contact-info {
       font-size: 11px;
       color: #888;
@@ -1352,22 +1352,22 @@
       min-height: 0;
     }
 
-    /* Markdown内容样式 */
+    /* Markdown鍐呭鏍峰紡 */
     .markdown-body {
       line-height: 1.6;
       color: #333;
-      word-wrap: break-word; /* 允许长单词换行 */
-      word-break: break-word; /* 强制长单词换行 */
-      overflow-wrap: break-word; /* 现代浏览器的换行属性 */
-      overflow-x: hidden; /* 隐藏水平滚动条 */
+      word-wrap: break-word; /* 鍏佽闀垮崟璇嶆崲琛?*/
+      word-break: break-word; /* 寮哄埗闀垮崟璇嶆崲琛?*/
+      overflow-wrap: break-word; /* 鐜颁唬娴忚鍣ㄧ殑鎹㈣灞炴€?*/
+      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
     }
 
-    /* 隐藏空的段落标签，避免多余空白 */
+    /* 闅愯棌绌虹殑娈佃惤鏍囩锛岄伩鍏嶅浣欑┖鐧?*/
     .markdown-body p:empty {
       display: none;
     }
 
-    /* 合理的段落间距 */
+    /* 鍚堢悊鐨勬钀介棿璺?*/
     .markdown-body p {
       margin: 0.5em 0;
     }
@@ -1380,7 +1380,7 @@
       margin-bottom: 0;
     }
 
-    /* 标题和段落之间的间距 */
+    /* 鏍囬鍜屾钀戒箣闂寸殑闂磋窛 */
     .markdown-body h1, 
     .markdown-body h2, 
     .markdown-body h3, 
@@ -1401,7 +1401,7 @@
       margin-top: 0;
     }
 
-    /* 标题样式 */
+    /* 鏍囬鏍峰紡 */
     .markdown-body h1 { font-size: 1.5em; color: #2c3e50; }
     .markdown-body h2 { font-size: 1.4em; color: #34495e; }
     .markdown-body h3 { font-size: 1.3em; color: #555; }
@@ -1409,25 +1409,25 @@
     .markdown-body h5 { font-size: 1.1em; color: #777; }
     .markdown-body h6 { font-size: 1em; color: #888; }
 
-    /* 列表间距 - 统一定义 */
+    /* 鍒楄〃闂磋窛 - 缁熶竴瀹氫箟 */
     .markdown-body ul,
     .markdown-body ol {
       margin: 0.8em 0;
-      padding-left: 1.8em; /* 增加内边距以容纳两位数 */
+      padding-left: 1.8em; /* 澧炲姞鍐呰竟璺濅互瀹圭撼涓や綅鏁?*/
     }
 
     .markdown-body li {
       margin: 0.3em 0;
       line-height: 1.5;
-      min-height: 1.2em; /* 确保最小高度，避免空列表项占用过多空间 */
+      min-height: 1.2em; /* 纭繚鏈€灏忛珮搴︼紝閬垮厤绌哄垪琛ㄩ」鍗犵敤杩囧绌洪棿 */
     }
 
-    /* 空的或只有符号的列表项应该被隐藏 */
+    /* 绌虹殑鎴栧彧鏈夌鍙风殑鍒楄〃椤瑰簲璇ヨ闅愯棌 */
     .markdown-body li:empty {
       display: none;
     }
 
-    /* 确保列表紧跟标题时有合适的间距 */
+    /* 纭繚鍒楄〃绱ц窡鏍囬鏃舵湁鍚堥€傜殑闂磋窛 */
     .markdown-body h1 + ul, .markdown-body h1 + ol,
     .markdown-body h2 + ul, .markdown-body h2 + ol,
     .markdown-body h3 + ul, .markdown-body h3 + ol {
@@ -1453,12 +1453,12 @@
       border: 1px solid #e1e8ed;
       border-radius: 6px;
       padding: 1em;
-      overflow-x: auto; /* 只在必要时显示水平滚动条 */
-      overflow-y: hidden; /* 隐藏垂直滚动条 */
-      white-space: pre-wrap; /* 保留空格和换行，同时允许自动换行 */
-      word-break: break-all; /* 强制长单词换行 */
+      overflow-x: auto; /* 鍙湪蹇呰鏃舵樉绀烘按骞虫粴鍔ㄦ潯 */
+      overflow-y: hidden; /* 闅愯棌鍨傜洿婊氬姩鏉?*/
+      white-space: pre-wrap; /* 淇濈暀绌烘牸鍜屾崲琛岋紝鍚屾椂鍏佽鑷姩鎹㈣ */
+      word-break: break-all; /* 寮哄埗闀垮崟璇嶆崲琛?*/
       margin: 1em 0;
-      max-width: 100%; /* 确保不超过容器宽度 */
+      max-width: 100%; /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
     }
 
     .markdown-body pre code {
@@ -1512,7 +1512,7 @@
       text-decoration: underline;
     }
     
-    /* 页面标题栏样式 */
+    /* 椤甸潰鏍囬鏍忔牱寮?*/
     .header-bar {
       display: flex;
       justify-content: space-between;
@@ -1522,7 +1522,7 @@
       border-bottom: 1px solid #e0e0e0;
     }
     
-    /* Toast提示样式 */
+    /* Toast鎻愮ず鏍峰紡 */
     .toast {
       position: fixed;
       bottom: 30px;
@@ -1550,7 +1550,7 @@
       color: #333;
     }
     
-    /* 页面标题和设置按钮样式 */
+    /* 椤甸潰鏍囬鍜岃缃寜閽牱寮?*/
     .page-header {
       display: flex;
       justify-content: space-between;
@@ -1566,7 +1566,7 @@
       color: #333;
     }
     
-    /* 图片生成器样式 */
+    /* 鍥剧墖鐢熸垚鍣ㄦ牱寮?*/
     .image-generator-container {
       display: flex;
       flex-direction: column;
@@ -1587,8 +1587,8 @@
     .image-generator-content {
       flex: 1;
       overflow-y: auto;
-      padding: 15px 5px; /* 减小左右内边距 */
-      width: 100%; /* 使用全宽 */
+      padding: 15px 5px; /* 鍑忓皬宸﹀彸鍐呰竟璺?*/
+      width: 100%; /* 浣跨敤鍏ㄥ */
       box-sizing: border-box;
     }
     
@@ -1603,14 +1603,14 @@
     }
     
     #promptInput {
-      width: 100%; /* 进一步减小宽度确保右边界完全可见 */
+      width: 100%; /* 杩涗竴姝ュ噺灏忓搴︾‘淇濆彸杈圭晫瀹屽叏鍙 */
       padding: 10px;
       border: 1px solid #ddd;
       border-radius: 4px;
       resize: vertical;
-      box-sizing: border-box; /* 确保宽度包含内边距和边框 */
-      display: block; /* 确保块级显示 */
-      margin: 0 auto; /* 居中显示 */
+      box-sizing: border-box; /* 纭繚瀹藉害鍖呭惈鍐呰竟璺濆拰杈规 */
+      display: block; /* 纭繚鍧楃骇鏄剧ず */
+      margin: 0 auto; /* 灞呬腑鏄剧ず */
     }
     
     .ratio-buttons {
@@ -1761,7 +1761,7 @@
       background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>');
     }
     
-    /* 灯箱效果 */
+    /* 鐏鏁堟灉 */
     .lightbox {
       position: fixed;
       top: 0;
@@ -1792,7 +1792,7 @@
       cursor: pointer;
     }
     
-    /* 历史记录项样式 */
+    /* 鍘嗗彶璁板綍椤规牱寮?*/
     .history-item {
       display: flex;
       justify-content: space-between;
@@ -1825,37 +1825,58 @@
       color: #888;
     }
     
-    /* 删除按钮样式 - 默认隐藏，悬停显示 */
+    /* 鍒犻櫎鎸夐挳鏍峰紡 - 榛樿闅愯棌锛屾偓鍋滄樉绀?*/
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .history-action-btn,
     .delete-btn {
       background-color: transparent;
       border: none;
-      color: #f44336;
       cursor: pointer;
       padding: 8px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s, background-color 0.2s;
+      transition: background-color 0.2s, color 0.2s;
       min-width: 36px;
       height: 36px;
     }
-    
+
+    .history-action-btn {
+      color: #5f6368;
+    }
+
+    .delete-btn {
+      color: #f44336;
+    }
+
+    .history-action-btn .material-icons,
     .delete-btn .material-icons {
       font-size: 18px;
     }
-    
-    .history-item:hover .delete-btn {
+
+    .history-item:hover .history-actions {
       opacity: 1;
     }
-    
+
+    .history-action-btn:hover {
+      background-color: rgba(95, 99, 104, 0.1);
+      color: #202124;
+    }
+
     .delete-btn:hover {
       background-color: rgba(244, 67, 54, 0.1);
       color: #d32f2f;
     }
     
-    /* 无历史记录提示 */
+    /* 鏃犲巻鍙茶褰曟彁绀?*/
     .no-history {
       text-align: center;
       color: #888;
@@ -1874,7 +1895,7 @@
       cursor: pointer;
     }
     
-    /* Monica风格的AI助手样式 */
+    /* Monica椋庢牸鐨凙I鍔╂墜鏍峰紡 */
     .monica-chat-container {
       height: 100%;
       display: flex;
@@ -1896,6 +1917,9 @@
       border-top: 1px solid #e5e7eb;
       background: #ffffff;
       padding: 16px;
+      position: relative;
+      z-index: 10;
+      overflow: visible;
     }
     
     .monica-toolbar {
@@ -1903,14 +1927,16 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
+      position: relative;
+      z-index: 11;
     }
     
     .monica-toolbar-left {
       display: flex;
       align-items: center;
       gap: 12px;
-      flex-shrink: 1; /* 允许左侧内容压缩 */
-      min-width: 0; /* 允许内容收缩 */
+      flex-shrink: 1; /* 鍏佽宸︿晶鍐呭鍘嬬缉 */
+      min-width: 0; /* 鍏佽鍐呭鏀剁缉 */
     }
     
     .monica-model-select {
@@ -1923,8 +1949,8 @@
       padding: 4px 8px;
       border-radius: 6px;
       transition: background-color 0.2s;
-      min-width: 100px; /* 设置最小宽度 */
-      max-width: 150px; /* 设置最大宽度，防止过长 */
+      min-width: 100px; /* 璁剧疆鏈€灏忓搴?*/
+      max-width: 150px; /* 璁剧疆鏈€澶у搴︼紝闃叉杩囬暱 */
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1938,11 +1964,124 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      flex-shrink: 0; /* 防止按钮被压缩 */
-      min-width: fit-content; /* 确保有足够空间显示所有按钮 */
+      flex-shrink: 0; /* 闃叉鎸夐挳琚帇缂?*/
+      min-width: fit-content; /* 纭繚鏈夎冻澶熺┖闂存樉绀烘墍鏈夋寜閽?*/
     }
     
-    .monica-tool-btn {
+    
+    .collect-tool-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .collect-tool-btn.is-active {
+      color: #ef4444;
+      background-color: #fee2e2;
+    }
+
+    .collect-tool-btn.active {
+      color: #2563eb;
+      background-color: #e0ecff;
+    }
+
+    .collect-tool-btn .collect-tool-icon {
+      width: 18px;
+      height: 18px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .collect-tool-panel {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      top: auto;
+      right: 0;
+      width: 260px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
+      z-index: 1200;
+      display: none;
+    }
+
+    .collect-tool-panel::after {
+      content: '';
+      position: absolute;
+      right: 14px;
+      bottom: -6px;
+      width: 10px;
+      height: 10px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+      transform: rotate(45deg);
+    }
+
+    .collect-tool-panel.open {
+      display: block;
+    }
+
+    .collect-tool-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+
+    .collect-tool-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .collect-tool-field label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .collect-tool-field input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fafafa;
+    }
+
+    .collect-tool-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #374151;
+      margin-bottom: 10px;
+      user-select: none;
+    }
+
+    .collect-submit-btn {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 13px;
+      box-shadow: none;
+      margin-top: 2px;
+    }
+
+    .collect-tool-status {
+      margin-top: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+.monica-tool-btn {
       background: none;
       border: none;
       padding: 6px;
@@ -2063,7 +2202,7 @@
       font-size: 16px;
     }
 
-    /* 响应式设计：在极小宽度时优化布局 */
+    /* 鍝嶅簲寮忚璁★細鍦ㄦ瀬灏忓搴︽椂浼樺寲甯冨眬 */
     @media (max-width: 320px) {
       .monica-toolbar-left {
         gap: 8px;
@@ -2089,7 +2228,7 @@
       }
     }
     
-    /* 更新消息样式以适配Monica风格 */
+    /* 鏇存柊娑堟伅鏍峰紡浠ラ€傞厤Monica椋庢牸 */
     .monica-chat-messages .message {
       margin-bottom: 16px;
       padding: 0;
@@ -2115,7 +2254,7 @@
       border: 1px solid #f3f4f6;
     }
     
-    /* 页面内容卡片样式 */
+    /* 椤甸潰鍐呭鍗＄墖鏍峰紡 */
     .page-content-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -2198,12 +2337,12 @@
       display: none;
     }
 
-    /* 自定义指令弹窗样式 */
+    /* 鑷畾涔夋寚浠ゅ脊绐楁牱寮?*/
     #instructions-modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: calc(100% - 50px); /* 减去导航栏宽度 */
+      width: calc(100% - 50px); /* 鍑忓幓瀵艰埅鏍忓搴?*/
       height: 100%;
       background-color: rgba(0, 0, 0, 0.4);
       z-index: 1000;
@@ -2221,7 +2360,7 @@
     #instructions-modal-overlay #instructions-container {
       background-color: #fff;
       width: 100%;
-      /* 修改：最大宽度继承父级，确保与主区域一致 */
+      /* 淇敼锛氭渶澶у搴︾户鎵跨埗绾э紝纭繚涓庝富鍖哄煙涓€鑷?*/
       max-width: 100%;
       border-top-left-radius: 16px;
       border-top-right-radius: 16px;
@@ -2249,7 +2388,7 @@
       margin: 0;
     }
 
-    /* 自定义指令说明文字 */
+    /* 鑷畾涔夋寚浠よ鏄庢枃瀛?*/
     .instructions-description {
       font-size: 12px;
       color: #666;
@@ -2296,19 +2435,19 @@
     }
     .instruction-item .delete-btn {
       cursor: pointer;
-      color: #f44336; /* 使用与历史记录删除按钮相同的红色 */
+      color: #f44336; /* 浣跨敤涓庡巻鍙茶褰曞垹闄ゆ寜閽浉鍚岀殑绾㈣壊 */
       font-weight: bold;
-      padding: 4px; /* 调整为圆形按钮大小 */
+      padding: 4px; /* 璋冩暣涓哄渾褰㈡寜閽ぇ灏?*/
       background: none;
       border: none;
-      font-size: 16px; /* 统一图标大小 */
-      opacity: 1; /* 覆盖通用.delete-btn的opacity: 0 */
-      border-radius: 50%; /* 添加圆角以匹配通用样式 */
-      display: flex; /* 使用flex布局以适应Material Icons */
+      font-size: 16px; /* 缁熶竴鍥炬爣澶у皬 */
+      opacity: 1; /* 瑕嗙洊閫氱敤.delete-btn鐨刼pacity: 0 */
+      border-radius: 50%; /* 娣诲姞鍦嗚浠ュ尮閰嶉€氱敤鏍峰紡 */
+      display: flex; /* 浣跨敤flex甯冨眬浠ラ€傚簲Material Icons */
       align-items: center;
       justify-content: center;
-      min-width: 28px; /* 设置最小宽度 */
-      height: 28px; /* 设置高度 */
+      min-width: 28px; /* 璁剧疆鏈€灏忓搴?*/
+      height: 28px; /* 璁剧疆楂樺害 */
       transition: background-color 0.2s;
     }
     
@@ -2318,7 +2457,7 @@
     }
     
     .instruction-item .delete-btn .material-icons {
-      font-size: 16px; /* 垃圾桶图标大小 */
+      font-size: 16px; /* 鍨冨溇妗跺浘鏍囧ぇ灏?*/
     }
     .instruction-buttons {
       display: flex;
@@ -2331,7 +2470,7 @@
       visibility: visible;
       opacity: 1;
     }
-    /* 确保"无指令"选项不显示操作按钮 */
+    /* 纭繚"鏃犳寚浠?閫夐」涓嶆樉绀烘搷浣滄寜閽?*/
     .instruction-item:not([data-id]) .instruction-buttons {
       display: none;
     }
@@ -2343,29 +2482,29 @@
       padding: 0 5px;
     }
 
-    /* 自定义指令按钮激活状态 */
+    /* 鑷畾涔夋寚浠ゆ寜閽縺娲荤姸鎬?*/
     #show-hide-instructions-btn {
-      position: relative; /* 为状态点定位 */
+      position: relative; /* 涓虹姸鎬佺偣瀹氫綅 */
     }
 
     #show-hide-instructions-btn.active .material-icons {
-      color: #007aff; /* 主题蓝 */
+      color: #007aff; /* 涓婚钃?*/
     }
 
     #show-hide-instructions-btn.active::after {
       content: '';
       position: absolute;
-      top: 2px; /* 微调位置 */
-      right: 2px; /* 微调位置 */
+      top: 2px; /* 寰皟浣嶇疆 */
+      right: 2px; /* 寰皟浣嶇疆 */
       width: 8px;
       height: 8px;
-      background-color: #34c759; /* 绿色 */
+      background-color: #34c759; /* 缁胯壊 */
       border-radius: 50%;
       border: 1px solid white;
-      box-shadow: 0 0 3px rgba(0,0,0,0.3); /* 加一点阴影使其更明显 */
+      box-shadow: 0 0 3px rgba(0,0,0,0.3); /* 鍔犱竴鐐归槾褰变娇鍏舵洿鏄庢樉 */
     }
 
-    /* 添加指令按钮样式 */
+    /* 娣诲姞鎸囦护鎸夐挳鏍峰紡 */
     #add-new-instruction-btn {
       background-color: #007aff;
       color: #fff;
@@ -2375,7 +2514,7 @@
       line-height: 1;
     }
 
-    /* 设置页面样式 */
+    /* 璁剧疆椤甸潰鏍峰紡 */
     #settings-container {
       width: 100%;
       background-color: #ffffff;
@@ -2392,7 +2531,7 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: calc(100% - 50px); /* 不覆盖导航栏 */
+      width: calc(100% - 50px); /* 涓嶈鐩栧鑸爮 */
       height: 100%;
       background-color: rgba(0, 0, 0, 0.4);
       z-index: 1000;
@@ -2440,7 +2579,7 @@
     }
 
     /* =============================== */
-    /* 聊天历史记录弹窗样式（保持与设置弹窗/自定义指令弹窗一致） */
+    /* 鑱婂ぉ鍘嗗彶璁板綍寮圭獥鏍峰紡锛堜繚鎸佷笌璁剧疆寮圭獥/鑷畾涔夋寚浠ゅ脊绐椾竴鑷达級 */
     /* =============================== */
     #historyModal {
       position: fixed;
@@ -2511,77 +2650,63 @@
   </style>
 </head>
 <body>
-  <!-- 主内容区域 -->
+  <!-- 涓诲唴瀹瑰尯鍩?-->
   <div class="main-content">
     <div class="tab-container">
-      <!-- 采集笔记Tab页 -->
-      <div class="tab-content active" id="collectionTab">
-        <div class="collection-section" id="collectionSection">
-          <div class="section-header">
-            <span class="section-title">采集笔记</span>
-          </div>
-          <div class="section-content" id="collectionContent">
-            <div class="input-group">
-              <div class="input-control">
-                <label>采集笔记数量</label>
-                <input type="number" id="maxNotes" value="10" min="1">
-              </div>
-              <div class="input-control">
-                <label>最低点赞数</label>
-                <input type="number" id="minLikes" value="500" min="0">
-              </div>
-            </div>
-
-            <!-- 复选框区域 -->
-            <div class="checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="downloadCover" class="custom-checkbox">
-                <span class="checkbox-text">同时下载封面图</span>
-              </label>
-            </div>
-
-            <div class="button-group">
-              <button id="collectBtn" class="apple-btn apple-btn-primary">
-                <span class="material-icons">play_circle</span>
-                开始采集
-              </button>
-            </div>
-            <div id="status" class="status-display" style="display: none;">
-              <span class="material-icons">info</span>
-              <span>等待开始采集...</span>
-            </div>
-          </div>
-        </div>
-        <div class="footer-tips" style="text-align:center;margin-top:auto;padding-bottom:10px;">
-          <div style="font-size:12px;color:#888;line-height:1.5;">如有建议请联系微信：jiangjiren</div>
-          <div style="font-size:12px;color:#888;line-height:1.5;">开发不易，欢迎打赏</div>
-        </div>
-      </div>
-      
-      <!-- AI助手Tab页 -->
-      <div id="aiAssistantTab" class="tab-content">
-        <!-- 简洁的AI助手聊天界面 -->
+      <!-- 閲囬泦绗旇Tab椤?-->
+      <div id="aiAssistantTab" class="tab-content active">
+        <!-- 绠€娲佺殑AI鍔╂墜鑱婂ぉ鐣岄潰 -->
         <div class="monica-chat-container">
           
-          <!-- 聊天消息区域 -->
+          <!-- 鑱婂ぉ娑堟伅鍖哄煙 -->
           <div id="chatMessages" class="monica-chat-messages">
-            <!-- 初始欢迎消息 -->
+            <!-- 鍒濆娆㈣繋娑堟伅 -->
           </div>
           
-          <!-- 底部输入区域 -->
+          <!-- 搴曢儴杈撳叆鍖哄煙 -->
           <div class="monica-input-container">
-            <!-- 自定义指令管理区域 -->
+            <!-- 鑷畾涔夋寚浠ょ鐞嗗尯鍩?-->
             
-            <!-- 顶部工具栏 -->
+            <!-- 椤堕儴宸ュ叿鏍?-->
             <div class="monica-toolbar">
               <div class="monica-toolbar-left">
                 <select id="modelSwitcher" class="monica-model-select">
                   <option value="deepseek">DeepSeek</option>
-                  <option value="gemini-2.5-flash">Gemini-2.5-Flash</option>
-                  <option value="gemini-2.5-pro">Gemini-2.5-Pro</option>
+                  <option value="gemini-3-flash-preview">Gemini-3-Flash-Preview</option>
+                  <option value="gemini-3.1-pro-preview">Gemini-3.1-Pro-Preview</option>
                 </select>
               </div>
               <div class="monica-toolbar-right">
+              <div class="collect-tool-wrapper">
+                <button id="collectToolBtn" class="monica-tool-btn collect-tool-btn" title="采集工具">
+                  <img class="collect-tool-icon" src="scratch.svg" alt="采集工具">
+                </button>
+                <div id="collectToolPanel" class="collect-tool-panel">
+                  <div class="collect-tool-title">采集工具</div>
+                  <div class="collect-tool-fields">
+                    <div class="collect-tool-field">
+                      <label for="maxNotes">采集数量</label>
+                      <input type="number" id="maxNotes" value="10" min="1">
+                    </div>
+                    <div class="collect-tool-field">
+                      <label for="minLikes">最低点赞</label>
+                      <input type="number" id="minLikes" value="500" min="0">
+                    </div>
+                  </div>
+                  <label class="collect-tool-checkbox" for="downloadCover">
+                    <input type="checkbox" id="downloadCover" class="custom-checkbox">
+                    <span>同时下载封面图</span>
+                  </label>
+                  <button id="collectBtn" class="apple-btn apple-btn-primary collect-submit-btn">
+                    <span class="material-icons">play_circle</span>
+                    开始采集
+                  </button>
+                  <div id="status" class="status-display collect-tool-status" style="display: none;">
+                    <span class="material-icons">info</span>
+                    <span>等待开始采集...</span>
+                  </div>
+                </div>
+              </div>
                 <button id="show-hide-instructions-btn" class="monica-tool-btn" title="自定义指令">
                     <span class="material-icons">auto_awesome</span>
                 </button>
@@ -2600,7 +2725,7 @@
               </div>
             </div>
             
-            <!-- 输入框区域 -->
+            <!-- 杈撳叆妗嗗尯鍩?-->
             <div class="monica-input-wrapper">
               <input type="file" id="fileInput" style="display: none;">
               <textarea id="messageInput" class="monica-input"></textarea>
@@ -2609,7 +2734,7 @@
               </button>
             </div>
             
-            <!-- 文件信息显示 -->
+            <!-- 鏂囦欢淇℃伅鏄剧ず -->
             <div id="fileInfo" class="monica-file-info" style="display: none;">
               <span id="fileName"></span>
               <button id="removeFile" class="monica-remove-file">
@@ -2620,18 +2745,18 @@
         </div>
       </div>
       
-      <!-- 图片生成Tab页 -->
+      <!-- 鍥剧墖鐢熸垚Tab椤?-->
       <div class="tab-content" id="imageGeneratorTab">
         <div class="image-generator-container">
-          <!-- 删除了标题 -->
+          <!-- 鍒犻櫎浜嗘爣棰?-->
           <div class="image-generator-content">
-            <!-- 提示词输入区域 -->
+            <!-- 鎻愮ず璇嶈緭鍏ュ尯鍩?-->
             <div class="prompt-section">
               <label for="promptInput">输入提示词生成图片</label>
               <textarea id="promptInput" placeholder="描述想要生成的图片" rows="3"></textarea>
             </div>
             
-            <!-- 图片比例选择 -->
+            <!-- 鍥剧墖姣斾緥閫夋嫨 -->
             <div class="image-ratio-section">
               <label>图片比例</label>
               <div class="ratio-buttons">
@@ -2644,7 +2769,7 @@
               </div>
             </div>
             
-            <!-- 自定义尺寸 -->
+            <!-- 鑷畾涔夊昂瀵?-->
             <div class="custom-size-section">
               <label>自定义尺寸</label>
               <div class="size-inputs">
@@ -2659,30 +2784,30 @@
               </div>
             </div>
             
-            <!-- 生成按钮 -->
+            <!-- 鐢熸垚鎸夐挳 -->
             <button id="generateButton" class="generate-btn">生成图片</button>
             
-            <!-- 错误显示 -->
+            <!-- 閿欒鏄剧ず -->
             <div id="errorDisplay" class="error-display" style="display: none;"></div>
             
-            <!-- 加载指示器 -->
+            <!-- 鍔犺浇鎸囩ず鍣?-->
             <div id="loadingIndicator" class="loading-indicator" style="display: none;">
               <div class="spinner"></div>
               <span>正在生成图片，请稍候...</span>
             </div>
             
-            <!-- 图片画廊 -->
+            <!-- 鍥剧墖鐢诲粖 -->
             <div id="imageGallery" class="image-gallery"></div>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Toast提示组件 -->
+    <!-- Toast鎻愮ず缁勪欢 -->
     <div id="toast" class="toast">设置成功</div>
   </div>
   
-  <!-- 自定义指令弹窗 -->
+  <!-- 鑷畾涔夋寚浠ゅ脊绐?-->
   <div id="instructions-modal-overlay" class="hidden">
     <div id="instructions-container">
       <div class="instructions-header">
@@ -2694,7 +2819,7 @@
       </div>
       <div class="instructions-description">AI大模型将根据自定义指令的要求进行回复</div>
       <div id="instructions-list" style="max-height: 250px; overflow-y: auto;">
-        <!-- 指令将通过 JS 动态插入这里 -->
+        <!-- 鎸囦护灏嗛€氳繃 JS 鍔ㄦ€佹彃鍏ヨ繖閲?-->
       </div>
       <div id="add-instruction-form" class="hidden">
         <input type="hidden" id="instruction-edit-id">
@@ -2708,7 +2833,7 @@
     </div>
   </div>
 
-  <!-- 设置弹窗 -->
+  <!-- 璁剧疆寮圭獥 -->
   <div id="settings-modal-overlay" class="hidden">
     <div id="settings-container">
       <div class="settings-header">
@@ -2744,15 +2869,11 @@
     </div>
   </div>
 
-  <!-- 右侧导航栏 -->
+  <!-- 鍙充晶瀵艰埅鏍?-->
   <div class="right-sidebar">
-    <!-- 将主要图标和设置图标分开 -->
+    <!-- 灏嗕富瑕佸浘鏍囧拰璁剧疆鍥炬爣鍒嗗紑 -->
     <div class="sidebar-top">
-      <div class="sidebar-icon active" id="collectionTabBtn" title="采集笔记">
-        <span class="material-icons">bug_report</span>
-        <span class="sidebar-label">采集</span>
-      </div>
-      <div class="sidebar-icon" id="aiAssistantTabBtn" title="AI助手">
+      <div class="sidebar-icon active" id="aiAssistantTabBtn" title="AI助手">
         <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M786.7392 205.4656A333.6704 333.6704 0 0 0 543.1296 102.4h-23.9616a340.6848 340.6848 0 0 0-319.7952 356.5568c-1.1264 1.0752-28.8256 37.376-50.5344 65.8432l-24.7296 32.3584a83.6608 83.6608 0 0 0-21.7088 50.8416c0.6656 44.0832 28.416 63.8464 84.0704 75.9808l20.8896 4.352 7.68 157.7984v3.7888a77.5168 77.5168 0 0 0 76.8 71.68c4.3008 0 128-15.36 187.5456-26.0096V812.032c-40.96 5.7344-132.4032 18.7392-185.4976 27.392l-9.3696-190.7712v-1.536a61.44 61.44 0 0 0-0.9216-8.6016 26.7264 26.7264 0 0 0-4.0448-10.6496 20.48 20.48 0 0 0-16.3328-9.9328Q240.64 614.4 218.112 610.56l-5.376-1.024-1.9968-0.4608a16.5888 16.5888 0 0 1-7.9872-26.2656q58.5216-71.68 65.536-78.848a43.008 43.008 0 0 0 11.9808-35.84 57.088 57.088 0 0 0-0.3584-6.6048 24.4224 24.4224 0 0 0-0.3072-3.8912A271.9232 271.9232 0 0 1 352.512 265.728a252.6208 252.6208 0 0 1 186.6752-82.6368h10.24a263.8848 263.8848 0 0 1 255.488 271.9232V460.8h81.4592v-6.656a362.8544 362.8544 0 0 0-99.5328-248.832z m54.4256 655.36l-116.0192-339.8656H655.36l-115.5584 339.6608h66.56l23.8592-80.5376h119.2448l23.808 80.5376h67.7376zM921.6 521.1648v339.6608h-60.3136v-339.8656H921.6z m-271.36 199.68q37.7344-133.8368 39.1168-139.8784 1.3824 5.9904 39.9872 139.8784z"></path></svg>
         <span class="sidebar-label">助手</span>
       </div>
@@ -2769,7 +2890,7 @@
     </div>
   </div>
   
-  <!-- 设置Tab页 -->
+  <!-- 璁剧疆Tab椤?-->
   <div id="settingsTab" class="tab-content">
     <div class="settings-container">
       <div class="settings-section">
@@ -2806,7 +2927,7 @@
     </div>
   </div>
   
-  <!-- 历史记录弹窗 -->
+  <!-- 鍘嗗彶璁板綍寮圭獥 -->
   <div id="historyModal" class="modal">
     <div class="modal-content history-modal-content">
       <div class="modal-header">
@@ -2814,17 +2935,18 @@
         <span class="close-modal" id="closeHistoryModal">&times;</span>
       </div>
       <div class="modal-body history-list" id="historyList">
-        <!-- 聊天历史列表内容由JS动态生成 -->
+        <!-- 鑱婂ぉ鍘嗗彶鍒楄〃鍐呭鐢盝S鍔ㄦ€佺敓鎴?-->
       </div>
     </div>
   </div>
   
-  <!-- 引入CryptoJS库，用于生成API签名 -->  
+  <!-- 寮曞叆CryptoJS搴擄紝鐢ㄤ簬鐢熸垚API绛惧悕 -->  
   <script src="crypto-js-core.js"></script>
   <script src="image_generator.js"></script>
-  <script src="popup.js"></script>
+  <script src="popup.js" defer></script>
 
   <script src="crypto-js-core.js"></script>
   <script src="fixed_function.js"></script>
 </body>
 </html>
+
