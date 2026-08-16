@@ -2,7 +2,10 @@
 const config = {
     // DeepSeek API配置
     DEEPSEEK_API_KEY: '', // 不再提供默认API密钥
-    DEEPSEEK_API_URL: 'https://api.deepseek.com/v1/chat/completions',
+    DEEPSEEK_API_URL: 'https://api.deepseek.com/chat/completions',
+    DEEPSEEK_MODEL: 'deepseek-v4-flash',
+    DEEPSEEK_THINKING_TYPE: 'enabled',
+    DEEPSEEK_REASONING_EFFORT: 'high',
     
     // Gemini API配置
     GEMINI_API_KEY: '',

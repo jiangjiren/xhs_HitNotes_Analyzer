@@ -1,216 +1,78 @@
-// ===== 鎵╁睍鍚姩娴嬭瘯 =====
-console.log('popup.js 文件开始加载...');
-console.log('当前时间:', new Date().toLocaleString());
+// ===== AI 创作助手 · Apple HIG 交互控制器 =====
+console.log('AI 创作助手 popup.js (Apple HIG Edition) 开始加载...');
 
-document.addEventListener('DOMContentLoaded', function() {
-
-  
-  const collectBtn = document.getElementById('collectBtn');
-  const status = document.getElementById('status');
-  const maxNotesInput = document.getElementById('maxNotes');
-  const minLikesInput = document.getElementById('minLikes');
+document.addEventListener('DOMContentLoaded', function () {
+  // DOM 核心引用
+  const chatMessages = document.getElementById('chatMessages');
   const messageInput = document.getElementById('messageInput');
   const sendMessageBtn = document.getElementById('sendMessage');
-  const chatMessages = document.getElementById('chatMessages');
   const fileInput = document.getElementById('fileInput');
   const fileInfo = document.getElementById('fileInfo');
-  const newChatBtn = document.getElementById('newChatBtn'); 
-  const getPageContentBtn = document.getElementById('getPageContentBtn'); 
-  const historyBtn = document.getElementById('historyBtn'); 
-  const historyModal = document.getElementById('historyModal'); 
-  const closeHistoryModal = document.getElementById('closeHistoryModal'); 
-  const historyList = document.getElementById('historyList'); 
+  const newChatBtn = document.getElementById('newChatBtn');
+  const getPageContentBtn = document.getElementById('getPageContentBtn');
+  const historyBtn = document.getElementById('historyBtn');
+  const historyModal = document.getElementById('historyModal');
+  const closeHistoryModal = document.getElementById('closeHistoryModal');
+  const historyList = document.getElementById('historyList');
   const modelSwitcher = document.getElementById('modelSwitcher');
+  const deepseekThinkingEffortSelect = document.getElementById('deepseekThinkingEffort');
   const collectToolBtn = document.getElementById('collectToolBtn');
   const collectToolPanel = document.getElementById('collectToolPanel');
-  
-  // 娣诲姞璁剧疆鐩稿叧鍏冪礌
-  const accessKeyIdInput = document.getElementById('accessKeyId');
-  const secretAccessKeyInput = document.getElementById('secretAccessKey');
-  
-  // 娣诲姞Tab椤靛垏鎹㈢浉鍏冲厓绱?
-  const collectionTabBtn = document.getElementById('collectionTabBtn');
-  const aiAssistantTabBtn = document.getElementById('aiAssistantTabBtn');
-  const imageGeneratorTabBtn = document.getElementById('imageGeneratorTabBtn');
+  const collectBtn = document.getElementById('collectBtn');
   const settingsTabBtn = document.getElementById('settingsTabBtn');
-  const collectionTab = document.getElementById('collectionTab');
-  const aiAssistantTab = document.getElementById('aiAssistantTab');
-  const imageGeneratorTab = document.getElementById('imageGeneratorTab');
-  const settingsTab = document.getElementById('settingsTab');
-  
-  let currentXhsTab = null;
-  let hasCollectedData = false; 
-  let chatSessions = []; 
-  let uploadedFileContent = null;
-  let hasShownOpenPageMessage = false; 
-  let isStreaming = false; 
-  let shouldStopStreaming = false; 
-  let pageContentLoaded = false; 
-  let currentPageContent = null;
-  let isCollecting = false; // 是否正在采集中
-  const MAX_CHAT_SESSIONS = 30;
-  const MAX_MESSAGES_PER_SESSION = 200;
-  
-  const settingsIcon = document.getElementById('settingsIcon');
-  const settingsModal = document.getElementById('settingsModal');
-  const saveSettingsButton = document.getElementById('saveSettings'); 
-  const closeSettingsModalBtn = document.querySelector('#settingsModal .close-modal'); 
   const settingsModalOverlay = document.getElementById('settings-modal-overlay');
   const closeSettingsBtn = document.getElementById('close-settings-btn');
   const saveSettingsBtn = document.getElementById('save-settings-btn');
   const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
-  
-  // 鍔犺浇宸蹭繚瀛樼殑璁剧疆
-  function loadSettings() {
-    // 鍔犺浇DeepSeek API瀵嗛挜
-    const apiKeyInput = document.getElementById('apiKey');
-    if (apiKeyInput) {
-      chrome.storage.local.get(['deepseekApiKey'], (result) => {
-        if (result.deepseekApiKey && result.deepseekApiKey.trim() !== '') {
-          apiKeyInput.value = '********';
-          apiKeyInput.setAttribute('data-has-value', 'true');
-        } else {
-          apiKeyInput.value = '';
-          apiKeyInput.removeAttribute('data-has-value');
-        }
-      });
-    }
-    
-    // 鍔犺浇Gemini API瀵嗛挜
-    const geminiApiKeyInput = document.getElementById('geminiApiKey');
-    if (geminiApiKeyInput) {
-      chrome.storage.local.get(['geminiApiKey'], (result) => {
-        if (result.geminiApiKey && result.geminiApiKey.trim() !== '') {
-          geminiApiKeyInput.value = '********';
-          geminiApiKeyInput.setAttribute('data-has-value', 'true');
-        } else {
-          geminiApiKeyInput.value = '';
-          geminiApiKeyInput.removeAttribute('data-has-value');
-        }
-      });
-    }
-    
-    // 鍔犺浇Access Key ID
-    if (accessKeyIdInput) {
-      chrome.storage.local.get(['imageGenApiKey'], (result) => {
-        if (result.imageGenApiKey && result.imageGenApiKey.trim() !== '') {
-          accessKeyIdInput.value = '********';
-          accessKeyIdInput.setAttribute('data-has-value', 'true');
-        } else {
-          accessKeyIdInput.value = '';
-          accessKeyIdInput.removeAttribute('data-has-value');
-        }
-      });
-    }
-    
-    // 鍔犺浇Secret Access Key
-    if (secretAccessKeyInput) {
-      chrome.storage.local.get(['imageGenApiSecret'], (result) => {
-        if (result.imageGenApiSecret && result.imageGenApiSecret.trim() !== '') {
-          secretAccessKeyInput.value = '********';
-          secretAccessKeyInput.setAttribute('data-has-value', 'true');
-        } else {
-          secretAccessKeyInput.value = '';
-          secretAccessKeyInput.removeAttribute('data-has-value');
-        }
-      });
-    }
-  }
-  
-  // 鎵撳紑璁剧疆妯℃€佹
-  if (settingsTabBtn && settingsModalOverlay) {
-    settingsTabBtn.addEventListener('click', function() {
-      loadSettings(); 
-      settingsModalOverlay.classList.remove('hidden');
-    });
-  }
+  const sessionPillBtn = document.getElementById('sessionPillBtn');
+  const headerSessionTitle = document.getElementById('headerSessionTitle');
+  const moreMenuBtn = document.getElementById('moreMenuBtn');
+  const moreMenu = document.getElementById('moreMenu');
 
-  // 鍏抽棴璁剧疆妯℃€佹
-  if (closeSettingsBtn && settingsModalOverlay) {
-    closeSettingsBtn.addEventListener('click', function() {
-      settingsModalOverlay.classList.add('hidden');
-    });
-  }
-  
-    // 鐐瑰嚮妯℃€佹澶栭儴鍏抽棴
-  if (settingsModalOverlay) {
-    settingsModalOverlay.addEventListener('click', function(e) {
-      if (e.target === settingsModalOverlay) {
-        settingsModalOverlay.classList.add('hidden');
-      }
-    });
-  }
+  // 情境横幅与灵动胶囊
+  const contextBanner = document.getElementById('contextBanner');
+  const contextBannerTitle = document.getElementById('contextBannerTitle');
+  const contextBannerDesc = document.getElementById('contextBannerDesc');
+  const contextActionBtn = document.getElementById('contextActionBtn');
+  const contextDismissBtn = document.getElementById('contextDismissBtn');
+  const contextBannerIcon = document.getElementById('contextBannerIcon');
+  const collectCapsule = document.getElementById('collectCapsule');
+  const capsuleStatusText = document.getElementById('capsuleStatusText');
+  const capsuleStopBtn = document.getElementById('capsuleStopBtn');
 
-  // 淇濆瓨璁剧疆
-  if (saveSettingsBtn && settingsModalOverlay) {
-    saveSettingsBtn.addEventListener('click', function() {
-      const apiKeyInput = document.getElementById('apiKey');
-      const geminiApiKeyInput = document.getElementById('geminiApiKey');
-      const accessKeyIdInput = document.getElementById('accessKeyId');
-      const secretAccessKeyInput = document.getElementById('secretAccessKey');
+  // 状态变量
+  let currentXhsTab = null;
+  let currentActiveTab = null;
+  let chatSessions = [];
+  let uploadedAttachments = [];
+  const SUPPORTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  const MAX_TEXT_FILE_SIZE = 10 * 1024 * 1024;
+  const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
+  // Gemini 视觉端内部本就会把图缩到 1568 左右，传更大只是白费带宽和 token
+  const IMAGE_MAX_EDGE = 1568;
+  // 尺寸和体积都已达标的图不重编码，避免无谓的画质损失
+  const IMAGE_SKIP_COMPRESS_SIZE = 1024 * 1024;
+  const IMAGE_JPEG_QUALITY = 0.85;
+  const IMAGE_PNG_FALLBACK_SIZE = 1.5 * 1024 * 1024;
+  const VISION_FALLBACK_MODEL = 'gemini-3.7-flash';
+  let isStreaming = false;
+  let shouldStopStreaming = false;
+  let pageContentLoaded = false;
+  let currentPageContent = null;
+  let isCollecting = false;
+  let streamingBuffer = '';
+  let streamingMessageDiv = null;
+  let reasoningBuffer = '';
+  let reasoningMessageDiv = null;
+  let hasAutoCollapsedReasoning = false;
+  let streamingRenderScheduled = false;
+  let reasoningRenderScheduled = false;
+  let bannerDismissed = false;
 
-      const settingsToSave = {};
-
-      if (apiKeyInput.value.trim() && !apiKeyInput.hasAttribute('data-has-value')) {
-        settingsToSave.deepseekApiKey = apiKeyInput.value.trim();
-      }
-
-      if (geminiApiKeyInput.value.trim() && !geminiApiKeyInput.hasAttribute('data-has-value')) {
-        settingsToSave.geminiApiKey = geminiApiKeyInput.value.trim();
-      }
-      
-      if (accessKeyIdInput.value.trim() && !accessKeyIdInput.hasAttribute('data-has-value')) {
-        settingsToSave.imageGenApiKey = accessKeyIdInput.value.trim();
-      }
-
-      if (secretAccessKeyInput.value.trim() && !secretAccessKeyInput.hasAttribute('data-has-value')) {
-        settingsToSave.imageGenApiSecret = secretAccessKeyInput.value.trim();
-      }
-
-      if (Object.keys(settingsToSave).length > 0) {
-        chrome.storage.local.set(settingsToSave, function() {
-          settingsModalOverlay.classList.add('hidden');
-          showToast('设置已保存！');
-          loadSettings(); // 閲嶆柊鍔犺浇浠ユ洿鏂扮姸鎬?
-          checkApiKeyStatus(); 
-          
-          // 濡傛灉鏈夋洿鏂帮紝鍙戦€佹秷鎭埌background.js
-          const message = { type: 'updateApiKey' };
-          if(settingsToSave.deepseekApiKey) message.deepseekApiKey = settingsToSave.deepseekApiKey;
-          if(settingsToSave.geminiApiKey) message.geminiApiKey = settingsToSave.geminiApiKey;
-          if(settingsToSave.imageGenApiKey) message.imageGenAK = settingsToSave.imageGenApiKey;
-          if(settingsToSave.imageGenApiSecret) message.imageGenSK = settingsToSave.imageGenApiSecret;
-
-          chrome.runtime.sendMessage(message);
-          
-          if (typeof window.updateImageGenCredentials === 'function') {
-              window.updateImageGenCredentials(settingsToSave.imageGenApiKey, settingsToSave.imageGenApiSecret);
-          }
-        });
-      } else {
-        settingsModalOverlay.classList.add('hidden');
-      }
-    });
-  }
-  
-  // 鍏抽棴璁剧疆妯℃€佹 (閫氳繃 specific close button ID)
-  if (closeSettingsModalBtn && settingsModal) {
-    closeSettingsModalBtn.addEventListener('click', function() {
-      settingsModal.style.display = 'none';
-    });
-  }
-
-  // 鐐瑰嚮妯℃€佹澶栭儴鍏抽棴 (Optional: good UX)
-  if (settingsModal) {
-    window.addEventListener('click', function(event) {
-      if (event.target == settingsModal) {
-        settingsModal.style.display = 'none';
-      }
-    });
-  }
-
-  // 鏄剧ずToast鎻愮ず鍑芥暟
-  function showToast(message, duration = 2000) {
+  // ==========================================================================
+  // 1. Apple 风格 Toast 通知
+  // ==========================================================================
+  function showToast(message, duration = 2200) {
     const toast = document.getElementById('toast');
     if (toast) {
       toast.textContent = message;
@@ -221,399 +83,1348 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  if (modelSwitcher) {
-    chrome.storage.local.get(['selectedModel'], (result) => {
-      const savedModel = result.selectedModel;
-      if (savedModel && modelSwitcher.querySelector(`option[value="${savedModel}"]`)) {
-        modelSwitcher.value = savedModel;
-      } else if (savedModel) {
-        chrome.storage.local.set({ selectedModel: modelSwitcher.value });
+  // ==========================================================================
+  // 2. 设置 (Settings) 管理
+  // ==========================================================================
+  function loadSettings() {
+    const apiKeyInput = document.getElementById('apiKey');
+    if (apiKeyInput) {
+      chrome.storage.local.get(['deepseekApiKey'], (result) => {
+        if (result.deepseekApiKey && result.deepseekApiKey.trim() !== '') {
+          apiKeyInput.value = '••••••••••••••••';
+          apiKeyInput.setAttribute('data-has-value', 'true');
+        } else {
+          apiKeyInput.value = '';
+          apiKeyInput.removeAttribute('data-has-value');
+        }
+      });
+    }
+
+    const geminiApiKeyInput = document.getElementById('geminiApiKey');
+    if (geminiApiKeyInput) {
+      chrome.storage.local.get(['geminiApiKey'], (result) => {
+        if (result.geminiApiKey && result.geminiApiKey.trim() !== '') {
+          geminiApiKeyInput.value = '••••••••••••••••';
+          geminiApiKeyInput.setAttribute('data-has-value', 'true');
+        } else {
+          geminiApiKeyInput.value = '';
+          geminiApiKeyInput.removeAttribute('data-has-value');
+        }
+      });
+    }
+  }
+
+  function openSettingsModal() {
+    loadSettings();
+    if (settingsModalOverlay) settingsModalOverlay.classList.remove('hidden');
+    closeAllPopovers();
+  }
+
+  function closeSettingsModal() {
+    if (settingsModalOverlay) settingsModalOverlay.classList.add('hidden');
+  }
+
+  if (settingsTabBtn) settingsTabBtn.addEventListener('click', openSettingsModal);
+  if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', closeSettingsModal);
+  if (cancelSettingsBtn) cancelSettingsBtn.addEventListener('click', closeSettingsModal);
+  if (settingsModalOverlay) {
+    settingsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === settingsModalOverlay) closeSettingsModal();
+    });
+  }
+
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener('click', () => {
+      const apiKeyInput = document.getElementById('apiKey');
+      const geminiApiKeyInput = document.getElementById('geminiApiKey');
+      const settingsToSave = {};
+
+      if (apiKeyInput.value.trim() && !apiKeyInput.hasAttribute('data-has-value')) {
+        settingsToSave.deepseekApiKey = apiKeyInput.value.trim();
+      }
+      if (geminiApiKeyInput.value.trim() && !geminiApiKeyInput.hasAttribute('data-has-value')) {
+        settingsToSave.geminiApiKey = geminiApiKeyInput.value.trim();
+      }
+
+      if (Object.keys(settingsToSave).length > 0) {
+        chrome.storage.local.set(settingsToSave, () => {
+          closeSettingsModal();
+          showToast('API 设置已保存');
+          loadSettings();
+          const message = { type: 'updateApiKey' };
+          if (settingsToSave.deepseekApiKey) message.deepseekApiKey = settingsToSave.deepseekApiKey;
+          if (settingsToSave.geminiApiKey) message.geminiApiKey = settingsToSave.geminiApiKey;
+          chrome.runtime.sendMessage(message);
+        });
+      } else {
+        closeSettingsModal();
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 3. 模型与思考深度选择器 (Model & Thinking Effort Menu)
+  // ==========================================================================
+  const modelMenuBtn = document.getElementById('modelMenuBtn');
+  const modelMenu = document.getElementById('modelMenu');
+  const modelMenuLabel = document.getElementById('modelMenuLabel');
+  const thinkingTagBadge = document.getElementById('thinkingTagBadge');
+  const thinkingSection = document.getElementById('thinkingSection');
+
+  function isDeepSeekModel(model) {
+    return typeof model === 'string' && model.startsWith('deepseek');
+  }
+
+  function getModelDisplayName(val) {
+    const map = {
+      'deepseek-v4-flash': 'DeepSeek V4 Flash',
+      'deepseek-v4-pro': 'DeepSeek V4 Pro',
+      'gemini-3.7-flash': 'Gemini 3.7 Flash',
+      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro'
+    };
+    return map[val] || val;
+  }
+
+  function getThinkingDisplayName(effort) {
+    if (effort === 'max') return 'Max';
+    if (effort === 'high') return 'High';
+    if (effort === 'mid' || effort === 'medium') return 'Mid';
+    if (effort === 'low') return 'Low';
+    return 'Off';
+  }
+
+  function getThinkingOptions(model) {
+    const effort = deepseekThinkingEffortSelect ? deepseekThinkingEffortSelect.value : 'high';
+    return {
+      thinkingType: (effort === 'disabled' || effort === 'off') ? 'disabled' : 'enabled',
+      reasoningEffort: effort
+    };
+  }
+
+  function syncModelMenuState() {
+    if (!modelSwitcher) return;
+    const model = modelSwitcher.value;
+    const effort = deepseekThinkingEffortSelect ? deepseekThinkingEffortSelect.value : 'high';
+
+    if (modelMenuLabel) modelMenuLabel.textContent = getModelDisplayName(model);
+
+    if (thinkingTagBadge) {
+      if (effort !== 'disabled') {
+        thinkingTagBadge.textContent = getThinkingDisplayName(effort);
+        thinkingTagBadge.classList.remove('disabled');
+      } else {
+        thinkingTagBadge.classList.add('disabled');
+      }
+    }
+
+    // 思考深度选项对 DeepSeek 和 Gemini 均生效
+    if (thinkingSection) {
+      thinkingSection.style.display = 'block';
+    }
+
+    if (modelMenu) {
+      modelMenu.querySelectorAll('[data-model]').forEach((item) => {
+        item.classList.toggle('checked', item.dataset.model === model);
+      });
+      modelMenu.querySelectorAll('[data-effort]').forEach((item) => {
+        item.classList.toggle('checked', item.dataset.effort === effort);
+      });
+    }
+  }
+
+  // 初始化模型与思考状态
+  chrome.storage.local.get(['selectedModel', 'deepseekReasoningEffort'], (result) => {
+    let savedModel = result.selectedModel === 'deepseek' ? 'deepseek-v4-flash' : result.selectedModel;
+    if (savedModel && modelSwitcher && modelSwitcher.querySelector(`option[value="${savedModel}"]`)) {
+      modelSwitcher.value = savedModel;
+    }
+    const savedEffort = result.deepseekReasoningEffort;
+    if (savedEffort && deepseekThinkingEffortSelect && deepseekThinkingEffortSelect.querySelector(`option[value="${savedEffort}"]`)) {
+      deepseekThinkingEffortSelect.value = savedEffort;
+    }
+    syncModelMenuState();
+  });
+
+  if (modelMenuBtn && modelMenu) {
+    modelMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !modelMenu.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) {
+        syncModelMenuState();
+        modelMenu.classList.add('open');
+        modelMenuBtn.classList.add('open');
+        modelMenuBtn.setAttribute('aria-expanded', 'true');
       }
     });
 
-    modelSwitcher.addEventListener('change', () => {
-      chrome.storage.local.set({ selectedModel: modelSwitcher.value });
-    });
-  }
-
-  function getMessageInputMaxHeight() {
-    if (!messageInput) return 0;
-    const maxHeightValue = window.getComputedStyle(messageInput).maxHeight;
-    const parsed = parseInt(maxHeightValue, 10);
-    return Number.isFinite(parsed) ? parsed : 120;
-  }
-
-  function autoResizeMessageInput() {
-    if (!messageInput) return;
-    const maxHeight = getMessageInputMaxHeight();
-    messageInput.style.height = 'auto';
-    const nextHeight = Math.min(messageInput.scrollHeight, maxHeight);
-    messageInput.style.height = `${nextHeight}px`;
-    messageInput.style.overflowY = messageInput.scrollHeight > maxHeight ? 'auto' : 'hidden';
-  }
-  function closeCollectToolPanel() {
-    if (!collectToolPanel || !collectToolBtn) return;
-    collectToolPanel.classList.remove('open');
-    collectToolBtn.classList.remove('active');
-    collectToolPanel.style.transform = 'translateX(0)';
-  }
-
-  function positionCollectToolPanel() {
-    if (!collectToolPanel) return;
-
-    const mainContent = document.querySelector('.main-content');
-    const boundsHost = mainContent || document.body;
-    const hostRect = boundsHost.getBoundingClientRect();
-
-    // Reset transform first, then calculate final offset.
-    collectToolPanel.style.transform = 'translateX(0)';
-    const panelRect = collectToolPanel.getBoundingClientRect();
-
-    const minLeft = hostRect.left + 8;
-    const maxRight = hostRect.right - 8;
-
-    // Prefer right alignment close to the extension content edge.
-    let shiftX = maxRight - panelRect.right;
-
-    // Keep panel fully visible inside host bounds.
-    const projectedLeft = panelRect.left + shiftX;
-    if (projectedLeft < minLeft) {
-      shiftX += (minLeft - projectedLeft);
-    }
-
-    const projectedRight = panelRect.right + shiftX;
-    if (projectedRight > maxRight) {
-      shiftX -= (projectedRight - maxRight);
-    }
-
-    collectToolPanel.style.transform = `translateX(${Math.round(shiftX)}px)`;
-  }
-
-  function toggleCollectToolPanel() {
-    if (!collectToolPanel || !collectToolBtn) return;
-    const isOpen = collectToolPanel.classList.contains('open');
-    if (isOpen) {
-      closeCollectToolPanel();
-      return;
-    }
-    collectToolPanel.classList.add('open');
-    collectToolBtn.classList.add('active');
-    requestAnimationFrame(() => {
-      // Always reset to the top when reopening, avoid "half panel" view.
-      collectToolPanel.scrollTop = 0;
-
-      const btnRect = collectToolBtn.getBoundingClientRect();
-      const chatContainer = collectToolPanel.closest('.monica-chat-container');
-      let availableAbove = Math.max(200, btnRect.top - 16);
-
-      if (chatContainer) {
-        const containerRect = chatContainer.getBoundingClientRect();
-        availableAbove = Math.max(200, btnRect.top - containerRect.top - 12);
+    modelMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const modelItem = e.target.closest('[data-model]');
+      if (modelItem) {
+        const selectedModel = modelItem.dataset.model;
+        if (modelSwitcher) {
+          modelSwitcher.value = selectedModel;
+          chrome.storage.local.set({ selectedModel });
+        }
+        syncModelMenuState();
+        return;
       }
 
-      collectToolPanel.style.maxHeight = `${Math.min(420, Math.floor(availableAbove))}px`;
-      positionCollectToolPanel();
+      const effortItem = e.target.closest('[data-effort]');
+      if (effortItem) {
+        const effort = effortItem.dataset.effort;
+        if (deepseekThinkingEffortSelect) {
+          deepseekThinkingEffortSelect.value = effort;
+          chrome.storage.local.set({ deepseekReasoningEffort: effort });
+        }
+        syncModelMenuState();
+        closeAllPopovers();
+      }
     });
   }
-  
-  // 鏇存柊閲囬泦鎸夐挳鐘舵€?
+
+  // ==========================================================================
+  // 4. 附件与更多 Popover 菜单
+  // ==========================================================================
+  const attachBtn = document.getElementById('attachBtn');
+  const attachMenu = document.getElementById('attachMenu');
+  const attachUploadBtn = document.getElementById('attachUploadBtn');
+
+  function closeAllPopovers() {
+    if (modelMenu) {
+      modelMenu.classList.remove('open');
+      if (modelMenuBtn) modelMenuBtn.classList.remove('open');
+    }
+    if (attachMenu) {
+      attachMenu.classList.remove('open');
+    }
+    if (moreMenu) {
+      moreMenu.classList.remove('open');
+    }
+    if (collectToolPanel) {
+      collectToolPanel.classList.remove('open');
+      if (collectToolBtn) collectToolBtn.classList.remove('active');
+    }
+  }
+
+  document.addEventListener('click', () => {
+    closeAllPopovers();
+  });
+
+  if (attachBtn && attachMenu) {
+    attachBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !attachMenu.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) attachMenu.classList.add('open');
+    });
+  }
+
+  if (attachUploadBtn && fileInput) {
+    attachUploadBtn.addEventListener('click', () => {
+      closeAllPopovers();
+      fileInput.click();
+    });
+  }
+
+  if (moreMenuBtn && moreMenu) {
+    moreMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !moreMenu.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) moreMenu.classList.add('open');
+    });
+  }
+
+  // ==========================================================================
+  // 5. 采集爆款面板与灵动胶囊交互
+  // ==========================================================================
+  if (collectToolBtn && collectToolPanel) {
+    collectToolBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = !collectToolPanel.classList.contains('open');
+      closeAllPopovers();
+      if (willOpen) {
+        collectToolPanel.classList.add('open');
+        collectToolBtn.classList.add('active');
+      }
+    });
+
+    collectToolPanel.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
   function updateCollectButtonState(collecting) {
-    if (!collectBtn) return;
-    
     isCollecting = collecting;
-    if (collectToolBtn) {
-      collectToolBtn.classList.toggle('is-active', collecting);
+    if (collectCapsule) {
+      collectCapsule.classList.toggle('active', collecting);
     }
-    const iconElement = collectBtn.querySelector('.material-icons');
-    
-    if (collecting) {
-      // 閲囬泦涓姸鎬?
-      collectBtn.className = 'apple-btn apple-btn-collecting';
-      iconElement.textContent = 'stop_circle';
-      // 鏇存柊鎸夐挳鏂囨湰锛屼繚鐣欏浘鏍?
-      collectBtn.innerHTML = '<span class="material-icons">stop_circle</span>停止采集';
-    } else {
-      // 鏈噰闆嗙姸鎬?
-      collectBtn.className = 'apple-btn apple-btn-primary';
-      iconElement.textContent = 'play_circle';
-      // 鏇存柊鎸夐挳鏂囨湰锛屼繚鐣欏浘鏍?
-      collectBtn.innerHTML = '<span class="material-icons">play_circle</span>开始采集';
+    if (collectBtn) {
+      collectBtn.innerHTML = collecting
+        ? '<span class="material-icons" style="font-size:16px;">stop</span><span>停止采集</span>'
+        : '<span class="material-icons" style="font-size:16px;">play_arrow</span><span>开始采集</span>';
     }
   }
-  
-  // 娴嬭瘯澶嶅埗鍔熻兘
-  function testClipboard() {
-    const testText = "测试复制功能";
-    navigator.clipboard.writeText(testText).then(() => {
-      console.log('复制测试成功');
-      showToast('复制功能正常');
-    }).catch(err => {
-      console.error('复制测试失败:', err);
-      showToast('复制功能异常: ' + err.message);
+
+  if (capsuleStopBtn) {
+    capsuleStopBtn.addEventListener('click', () => {
+      if (isCollecting && currentXhsTab) {
+        capsuleStatusText.textContent = '正在停止采集...';
+        chrome.tabs.sendMessage(currentXhsTab.id, { type: 'stopCollecting' });
+        updateCollectButtonState(false);
+      }
     });
   }
-  
-  // Tab椤靛垏鎹㈠姛鑳?
-  function switchTab(tabId) {
-    console.log('鍒囨崲鍒皌ab:', tabId);
 
-    if (!aiAssistantTab || !imageGeneratorTab || !settingsTab ||
-        !aiAssistantTabBtn || !imageGeneratorTabBtn || !settingsTabBtn) {
-      console.error('Tab鍏冪礌鏈壘鍒帮紝鏃犳硶鍒囨崲');
+  // 触发采集逻辑
+  async function triggerCollection(customParams = null) {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+
+    if (!tab || !tab.url || !tab.url.includes('xiaohongshu.com')) {
+      showToast('请在小红书网页端使用此功能');
       return;
     }
 
-    [collectionTab, aiAssistantTab, imageGeneratorTab, settingsTab].forEach((tab) => {
-      if (tab) tab.classList.remove('active');
-    });
+    currentXhsTab = tab;
+    closeAllPopovers();
 
-    [collectionTabBtn, aiAssistantTabBtn, imageGeneratorTabBtn, settingsTabBtn].forEach((btn) => {
-      if (btn) btn.classList.remove('active');
-    });
-
-    if (tabId === 'collection') {
-      tabId = 'aiAssistant';
-    }
-
-    if (tabId === 'aiAssistant') {
-      aiAssistantTab.classList.add('active');
-      aiAssistantTabBtn.classList.add('active');
-    } else if (tabId === 'imageGenerator') {
-      imageGeneratorTab.classList.add('active');
-      imageGeneratorTabBtn.classList.add('active');
-      if (typeof window.imageGeneratorInitialized === 'undefined') {
-        window.imageGeneratorInitialized = true;
-        if (typeof window.initImageGenerator === 'function') {
-          window.initImageGenerator();
+    // 确保页面就绪
+    let pageReady = false;
+    let attempts = 0;
+    while (!pageReady && attempts < 3) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'ping' });
+        pageReady = true;
+      } catch (err) {
+        attempts++;
+        if (attempts >= 3) {
+          await injectContentScript(tab.id);
+          pageReady = true;
         }
       }
-    } else if (tabId === 'settings') {
-      settingsTab.classList.add('active');
-      settingsTabBtn.classList.add('active');
-      loadSettings();
+    }
+
+    if (pageReady) {
+      const maxNotes = customParams?.maxNotes || parseInt(document.getElementById('maxNotes').value) || 10;
+      const minLikes = customParams?.minLikes || parseInt(document.getElementById('minLikes').value) || 500;
+      const downloadCover = customParams?.downloadCover ?? document.getElementById('downloadCover').checked;
+
+      capsuleStatusText.textContent = `开始采集前 ${maxNotes} 篇爆款 (赞>${minLikes})...`;
+      updateCollectButtonState(true);
+
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'startCollecting',
+        maxNotes: maxNotes,
+        minLikes: minLikes,
+        downloadCover: downloadCover
+      });
     }
   }
-  
-  // 娣诲姞Tab鎸夐挳鐐瑰嚮浜嬩欢
-  
-  if (aiAssistantTabBtn) {
-    aiAssistantTabBtn.addEventListener('click', () => {
-      switchTab('aiAssistant');
-    });
-  }
-  
-  if (imageGeneratorTabBtn) {
-    imageGeneratorTabBtn.addEventListener('click', () => {
-      switchTab('imageGenerator');
-    });
-  }
 
-  if (settingsTabBtn) {
-    settingsTabBtn.addEventListener('click', () => {
-      if (settingsModalOverlay) settingsModalOverlay.classList.remove('hidden');
-      loadSettings();
-    });
-  }
-  
-  // 鍔犺浇鍘嗗彶浼氳瘽
-  chrome.storage.local.get(['chatSessions'], (result) => {
-    let existingSessions = [];
-    if (result.chatSessions) {
-      existingSessions = result.chatSessions;
-    }
-    
-    const now = new Date();
-    const newSession = {
-      id: 'session_' + now.getTime(),
-      title: now.toLocaleString(),
-      created: now.toLocaleString(),
-      messages: [], // 绌烘秷鎭暟缁勶紝涓嶅寘鍚杩庢秷鎭?
-      hasUserMessage: false,
-      currentSession: true,
-      isTemporary: true // 鏍囪涓轰复鏃朵細璇?
-    };
-    
-    // 灏嗘柊浼氳瘽鍜屽巻鍙蹭細璇濆悎骞讹紝鏂颁細璇濆湪鍓?
-    chatSessions = [newSession];
-    
-    if (existingSessions.length > 0) {
-      chatSessions = chatSessions.concat(existingSessions);
-    }
-    
-    // 涓嶇珛鍗充繚瀛樺埌storage锛岀瓑鏈夊疄闄呭璇濆唴瀹规椂鍐嶄繚瀛?
-    console.log('[DEBUG] 鍒濆鍖栧姞杞絚hatSessions锛堜笉淇濆瓨锛?', chatSessions.length, chatSessions.map(s => ({id: s.id, messages: s.messages.length, isTemporary: s.isTemporary})));
-    
-    // 鍙湪UI涓婃樉绀烘杩庢秷鎭紝涓嶅姞鍏ヤ細璇濆巻鍙?
-    addMessage('欢迎使用AI助手，请输入您的问题。', false, true);
-    
-    uploadedFileContent = null; 
-    clearUploadedFile(); 
-    messageInput.value = ''; 
-    autoResizeMessageInput();
-    clearPageContent(); 
-  });
-  
-  // 娓呯悊鍘嗗彶璁板綍鐨勫嚱鏁?
-  function clearChatHistory() {
-    chatSessions = [];
-    chatMessages.innerHTML = '';
-    chrome.storage.local.remove('chatSessions');
-    uploadedFileContent = null; 
-    clearUploadedFile(); 
-    messageInput.value = ''; 
-    autoResizeMessageInput();
-    clearPageContent(); 
-  }
-
-  if (collectToolBtn && collectToolPanel) {
-    collectToolBtn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      toggleCollectToolPanel();
-    });
-
-    collectToolPanel.addEventListener('click', (event) => {
-      event.stopPropagation();
-    });
-
-    document.addEventListener('click', () => {
-      closeCollectToolPanel();
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        closeCollectToolPanel();
+  if (collectBtn) {
+    collectBtn.addEventListener('click', () => {
+      if (isCollecting) {
+        if (currentXhsTab) {
+          chrome.tabs.sendMessage(currentXhsTab.id, { type: 'stopCollecting' });
+          updateCollectButtonState(false);
+        }
+      } else {
+        triggerCollection();
       }
     });
+  }
 
-    window.addEventListener('resize', () => {
-      if (!collectToolPanel.classList.contains('open')) return;
-      requestAnimationFrame(() => {
-        positionCollectToolPanel();
-      });
+  // ==========================================================================
+  // 6. 智能情境感知 (Context-Aware Intelligence)
+  // ==========================================================================
+  async function updateContextAwareness() {
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tab = tabs[0];
+      if (!tab || !tab.url || bannerDismissed) return;
+
+      currentActiveTab = tab;
+      const url = tab.url;
+
+      if (url.includes('xiaohongshu.com/search') || (url.includes('xiaohongshu.com/explore') && url.includes('keyword='))) {
+        // 小红书搜索页
+        contextBannerTitle.textContent = '小红书爆款嗅探';
+        contextBannerDesc.textContent = '检测到搜索页，可一键采集前10篇高赞笔记';
+        contextActionBtn.innerHTML = '<span class="material-icons" style="font-size:13px;">bolt</span><span>一键采集 Top 10</span>';
+        contextBannerIcon.innerHTML = '<span class="material-icons">bolt</span>';
+        contextActionBtn.onclick = () => triggerCollection({ maxNotes: 10, minLikes: 500, downloadCover: true });
+        contextBanner.classList.add('show');
+      } else if (url.includes('xiaohongshu.com/explore/')) {
+        // 小红书单篇笔记详情页
+        contextBannerTitle.textContent = '爆款笔记拆解';
+        contextBannerDesc.textContent = '已就绪：分析当前笔记文案结构与爆款钩子';
+        contextActionBtn.innerHTML = '<span class="material-icons" style="font-size:13px;">auto_awesome</span><span>一键拆解</span>';
+        contextBannerIcon.innerHTML = '<span class="material-icons">description</span>';
+        contextActionBtn.onclick = () => {
+          if (getPageContentBtn) getPageContentBtn.click();
+        };
+        contextBanner.classList.add('show');
+      } else if (!url.startsWith('chrome://') && !url.startsWith('edge://') && !url.startsWith('about:')) {
+        // 普通文章/网页
+        contextBannerTitle.textContent = '网页内容提炼';
+        contextBannerDesc.textContent = `将 ${tab.title ? tab.title.substring(0, 18) + '...' : '当前网页'} 改写为小红书笔记`;
+        contextActionBtn.innerHTML = '<span class="material-icons" style="font-size:13px;">auto_awesome</span><span>读取并改写</span>';
+        contextBannerIcon.innerHTML = '<span class="material-icons">article</span>';
+        contextActionBtn.onclick = () => {
+          if (getPageContentBtn) getPageContentBtn.click();
+        };
+        contextBanner.classList.add('show');
+      } else {
+        contextBanner.classList.remove('show');
+      }
+    } catch (e) {
+      console.warn('Context awareness error:', e);
+    }
+  }
+
+  if (contextDismissBtn) {
+    contextDismissBtn.addEventListener('click', () => {
+      bannerDismissed = true;
+      contextBanner.classList.remove('show');
     });
   }
-  // 娣诲姞娓呴櫎椤甸潰鍐呭鐨勫嚱鏁?
-  function clearPageContent() {
-    pageContentLoaded = false;
-    currentPageContent = null;
-    getPageContentBtn.classList.remove('active');
+
+  // 轮询当前标签页环境
+  setInterval(updateContextAwareness, 1500);
+
+  // ==========================================================================
+  // 7. 会话管理 (Chat Sessions)
+  // ==========================================================================
+  function updateHeaderSessionTitle(title) {
+    if (headerSessionTitle) {
+      headerSessionTitle.textContent = title || '新建对话';
+    }
   }
 
-  // 娣诲姞鍒涘缓鏂颁細璇濈殑鍑芥暟
+  function saveSessionsToStorage() {
+    const toSave = chatSessions.filter(s => !s.isTemporary || (s.messages && s.messages.length > 0));
+    // 图片 base64 只在内存里保留（供当前会话多轮追问回灌给模型），写入 storage 时剥离。
+    // 历史渲染本来就不读 attachments，全量写入只会顶满配额，
+    // 导致后续 _pendingImageAttachments 的写入静默失败、图片丢给 AI 之前就没了。
+    const stripped = toSave.map(s => ({
+      ...s,
+      messages: (s.messages || []).map(m =>
+        m.attachments && m.attachments.length > 0
+          ? { ...m, attachments: m.attachments.map(a => ({ mimeType: a.mimeType })) }
+          : m
+      )
+    }));
+    chrome.storage.local.set({ chatSessions: stripped }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('保存会话失败:', chrome.runtime.lastError.message);
+      }
+    });
+  }
+
+  // 会话是否还没被首条消息命名过。
+  // 用显式标记而不是比较标题字符串——占位文案一改，字符串判定就会失效
+  function isUnnamedSession(session) {
+    if (!session) return false;
+    if (typeof session.titlePending === 'boolean') return session.titlePending;
+    // 兼容标记引入前存下的旧会话
+    return !session.title || session.title === session.created || session.title === '新建对话';
+  }
+
+  function makeSessionTitle(text) {
+    const clean = (text || '').replace(/\s+/g, ' ').trim();
+    if (!clean) return '新建对话';
+    return clean.length > 18 ? clean.substring(0, 18) + '...' : clean;
+  }
+
+  // 一次性回填：占位标题不会被首条消息覆盖的那段时期，历史里堆了一批「新建对话」。
+  // 回填后写入 titlePending: false，之后启动不会重复处理
+  function backfillSessionTitles(sessions) {
+    let fixed = 0;
+    for (const s of sessions) {
+      if (!s || !Array.isArray(s.messages) || s.messages.length === 0) continue;
+      if (!isUnnamedSession(s)) continue;
+      const firstUser = s.messages.find(m => m.role === 'user' && m.content && m.content.trim());
+      if (!firstUser) continue;
+      s.title = makeSessionTitle(firstUser.content);
+      s.titlePending = false;
+      fixed++;
+    }
+    return fixed;
+  }
+
   function createNewChatSession(title = null) {
     chatMessages.innerHTML = '';
-    addMessage('欢迎使用AI助手，请输入您的问题。', false, true); // 只UI展示
+    renderWelcomeScreen();
     const now = new Date();
     const newSession = {
       id: 'session_' + now.getTime(),
       title: title || now.toLocaleString(),
       created: now.toLocaleString(),
-      messages: [], // 鏂颁細璇濅粠绌虹殑娑堟伅鏁扮粍寮€濮?
+      messages: [],
       hasUserMessage: false,
-      currentSession: true
-      // 涓嶅啀榛樿鍔爏aveToHistory: true
+      currentSession: true,
+      titlePending: !title
     };
-    
-    // 纭繚鎵€鏈夋棫浼氳瘽閮戒笉鏄綋鍓嶄細璇?
+
     if (chatSessions && chatSessions.length > 0) {
-      chatSessions.forEach(s => { 
-        s.currentSession = false; 
-      });
+      chatSessions.forEach(s => { s.currentSession = false; });
     }
-    
-    // 灏嗘柊浼氳瘽娣诲姞鍒颁細璇濆垪琛ㄧ殑寮€澶?
-    if (!chatSessions) {
-      chatSessions = [];
-    }
-    chatSessions = [newSession, ...chatSessions];
-    
-    // 娓呯悊鎵€鏈夊巻鍙?session 鐨勬湰鍦版彁绀猴紙淇濇寔鍘熸湁閫昏緫锛?
-    chatSessions.forEach(session => {
-      if (session.id !== newSession.id) { // 涓嶅鐞嗘柊鍒涘缓鐨勪細璇?
-        session.messages = (session.messages || []).filter(msg => {
-          if (!msg.role || !msg.content) return false;
-          if (msg.role === 'assistant' && (
-            msg.content === '欢迎使用AI助手，请输入您的问题。' ||
-            msg.content === '正在思考...' ||
-            msg.content === '正在总结内容...' ||
-            msg.content === '正在生成爆款标题，请稍候...' ||
-            msg.content === '正在将内容改写为小红书笔记，请稍候...')) {
-            return false;
-          }
-          return true;
-        });
-      }
-    });
-    
-    console.log('鍒涘缓鏂颁細璇?', newSession.id, '娑堟伅鏁伴噺:', newSession.messages.length);
+
+    chatSessions = [newSession, ...(chatSessions || [])];
+    updateHeaderSessionTitle(newSession.title);
+    clearUploadedFiles();
+    clearPageContent();
+    messageInput.value = '';
+    autoResizeMessageInput();
     return newSession;
   }
 
-  // 鏂板缓瀵硅瘽鎸夐挳鐐瑰嚮浜嬩欢
-  newChatBtn.addEventListener('click', () => {
-    // 鍏堟竻绌哄綋鍓嶄細璇濈殑鍘嗗彶璁板綍
-    if (chatSessions && chatSessions.length > 0) {
-      chatSessions.forEach(session => {
-        session.currentSession = false;
-      });
-    }
-    
-    // 鍒涘缓鍏ㄦ柊鐨勪細璇?
-    createNewChatSession();
-    
-    uploadedFileContent = null; 
-    clearUploadedFile(); 
-    messageInput.value = ''; 
-    autoResizeMessageInput();
-    clearPageContent();
-    
-    console.log('鏂板缓瀵硅瘽瀹屾垚锛屽綋鍓嶄細璇濆巻鍙插凡娓呯┖');
-  });
+  if (newChatBtn) {
+    newChatBtn.addEventListener('click', () => {
+      createNewChatSession();
+      showToast('已新建对话');
+    });
+  }
 
-  // 椤甸潰鍐呭鎸夐挳鐐瑰嚮浜嬩欢
+  if (sessionPillBtn) {
+    sessionPillBtn.addEventListener('click', () => {
+      if (historyBtn) historyBtn.click();
+    });
+  }
+
+  // ==========================================================================
+  // 8. 欢迎引导屏渲染
+  // ==========================================================================
+  function renderWelcomeScreen() {
+    if (!chatMessages) return;
+
+    const welcome = document.createElement('div');
+    welcome.className = 'welcome';
+    welcome.innerHTML = `
+      <div class="welcome-badge">
+        <span class="material-icons" style="font-size:12px;">auto_awesome</span>
+        <span>小红书 · 创作副驾</span>
+      </div>
+      <h1 class="welcome-title">今天想写点什么？</h1>
+      <p class="welcome-sub">采集爆款数据 → 拆解核心结构 → 生成你自己的爆款笔记</p>
+      <div class="welcome-grid">
+        <button class="welcome-card" type="button" data-welcome="collect">
+          <span class="material-icons">travel_explore</span>
+          <span class="welcome-card-body">
+            <span class="welcome-card-title">采集爆款笔记</span>
+            <span class="welcome-card-desc">在小红书搜索结果页批量抓取高赞笔记，自动分析共性</span>
+          </span>
+        </button>
+        <button class="welcome-card" type="button" data-welcome="page">
+          <span class="material-icons">description</span>
+          <span class="welcome-card-body">
+            <span class="welcome-card-title">读取当前网页</span>
+            <span class="welcome-card-desc">把正在阅读的文章一键提炼、总结或改写为小红书风格</span>
+          </span>
+        </button>
+        <button class="welcome-card" type="button" data-welcome="prompt"
+          data-prompt="帮我写一篇小红书笔记，主题是：">
+          <span class="material-icons">edit_note</span>
+          <span class="welcome-card-body">
+            <span class="welcome-card-title">写一篇小红书文案</span>
+            <span class="welcome-card-desc">输入任意主题，生成结构完整、口语化排版的优质文案</span>
+          </span>
+        </button>
+        <button class="welcome-card" type="button" data-welcome="prompt"
+          data-prompt="围绕下面这个主题，帮我起 5 个吸引人点击的小红书爆款标题：">
+          <span class="material-icons">local_fire_department</span>
+          <span class="welcome-card-body">
+            <span class="welcome-card-title">起 5 个爆款标题</span>
+            <span class="welcome-card-desc">套用高点击标题公式，快速测试用户吸睛点</span>
+          </span>
+        </button>
+      </div>
+    `;
+
+    welcome.addEventListener('click', (event) => {
+      const card = event.target.closest('.welcome-card');
+      if (!card) return;
+      event.stopPropagation();
+
+      const type = card.dataset.welcome;
+      if (type === 'collect') {
+        if (collectToolBtn) collectToolBtn.click();
+      } else if (type === 'page') {
+        if (getPageContentBtn) getPageContentBtn.click();
+      } else if (type === 'prompt') {
+        if (!messageInput) return;
+        messageInput.value = card.dataset.prompt || '';
+        messageInput.focus();
+        messageInput.setSelectionRange(messageInput.value.length, messageInput.value.length);
+        autoResizeMessageInput();
+      }
+    });
+
+    chatMessages.appendChild(welcome);
+  }
+
+  function removeWelcomeScreen() {
+    if (!chatMessages) return;
+    const welcome = chatMessages.querySelector('.welcome');
+    if (welcome) welcome.remove();
+  }
+
+  // ==========================================================================
+  // 9. 智能后续指令胶囊 (Follow-up Action Chips)
+  // ==========================================================================
+  function appendFollowUpPills(container) {
+    const followupDiv = document.createElement('div');
+    followupDiv.className = 'followup-container';
+    followupDiv.innerHTML = `
+      <button type="button" class="followup-pill" data-prompt="请按上面的第 1 个选题，写出一篇完整的小红书正文笔记，带emoji和标签">
+        <span>👉 写第1个选题正文</span>
+      </button>
+      <button type="button" class="followup-pill" data-prompt="请针对上面的内容，再生成 5 个不同风格的吸睛爆款标题">
+        <span>👉 换一批爆款标题</span>
+      </button>
+      <button type="button" class="followup-pill" data-prompt="请帮我设计这篇笔记配套的首图封面排版与拍摄脚本建议">
+        <span>👉 封面图设计建议</span>
+      </button>
+    `;
+
+    followupDiv.addEventListener('click', (e) => {
+      const pill = e.target.closest('.followup-pill');
+      if (!pill) return;
+      const prompt = pill.dataset.prompt;
+      if (prompt && !isStreaming) {
+        if (messageInput) {
+          messageInput.value = prompt;
+          handleSendMessage();
+        }
+      }
+    });
+
+    container.appendChild(followupDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // ==========================================================================
+  // 10. 消息渲染与复制逻辑
+  // ==========================================================================
+  function addMessage(message, isUser, onlyUI = false) {
+    removeWelcomeScreen();
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+
+    if (!isUser) {
+      messageDiv.setAttribute('data-raw-content', message);
+
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'ai-message-header';
+      headerDiv.innerHTML = '<span class="material-icons">auto_awesome</span><span>AI 助手</span>';
+      messageDiv.appendChild(headerDiv);
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'markdown-body';
+      if (typeof window.parseMarkdown === 'function') {
+        contentDiv.innerHTML = window.parseMarkdown(message);
+      } else if (typeof marked !== 'undefined') {
+        contentDiv.innerHTML = marked(String(message).trim());
+      } else {
+        contentDiv.textContent = message;
+      }
+      messageDiv.appendChild(contentDiv);
+
+      // 复制按钮
+      if (!message.startsWith('正在') && !message.startsWith('错误')) {
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
+        copyButton.addEventListener('click', async () => {
+          try {
+            let textToCopy = contentDiv.innerText || message;
+            await navigator.clipboard.writeText(textToCopy);
+            copyButton.innerHTML = '<span class="material-icons">check</span>已复制';
+            copyButton.classList.add('copy-success');
+            setTimeout(() => {
+              copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
+              copyButton.classList.remove('copy-success');
+            }, 1800);
+          } catch (err) {
+            showToast('复制失败，请手动选择复制');
+          }
+        });
+        messageDiv.appendChild(copyButton);
+      }
+
+      if (!onlyUI) {
+        const currentSession = chatSessions.find(s => s.currentSession === true) || chatSessions[0];
+        if (currentSession) {
+          currentSession.messages.push({ role: 'assistant', content: message });
+          saveSessionsToStorage();
+        }
+      }
+    } else {
+      messageDiv.textContent = message;
+      if (!onlyUI) {
+        const currentSession = chatSessions.find(s => s.currentSession === true) || chatSessions[0];
+        if (currentSession) {
+          currentSession.messages.push({ role: 'user', content: message });
+          currentSession.hasUserMessage = true;
+          if (currentSession.isTemporary) delete currentSession.isTemporary;
+          saveSessionsToStorage();
+        }
+      }
+    }
+
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function addImageMessage(image) {
+    if (!chatMessages) return;
+    removeWelcomeScreen();
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message user-message';
+
+    const caption = document.createElement('div');
+    caption.textContent = `${image.fileName} (${formatFileSize(image.fileSize)})`;
+
+    const img = document.createElement('img');
+    img.className = 'message-image';
+    img.src = image.dataUrl;
+    img.alt = image.fileName;
+
+    messageDiv.appendChild(caption);
+    messageDiv.appendChild(img);
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function addThinkingMessage() {
+    removeWelcomeScreen();
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message thinking-message';
+    messageDiv.innerHTML = `
+      <span class="material-icons" style="font-size:16px; color:var(--brand);">auto_awesome</span>
+      <span class="thinking-text">正在思考与生成</span>
+      <div class="thinking-dots">
+        <span></span><span></span><span></span>
+      </div>
+    `;
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function ensureReasoningMessage() {
+    if (reasoningMessageDiv) return reasoningMessageDiv;
+    reasoningBuffer = '';
+    reasoningMessageDiv = document.createElement('div');
+    reasoningMessageDiv.className = 'message deepseek-reasoning-message';
+    reasoningMessageDiv.innerHTML = `
+      <div class="deepseek-reasoning-header">
+        <span class="deepseek-reasoning-title">
+          <span class="material-icons" style="font-size:14px; vertical-align:text-bottom; margin-right:3px; color:var(--brand);">psychology</span>
+          <span class="title-text">思考过程 (Reasoning)</span>
+        </span>
+        <button type="button" class="deepseek-reasoning-toggle" title="收起/展开">
+          <span class="material-icons">expand_less</span>
+        </button>
+      </div>
+      <div class="deepseek-reasoning-body">正在深度推理...</div>
+    `;
+
+    chatMessages.appendChild(reasoningMessageDiv);
+    return reasoningMessageDiv;
+  }
+
+  // 全局事件代理：点击任何思考过程标题栏均能百分百响应折叠/展开
+  if (chatMessages) {
+    chatMessages.addEventListener('click', (e) => {
+      const header = e.target.closest('.deepseek-reasoning-header');
+      if (header) {
+        const card = header.closest('.deepseek-reasoning-message');
+        if (card) {
+          const isCollapsed = card.classList.toggle('collapsed');
+          const icon = card.querySelector('.deepseek-reasoning-toggle .material-icons');
+          if (icon) icon.textContent = isCollapsed ? 'expand_more' : 'expand_less';
+        }
+      }
+    });
+  }
+
+  function scheduleReasoningRender() {
+    if (reasoningRenderScheduled) return;
+    reasoningRenderScheduled = true;
+    requestAnimationFrame(() => {
+      reasoningRenderScheduled = false;
+      if (!reasoningMessageDiv) return;
+      const body = reasoningMessageDiv.querySelector('.deepseek-reasoning-body');
+      if (body) {
+        // 卡片自身是 max-height:200px 的滚动容器，只滚外层不够：
+        // 外层早已到底，内层却停在顶部，新推理文字堆在看不见的地方。
+        // 贴底判断要在写入前测量，且用户手动上翻时不强行拽回
+        const stickToBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+        body.textContent = reasoningBuffer || '正在思考...';
+        if (stickToBottom) body.scrollTop = body.scrollHeight;
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+  }
+
+  function scheduleStreamingRender() {
+    if (streamingRenderScheduled) return;
+    streamingRenderScheduled = true;
+    requestAnimationFrame(() => {
+      streamingRenderScheduled = false;
+      if (!streamingMessageDiv) return;
+      const contentDiv = streamingMessageDiv.querySelector('.markdown-body');
+      if (contentDiv) {
+        if (typeof window.parseMarkdown === 'function') {
+          contentDiv.innerHTML = window.parseMarkdown(streamingBuffer);
+        } else if (typeof marked !== 'undefined') {
+          contentDiv.innerHTML = marked(streamingBuffer);
+        } else {
+          contentDiv.textContent = streamingBuffer;
+        }
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+  }
+
+  // ==========================================================================
+  // 11. 输入区高度自适应与发送处理
+  // ==========================================================================
+  const INITIAL_INPUT_HEIGHT = 34;
+  function autoResizeMessageInput() {
+    if (!messageInput) return;
+    messageInput.style.height = 'auto';
+    if (!messageInput.value) {
+      messageInput.style.height = `${INITIAL_INPUT_HEIGHT}px`;
+      messageInput.style.overflowY = 'hidden';
+      return;
+    }
+    const h = messageInput.scrollHeight;
+    messageInput.style.height = `${Math.min(Math.max(h, INITIAL_INPUT_HEIGHT), 130)}px`;
+    messageInput.style.overflowY = h > 130 ? 'auto' : 'hidden';
+  }
+
+  if (messageInput) {
+    messageInput.addEventListener('input', autoResizeMessageInput);
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+    });
+  }
+
+  function toggleSendStopButton(isStop) {
+    if (!sendMessageBtn) return;
+    if (isStop) {
+      sendMessageBtn.classList.add('stop-mode');
+      sendMessageBtn.title = '停止生成';
+      sendMessageBtn.innerHTML = '<span class="material-icons">stop</span>';
+    } else {
+      sendMessageBtn.classList.remove('stop-mode');
+      sendMessageBtn.title = '发送 (Enter)';
+      sendMessageBtn.innerHTML = '<span class="material-icons">arrow_upward</span>';
+    }
+  }
+
+  function handleStopStreaming() {
+    if (isStreaming) {
+      shouldStopStreaming = true;
+      chrome.runtime.sendMessage({ action: 'stopStreaming' });
+      isStreaming = false;
+      toggleSendStopButton(false);
+      const thinkingMessage = document.querySelector('.thinking-message');
+      if (thinkingMessage) thinkingMessage.remove();
+    }
+  }
+
+  function handleSendMessage() {
+    let rawMessage = messageInput.value.trim();
+    if (isStreaming) return;
+
+    const hasImages = uploadedAttachments.some(a => a.kind === 'image');
+    const hasFiles = uploadedAttachments.length > 0;
+
+    // 如果未输入文字，但存在附件或提取的网页内容，提供智能默认提示词
+    if (!rawMessage) {
+      if (hasImages) {
+        const imgCount = uploadedAttachments.filter(a => a.kind === 'image').length;
+        rawMessage = imgCount > 1
+          ? `请综合分析这 ${imgCount} 张图片，提炼小红书多图/九宫格视觉亮点与创作建议。`
+          : '请分析这张图片，提炼视觉亮点，并给出适合的小红书爆款选题与文案创作建议。';
+      } else if (hasFiles) {
+        rawMessage = '请分析上传的文件内容并提炼核心要点。';
+      } else if (pageContentLoaded && currentPageContent) {
+        rawMessage = '请分析当前网页内容并总结要点。';
+      } else {
+        return; // 既无文字又无附件时才忽略
+      }
+    }
+
+    chrome.storage.local.get(['activeInstructionId', 'customInstructions'], (data) => {
+      let customInstructionPrompt = '';
+      if (data.activeInstructionId && Array.isArray(data.customInstructions)) {
+        const activeInstr = data.customInstructions.find(i => i.id === data.activeInstructionId);
+        if (activeInstr && activeInstr.prompt) customInstructionPrompt = activeInstr.prompt.trim();
+      }
+
+      sendToAI(rawMessage, rawMessage, customInstructionPrompt);
+      messageInput.value = '';
+      autoResizeMessageInput();
+    });
+  }
+
+  if (sendMessageBtn) {
+    sendMessageBtn.addEventListener('click', () => {
+      if (isStreaming) {
+        handleStopStreaming();
+      } else {
+        handleSendMessage();
+      }
+    });
+  }
+
+  // 发送消息至 AI
+  function sendToAI(message, displayMessage = null, customInstructionPrompt = '') {
+    const uiMessage = displayMessage !== null ? displayMessage : message;
+    const currentAttachments = [...uploadedAttachments]; // 保存本次请求的所有附件快照
+    const imageAttachments = currentAttachments.filter(a => a.kind === 'image');
+    const textAttachments = currentAttachments.filter(a => a.kind !== 'image');
+    const hasCurrentPage = pageContentLoaded && !!currentPageContent;
+
+    // 清理输入框挂载的附件状态，并把附件气泡渲染到主聊天区
+    if (currentAttachments.length > 0) {
+      for (const img of imageAttachments) {
+        addImageMessage(img);
+      }
+      for (const txt of textAttachments) {
+        addMessage(`已上传文件：${txt.fileName} (${formatFileSize(txt.fileSize)})`, true, true);
+      }
+      if (imageAttachments.length > 0) {
+        ensureVisionCapableModel();
+      }
+      clearUploadedFiles();
+    }
+
+    addMessage(uiMessage, true, true);
+
+    let activeModel = modelSwitcher ? modelSwitcher.value : 'gemini-3.7-flash';
+    if (imageAttachments.length > 0 && !activeModel.startsWith('gemini')) {
+      activeModel = 'gemini-3.7-flash';
+      if (modelSwitcher) modelSwitcher.value = activeModel;
+      syncModelMenuState();
+    }
+    const isDataAnalysis = textAttachments.some(t => t.isData);
+
+    try {
+      isStreaming = true;
+      hasAutoCollapsedReasoning = false;
+      toggleSendStopButton(true);
+
+      let currentSession = chatSessions.find(s => s.currentSession === true) || chatSessions[0];
+      const attachments = imageAttachments.map(att => ({
+        mimeType: att.mimeType,
+        data: att.base64
+      }));
+
+      currentSession.messages.push({
+        role: 'user',
+        content: uiMessage,
+        attachments: attachments
+      });
+      currentSession.hasUserMessage = true;
+      if (isUnnamedSession(currentSession)) {
+        currentSession.title = makeSessionTitle(uiMessage);
+        currentSession.titlePending = false;
+        updateHeaderSessionTitle(currentSession.title);
+      }
+      saveSessionsToStorage();
+
+      addThinkingMessage();
+
+      let content = '';
+      if (textAttachments.length > 0) {
+        const combinedText = textAttachments.map(t => `===== 文件 [${t.fileName}] 开始 =====\n${t.content}\n===== 文件结束 =====`).join('\n\n');
+        content = `${combinedText}\n\n用户问题：${message}`;
+      } else if (hasCurrentPage) {
+        content = `===== 网页内容开始 =====\n标题：${currentPageContent.title}\n内容：\n${currentPageContent.content}\n===== 网页内容结束 =====\n\n用户问题：${message}`;
+      } else {
+        content = message;
+      }
+
+      const allMessages = currentSession.messages || [];
+      const filteredHistory = allMessages.slice(0, -1).filter(m => m.role && (m.content || (m.attachments && m.attachments.length > 0)) && !m.content?.startsWith('正在'));
+
+      // chrome.runtime.sendMessage 对大消息有隐性限制，
+      // 大型 base64 图片通过 chrome.storage.local 中转更可靠
+      if (attachments.length > 0) {
+        const sendWithAttachments = (payloadAttachments) => {
+          chrome.runtime.sendMessage({
+            action: 'analyzeContent',
+            content: content,
+            isChat: true,
+            isDataAnalysis: isDataAnalysis,
+            chatHistory: filteredHistory,
+            hasFile: currentAttachments.length > 0 || hasCurrentPage,
+            attachments: payloadAttachments,
+            model: activeModel,
+            ...getThinkingOptions(activeModel),
+            customInstructionPrompt: customInstructionPrompt
+          }).catch(err => {
+            console.error('发送带图消息失败:', err);
+            showToast('发送失败，请重试');
+          });
+        };
+
+        chrome.storage.local.set({ _pendingImageAttachments: attachments }, () => {
+          // storage 写入失败（多为配额超限）时必须降级直传，
+          // 否则 background 读到空数组，图片会被静默丢掉而 AI 照常作答
+          if (chrome.runtime.lastError) {
+            console.error('📸 图片暂存 storage 失败，降级为直接传递:', chrome.runtime.lastError.message);
+            showToast('图片暂存失败，已改为直接发送');
+            sendWithAttachments(attachments);
+            return;
+          }
+          console.log(`📸 ${attachments.length} 张图片已暂存至 storage，大小约:`, Math.round(JSON.stringify(attachments).length / 1024), 'KB');
+          sendWithAttachments([{ _fromStorage: true }]);
+        });
+      } else {
+        chrome.runtime.sendMessage({
+          action: 'analyzeContent',
+          content: content,
+          isChat: true,
+          isDataAnalysis: isDataAnalysis,
+          chatHistory: filteredHistory,
+          hasFile: currentAttachments.length > 0 || hasCurrentPage,
+          attachments: [],
+          model: activeModel,
+          ...getThinkingOptions(activeModel),
+          customInstructionPrompt: customInstructionPrompt
+        });
+      }
+    } catch (error) {
+      console.error('发送消息失败:', error);
+      const thinking = document.querySelector('.thinking-message');
+      if (thinking) thinking.remove();
+      addMessage(`错误：${error.message || '发送失败，请重试'}`, false, true);
+      isStreaming = false;
+      toggleSendStopButton(false);
+    }
+  }
+
+  // ==========================================================================
+  // 12. 多图与多文件上传展示处理 (Multi-Attachment Engine)
+  // ==========================================================================
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function renderAttachmentShelf() {
+    const shelf = document.getElementById('fileInfo');
+    const list = document.getElementById('attachmentList');
+    if (!shelf || !list) return;
+
+    if (uploadedAttachments.length === 0) {
+      shelf.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+
+    shelf.style.display = 'flex';
+    list.innerHTML = '';
+
+    uploadedAttachments.forEach((att, idx) => {
+      const item = document.createElement('div');
+      item.className = 'attachment-item';
+
+      if (att.kind === 'image') {
+        item.innerHTML = `
+          <img class="file-thumb" src="${att.dataUrl}" alt="${att.fileName}" title="${att.fileName} (${formatFileSize(att.fileSize)})">
+          <button type="button" class="attachment-remove-btn" data-index="${idx}" title="移除">
+            <span class="material-icons">close</span>
+          </button>
+        `;
+      } else {
+        item.innerHTML = `
+          <div class="attachment-text-chip" title="${att.fileName} (${formatFileSize(att.fileSize)})">
+            <span class="material-icons" style="font-size:14px;">description</span>
+            <span>${att.fileName}</span>
+          </div>
+          <button type="button" class="attachment-remove-btn" data-index="${idx}" title="移除">
+            <span class="material-icons">close</span>
+          </button>
+        `;
+      }
+
+      list.appendChild(item);
+    });
+  }
+
+  // 监听附件列表中移除按钮的点击
+  const attachmentListEl = document.getElementById('attachmentList');
+  if (attachmentListEl) {
+    attachmentListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.attachment-remove-btn');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.index, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < uploadedAttachments.length) {
+        uploadedAttachments.splice(idx, 1);
+        renderAttachmentShelf();
+        if (fileInput) fileInput.value = '';
+      }
+    });
+  }
+
+  function clearUploadedFiles() {
+    uploadedAttachments = [];
+    renderAttachmentShelf();
+    if (fileInput) fileInput.value = '';
+  }
+
+  function ensureVisionCapableModel() {
+    const cur = modelSwitcher ? modelSwitcher.value : '';
+    if (cur.startsWith('gemini')) return;
+    if (modelSwitcher) {
+      modelSwitcher.value = VISION_FALLBACK_MODEL;
+      chrome.storage.local.set({ selectedModel: VISION_FALLBACK_MODEL });
+    }
+    syncModelMenuState();
+    showToast('已自动切换到支持看图的 Gemini 模型');
+  }
+
+  async function processUploadedFiles(fileList) {
+    if (!fileList || fileList.length === 0) return;
+    const files = Array.from(fileList);
+
+    let hasNewImage = false;
+    let addedCount = 0;
+    let savedBytes = 0;
+
+    for (const file of files) {
+      if (uploadedAttachments.length >= 9) {
+        showToast('最多同时添加 9 张图片或文件');
+        break;
+      }
+      const isImg = file.type.startsWith('image/') || SUPPORTED_IMAGE_TYPES.includes(file.type);
+      if (isImg) {
+        if (file.size > MAX_IMAGE_SIZE) {
+          showToast(`图片 ${file.name} 超过 20MB，已跳过`);
+          continue;
+        }
+        try {
+          const img = await compressImageFile(file);
+          if (img.fileSize < img.originalSize) {
+            savedBytes += img.originalSize - img.fileSize;
+          }
+
+          uploadedAttachments.push({
+            fileName: file.name || `图片_${uploadedAttachments.length + 1}.png`,
+            fileSize: img.fileSize,
+            mimeType: img.mimeType,
+            dataUrl: img.dataUrl,
+            base64: img.base64,
+            kind: 'image'
+          });
+          hasNewImage = true;
+          addedCount++;
+        } catch (err) {
+          console.error('读取图片失败:', err);
+        }
+      } else {
+        if (file.size > MAX_TEXT_FILE_SIZE) {
+          showToast(`文件 ${file.name} 超过 10MB，已跳过`);
+          continue;
+        }
+        try {
+          const text = await readFileContent(file);
+          uploadedAttachments.push({
+            fileName: file.name || `文本_${uploadedAttachments.length + 1}.txt`,
+            fileSize: file.size,
+            content: text,
+            kind: 'text'
+          });
+          addedCount++;
+        } catch (err) {
+          console.error('读取文件失败:', err);
+        }
+      }
+    }
+
+    renderAttachmentShelf();
+    if (hasNewImage) {
+      ensureVisionCapableModel();
+      const imgCount = uploadedAttachments.filter(a => a.kind === 'image').length;
+      showToast(savedBytes > 100 * 1024
+        ? `已就绪 ${imgCount} 张图片，压缩省下 ${formatFileSize(savedBytes)}`
+        : `已就绪 ${imgCount} 张图片`);
+    } else if (addedCount > 0) {
+      showToast('文件已加载');
+    }
+    if (fileInput) fileInput.value = '';
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', async (event) => {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        await processUploadedFiles(files);
+      }
+    });
+  }
+
+  // 支持输入框直接 Ctrl+V 连续粘贴截图 / 多图
+  if (messageInput) {
+    messageInput.addEventListener('paste', async (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const filesToProcess = [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) filesToProcess.push(file);
+        }
+      }
+      if (filesToProcess.length > 0) {
+        await processUploadedFiles(filesToProcess);
+      }
+    });
+  }
+
+  // 支持拖拽多张图片到输入区域
+  const omnibarCard = document.querySelector('.omnibar-card');
+  if (omnibarCard) {
+    omnibarCard.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      omnibarCard.style.borderColor = 'var(--apple-blue)';
+    });
+    omnibarCard.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      omnibarCard.style.borderColor = '';
+    });
+    omnibarCard.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      omnibarCard.style.borderColor = '';
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        await processUploadedFiles(files);
+      }
+    });
+  }
+
+  function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      reader.readAsText(file);
+    });
+  }
+
+  // 上传前把图缩到 Gemini 实际需要的尺寸，5MB 的截图通常能降到几百 KB，
+  // 既省传输，也让 storage 中转不至于被单张图顶满
+  async function compressImageFile(file) {
+    const originalSize = file.size;
+
+    const asOriginal = async () => {
+      const dataUrl = await readFileAsDataURL(file);
+      let mimeType = file.type || 'image/png';
+      if (mimeType === 'image/jpg') mimeType = 'image/jpeg';
+      return { dataUrl, base64: dataUrl.split(',')[1], mimeType, fileSize: originalSize, originalSize };
+    };
+
+    // GIF 重编码只会剩第一帧，原样保留
+    if (file.type === 'image/gif') return asOriginal();
+
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch (err) {
+      console.warn('图片解码失败，按原图上传:', err);
+      return asOriginal();
+    }
+
+    const longEdge = Math.max(bitmap.width, bitmap.height);
+    if (longEdge <= IMAGE_MAX_EDGE && originalSize <= IMAGE_SKIP_COMPRESS_SIZE) {
+      bitmap.close();
+      return asOriginal();
+    }
+
+    const scale = Math.min(1, IMAGE_MAX_EDGE / longEdge);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    // PNG 保持 PNG，避免透明区域被压成黑块；PNG 压完仍过大时才退回 JPEG
+    let mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+    let dataUrl = mimeType === 'image/png'
+      ? canvas.toDataURL('image/png')
+      : canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+
+    if (mimeType === 'image/png' && dataUrl.length * 0.75 > IMAGE_PNG_FALLBACK_SIZE) {
+      // 转 JPEG 前先给透明区域垫一层白底，否则会变黑
+      ctx.globalCompositeOperation = 'destination-over';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-over';
+      mimeType = 'image/jpeg';
+      dataUrl = canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY);
+    }
+
+    const base64 = dataUrl.split(',')[1];
+    return { dataUrl, base64, mimeType, fileSize: Math.round(base64.length * 0.75), originalSize };
+  }
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ==========================================================================
+  // 13. 网页内容提取
+  // ==========================================================================
+  function clearPageContent() {
+    pageContentLoaded = false;
+    currentPageContent = null;
+  }
+
   if (getPageContentBtn) {
     getPageContentBtn.addEventListener('click', async () => {
+      closeAllPopovers();
       try {
-        getPageContentBtn.classList.add('active');
-        
-        // 鑾峰彇褰撳墠娲诲姩鏍囩椤?
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
         if (!tab) {
-          showToast('无法获取当前页面');
-          getPageContentBtn.classList.remove('active');
+          showToast('无法获取当前标签页');
           return;
         }
 
-        // 鏀寔鎵€鏈夌綉椤碉紝涓嶉檺鍒剁壒瀹氱綉绔?
-
-        // 娉ㄥ叆鍐呭鑴氭湰鑾峰彇椤甸潰鍐呭
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: () => {
-            // 鑾峰彇椤甸潰鏍囬
             const title = document.title;
-            
-            // 鑾峰彇椤甸潰涓昏鍐呭锛屽皾璇曞绉嶉€夋嫨鍣?
             let content = '';
-            
-            // 灏濊瘯鑾峰彇鏂囩珷鍐呭鐨勫父瑙侀€夋嫨鍣?
             const contentSelectors = [
-              'article', 
-              '.content', 
-              '.post-content', 
-              '.entry-content',
-              '.note-content',
-              '[data-testid="note-content"]',
-              'main',
-              '.main-content',
-              '#content',
-              '.article-content',
-              '.post-body',
-              '.text-content'
+              'article', '.content', '.post-content', '.entry-content',
+              '.note-content', '[data-testid="note-content"]', 'main',
+              '.main-content', '#content', '.article-content', '.post-body', '.text-content'
             ];
-            
+
             for (const selector of contentSelectors) {
               const element = document.querySelector(selector);
               if (element && element.innerText.trim()) {
@@ -621,30 +1432,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
               }
             }
-            
-            // 濡傛灉娌℃湁鎵惧埌涓昏鍐呭锛岃幏鍙朾ody涓殑鎵€鏈夋枃鏈紙鎺掗櫎瀵艰埅銆佽剼鏈瓑锛?
+
             if (!content) {
-              const bodyClone = document.body.cloneNode(true);
-              // 绉婚櫎鑴氭湰銆佹牱寮忋€佸鑸瓑涓嶉渶瑕佺殑鍏冪礌
-              const elementsToRemove = bodyClone.querySelectorAll('script, style, nav, header, footer, .nav, .navigation, .menu, .sidebar');
-              elementsToRemove.forEach(el => el.remove());
-              content = bodyClone.innerText.trim();
+              const clone = document.body.cloneNode(true);
+              clone.querySelectorAll('script, style, nav, header, footer, .nav, .sidebar').forEach(el => el.remove());
+              content = clone.innerText.trim();
             }
-            
-            // 鑾峰彇缃戠珯淇℃伅
-            const hostname = window.location.hostname;
-            const siteName = document.querySelector('meta[property="og:site_name"]')?.content || hostname;
-            
-            // 鑾峰彇鎻忚堪淇℃伅
-            const description = document.querySelector('meta[name="description"]')?.content || 
-                              document.querySelector('meta[property="og:description"]')?.content || '';
-            
+
             return {
               title: title,
-              content: content.substring(0, 3000), // 闄愬埗鍐呭闀垮害锛岄伩鍏嶈繃闀?
-              siteName: siteName,
-              hostname: hostname,
-              description: description,
+              content: content.substring(0, 3500),
+              hostname: window.location.hostname,
               url: window.location.href
             };
           }
@@ -654,1130 +1452,357 @@ document.addEventListener('DOMContentLoaded', function() {
           const pageData = results[0].result;
           currentPageContent = pageData;
           pageContentLoaded = true;
-          
-          // 鍦ㄨ亰澶╂涓樉绀洪〉闈俊鎭崱鐗?
-          const pageCard = createPageContentCard(pageData);
-          chatMessages.appendChild(pageCard);
+
+          const card = createPageContentCard(pageData);
+          chatMessages.appendChild(card);
           chatMessages.scrollTop = chatMessages.scrollHeight;
-          
-          showToast(`已加载 ${pageData.hostname} 的页面内容`);
+          showToast(`已加载 ${pageData.hostname} 网页内容`);
         } else {
-          showToast('获取页面内容失败');
+          showToast('读取网页失败');
         }
-        
-        getPageContentBtn.classList.remove('active');
-      } catch (error) {
-        console.error('获取页面内容失败:', error);
-        showToast('获取页面内容失败');
-        getPageContentBtn.classList.remove('active');
+      } catch (err) {
+        console.error('获取页面内容失败:', err);
+        showToast('读取页面失败，请刷新页面重试');
       }
     });
   }
 
-  // 鍒涘缓椤甸潰鍐呭鍗＄墖
   function createPageContentCard(pageData) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'page-content-preview';
-    
-    let cardHTML = `
+    cardDiv.innerHTML = `
       <div class="page-preview-header">
         <span class="material-icons">description</span>
-        <span>页面内容已加载</span>
+        <span>页面内容已提取</span>
       </div>
       <div class="page-preview-body">
         <div class="page-title">
           <a href="${pageData.url}" target="_blank" class="page-title-link">${pageData.title}</a>
-        </div>`;
-    
-    if (pageData.author) {
-      cardHTML += `<div class="page-author">作者：${pageData.author}</div>`;
-    }
-    
-    cardHTML += `
-        <div class="page-source">来源：${pageData.hostname || pageData.siteName || '未知来源'}</div>
+        </div>
+        <div class="page-source">来源：${pageData.hostname || '当前网页'}</div>
       </div>
       <div class="page-actions">
-        <button class="summarize-btn">一键总结</button>
-        <button class="note-btn">写成小红书笔记</button>
-        <button class="hot-title-btn">生成爆款标题</button>
+        <button type="button" class="summarize-btn">一键总结</button>
+        <button type="button" class="note-btn">写成小红书笔记</button>
+        <button type="button" class="hot-title-btn">生成5个爆款标题</button>
       </div>
     `;
-    
-    cardDiv.innerHTML = cardHTML;
-    
-    // 涓轰竴閿€荤粨鎸夐挳娣诲姞鐐瑰嚮浜嬩欢
-    const summarizeBtn = cardDiv.querySelector('.summarize-btn');
-    if (summarizeBtn) {
-      summarizeBtn.addEventListener('click', () => {
-        // 濡傛灉姝ｅ湪娴佸紡杈撳嚭锛屼笉澶勭悊
-        if (isStreaming) return;
-        
-        // 鏄剧ず澶勭悊涓姸鎬?
-        addMessage('正在总结内容...', false);
-        
-                 // 鏋勫缓鎬荤粨璇锋眰
-         const title = currentPageContent.title || '无标题';
-         const content = currentPageContent.content || '';
-         const summaryRequest = `请对以下内容进行总结，提炼核心观点和要点：\n\n标题：${title}\n\n${content}`;
-         
-         // 鑾峰彇褰撳墠閫夋嫨鐨勬ā鍨?
-         const modelSwitcher = document.getElementById('modelSwitcher');
-         const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
-        
-        // 鍙戦€佹秷鎭粰background script
-        chrome.runtime.sendMessage({
-          action: 'analyzeContent',
-          content: summaryRequest,
-          isChat: true,
-          isDataAnalysis: false,
-          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-          hasFile: false,
-          skipUserMessage: true, // 娣诲姞鏍囪锛岃〃绀轰笉鏄剧ず鐢ㄦ埛娑堟伅
-          model: selectedModel,
-          customInstructionPrompt: '' // 椤甸潰鍔熻兘涓嶄娇鐢ㄨ嚜瀹氫箟鎸囦护锛屼繚鎸佷负绌?
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('鍙戦€佹秷鎭椂鍑洪敊:', chrome.runtime.lastError);
-          }
-        });
-        
-                 // 娣诲姞鍒板巻鍙茶褰曚絾涓嶆樉绀哄湪鐣岄潰涓?
-         const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-         if (currentSessionIndex !== -1) {
-           const summaryMessage = `[一键总结] ${title}`;
-           chatSessions[currentSessionIndex].messages.push({ role: "user", content: summaryMessage, hidden: true });
-           chatSessions[currentSessionIndex].hasUserMessage = true;
-           saveSessionsToStorage();
-         }
-      });
-    }
-    
-    // 涓哄啓鎴愮瑪璁版寜閽坊鍔犵偣鍑讳簨浠?
-    const noteBtn = cardDiv.querySelector('.note-btn');
-    if (noteBtn) {
-      noteBtn.addEventListener('click', () => {
-        // 濡傛灉姝ｅ湪娴佸紡杈撳嚭锛屼笉澶勭悊
-        if (isStreaming) return;
-        
-        // 鏄剧ず澶勭悊涓姸鎬?
-        addMessage('正在将内容改写为小红书笔记，请稍候...', false);
-        
-                 // 鏋勫缓鏀瑰啓璇锋眰
-         const title = currentPageContent.title || '无标题';
-         const content = currentPageContent.content || '';
-         const rewriteRequest = `请将以下内容改写成1000字以内的小红书笔记格式，保留核心内容，使用小红书常见的轻松活泼风格，添加适当的emoji表情，分段清晰：\n\n标题：${title}\n\n${content}`;
-         
-         // 鑾峰彇褰撳墠閫夋嫨鐨勬ā鍨?
-         const modelSwitcher = document.getElementById('modelSwitcher');
-         const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
-        
-        // 鍙戦€佹秷鎭粰background script
-        chrome.runtime.sendMessage({
-          action: 'analyzeContent',
-          content: rewriteRequest,
-          isChat: true,
-          isDataAnalysis: false,
-          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-          hasFile: false,
-          skipUserMessage: true,
-          model: selectedModel,
-          customInstructionPrompt: '' // 椤甸潰鍔熻兘涓嶄娇鐢ㄨ嚜瀹氫箟鎸囦护锛屼繚鎸佷负绌?
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('鍙戦€佹秷鎭椂鍑洪敊:', chrome.runtime.lastError);
-          }
-        });
-        
-                 // 娣诲姞鍒板巻鍙茶褰曚絾涓嶆樉绀哄湪鐣岄潰涓?
-         const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-         if (currentSessionIndex !== -1) {
-           const noteMessage = `[写成笔记] ${title}`;
-           chatSessions[currentSessionIndex].messages.push({ role: "user", content: noteMessage, hidden: true });
-           chatSessions[currentSessionIndex].hasUserMessage = true;
-           saveSessionsToStorage();
-         }
-      });
-    }
-    
-    // 涓虹敓鎴愮垎娆炬爣棰樻寜閽坊鍔犵偣鍑讳簨浠?
-    const hotTitleBtn = cardDiv.querySelector('.hot-title-btn');
-    if (hotTitleBtn) {
-      hotTitleBtn.addEventListener('click', () => {
-        // 濡傛灉姝ｅ湪娴佸紡杈撳嚭锛屼笉澶勭悊
-        if (isStreaming) return;
-        
-        // 鏄剧ず澶勭悊涓姸鎬?
-        addMessage('正在生成爆款标题，请稍候...', false);
-        
-                 // 鏋勫缓鐢熸垚鏍囬璇锋眰
-         const title = currentPageContent.title || '';
-         const content = currentPageContent.content || '';
-         const titleRequest = `请根据以下内容，直接生成5个吸引人的小红书爆款标题，不要解释，只需列出5个标题：\n\n标题：${title}\n\n${content}`;
-         
-         // 鑾峰彇褰撳墠閫夋嫨鐨勬ā鍨?
-         const modelSwitcher = document.getElementById('modelSwitcher');
-         const selectedModel = modelSwitcher ? modelSwitcher.value : 'deepseek';
-        
-        // 鍙戦€佹秷鎭粰background script
-        chrome.runtime.sendMessage({
-          action: 'analyzeContent',
-          content: titleRequest,
-          isChat: true,
-          isDataAnalysis: false,
-          chatHistory: chatSessions.find(s => s.currentSession === true)?.messages || [],
-          hasFile: false,
-          skipUserMessage: true,
-          model: selectedModel,
-          customInstructionPrompt: '' // 椤甸潰鍔熻兘涓嶄娇鐢ㄨ嚜瀹氫箟鎸囦护锛屼繚鎸佷负绌?
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('鍙戦€佹秷鎭椂鍑洪敊:', chrome.runtime.lastError);
-          }
-        });
-        
-                 // 娣诲姞鍒板巻鍙茶褰曚絾涓嶆樉绀哄湪鐣岄潰涓?
-         const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-         if (currentSessionIndex !== -1) {
-           const titleMessage = `[生成爆款标题] ${title}`;
-           chatSessions[currentSessionIndex].messages.push({ role: "user", content: titleMessage, hidden: true });
-           chatSessions[currentSessionIndex].hasUserMessage = true;
-           saveSessionsToStorage();
-         }
-      });
-    }
-    
+
+    cardDiv.querySelector('.summarize-btn').addEventListener('click', () => {
+      if (isStreaming) return;
+      addMessage('正在提炼网页要点...', false);
+      sendToAI(`请对以下内容进行结构化总结，提炼核心痛点与要点：\n\n标题：${pageData.title}\n\n${pageData.content}`, '一键总结当前网页');
+    });
+
+    cardDiv.querySelector('.note-btn').addEventListener('click', () => {
+      if (isStreaming) return;
+      addMessage('正在改写为小红书笔记...', false);
+      sendToAI(`请将以下内容改写成一篇结构完整的小红书文案（800字以内），语言通俗活泼，分段清晰，带emoji与相关标签：\n\n标题：${pageData.title}\n\n${pageData.content}`, '将当前网页改写为小红书笔记');
+    });
+
+    cardDiv.querySelector('.hot-title-btn').addEventListener('click', () => {
+      if (isStreaming) return;
+      addMessage('正在生成爆款标题...', false);
+      sendToAI(`请根据以下内容，直接提供5个高点击率的小红书爆款标题：\n\n标题：${pageData.title}\n\n${pageData.content}`, '生成5个爆款标题');
+    });
+
     return cardDiv;
   }
 
-  // 鍘嗗彶璁板綍鎸夐挳鐐瑰嚮浜嬩欢
-  if (historyBtn) {
-    historyBtn.addEventListener('click', () => {
-      // 鏄剧ず鍘嗗彶璁板綍妯℃€佹
-      const historyModal = document.getElementById('historyModal');
-      const historyList = document.getElementById('historyList');
-      
-      if (historyModal && historyList) {
-        // 娓呯┖鍘嗗彶鍒楄〃
-        historyList.innerHTML = '';
-        
-        // 鍔犺浇鍘嗗彶璁板綍
-        chrome.storage.local.get(['chatSessions'], (result) => {
-          const sessions = result.chatSessions || [];
-          
-          if (sessions.length === 0) {
-            historyList.innerHTML = '<div class="no-history">暂无聊天历史</div>';
-          } else {
-            sessions.forEach(session => {
-              const sessionDiv = document.createElement('div');
-              sessionDiv.className = 'history-item';
-              sessionDiv.innerHTML = `
-                <div class="history-content">
-                  <div class="history-title">${session.title}</div>
-                  <div class="history-date">${session.created}</div>
-                </div>
-                <button class="delete-btn" title="删除此对话">
+  // ==========================================================================
+  // 14. 历史记录管理 (History Modal)
+  // ==========================================================================
+  function openHistoryModal() {
+    closeAllPopovers();
+    if (historyModal && historyList) {
+      historyList.innerHTML = '';
+      chrome.storage.local.get(['chatSessions'], (result) => {
+        const sessions = (result.chatSessions || []).filter(s => s.messages && s.messages.length > 0);
+        if (sessions.length === 0) {
+          historyList.innerHTML = '<div class="no-history">暂无历史对话记录</div>';
+        } else {
+          sessions.forEach(session => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+              <div class="history-content">
+                <div class="history-title">${session.title || '未命名对话'}</div>
+                <div class="history-date">${session.created || ''}</div>
+              </div>
+              <div class="history-actions">
+                <button type="button" class="history-action-btn rename-btn" title="重命名">
+                  <span class="material-icons">edit</span>
+                </button>
+                <button type="button" class="delete-btn" title="删除对话">
                   <span class="material-icons">delete</span>
                 </button>
-              `;
+              </div>
+            `;
 
-              const titleElement = sessionDiv.querySelector('.history-title');
-              if (titleElement) {
-                titleElement.textContent = session.title || '未命名对话';
+            item.querySelector('.history-content').addEventListener('click', () => {
+              loadChatSession(session);
+              historyModal.classList.add('hidden');
+            });
+
+            item.querySelector('.rename-btn').addEventListener('click', (e) => {
+              e.stopPropagation();
+              const next = prompt('请输入新标题', session.title || '');
+              if (next && next.trim()) {
+                session.title = next.trim();
+                session.titlePending = false;  // 手动改过名就不再被首条消息覆盖
+                saveSessionsToStorage();
+                openHistoryModal();
+                updateHeaderSessionTitle(session.title);
               }
+            });
 
-              const dateElement = sessionDiv.querySelector('.history-date');
-              if (dateElement) {
-                dateElement.textContent = session.created || '';
+            item.querySelector('.delete-btn').addEventListener('click', (e) => {
+              e.stopPropagation();
+              if (confirm('确定要删除这条对话记录吗？')) {
+                chatSessions = chatSessions.filter(s => s.id !== session.id);
+                saveSessionsToStorage();
+                openHistoryModal();
+                showToast('已删除记录');
               }
+            });
 
-              const deleteActionBtn = sessionDiv.querySelector('.delete-btn');
-              const actionsDiv = document.createElement('div');
-              actionsDiv.className = 'history-actions';
+            historyList.appendChild(item);
+          });
+        }
+      });
+      historyModal.classList.remove('hidden');
+    }
+  }
 
-              const renameBtn = document.createElement('button');
-              renameBtn.className = 'history-action-btn rename-btn';
-              renameBtn.type = 'button';
-              renameBtn.title = '重命名此对话';
-              renameBtn.innerHTML = '<span class="material-icons">edit</span>';
+  function loadChatSession(session) {
+    chatMessages.innerHTML = '';
+    chatSessions.forEach(s => { s.currentSession = (s.id === session.id); });
+    updateHeaderSessionTitle(session.title);
 
-              if (deleteActionBtn) {
-                sessionDiv.appendChild(actionsDiv);
-                actionsDiv.appendChild(renameBtn);
-                actionsDiv.appendChild(deleteActionBtn);
-              }
-              
-              // 鐐瑰嚮鍘嗗彶璁板綍椤瑰姞杞藉璇?
-              const historyContent = sessionDiv.querySelector('.history-content');
-              historyContent.addEventListener('click', () => {
-                loadChatSession(session);
-                historyModal.style.display = 'none';
-              });
+    if (session.messages && session.messages.length > 0) {
+      session.messages.forEach(msg => {
+        if (msg.role === 'user') {
+          addMessage(msg.content, true, true);
+        } else if (msg.role === 'assistant') {
+          addMessage(msg.content, false, true);
+        }
+      });
+      appendFollowUpPills(chatMessages);
+    } else {
+      renderWelcomeScreen();
+    }
+  }
 
-              renameBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                renameHistorySession(session.id, session.title || '');
-              });
-              
-              // 鐐瑰嚮鍒犻櫎鎸夐挳鍒犻櫎瀵硅瘽
-              const deleteBtn = sessionDiv.querySelector('.delete-btn');
-              deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // 闃绘浜嬩欢鍐掓场
-                deleteHistorySession(session.id);
-              });
-              
-              historyList.appendChild(sessionDiv);
+  if (historyBtn) historyBtn.addEventListener('click', openHistoryModal);
+  if (closeHistoryModal) closeHistoryModal.addEventListener('click', () => historyModal.classList.add('hidden'));
+  if (historyModal) {
+    historyModal.addEventListener('click', (e) => {
+      if (e.target === historyModal) historyModal.classList.add('hidden');
+    });
+  }
+
+  // ==========================================================================
+  // 15. 自定义指令 (Custom Instructions)
+  // ==========================================================================
+  const instructionsModalOverlay = document.getElementById('instructions-modal-overlay');
+  const showHideInstructionsBtn = document.getElementById('show-hide-instructions-btn');
+  const closeInstructionsBtn = document.getElementById('close-instructions-btn');
+  const addNewInstructionBtn = document.getElementById('add-new-instruction-btn');
+  const addInstructionForm = document.getElementById('add-instruction-form');
+  const saveInstructionBtn = document.getElementById('save-instruction-btn');
+  const cancelAddInstructionBtn = document.getElementById('cancel-add-btn');
+  const instructionsList = document.getElementById('instructions-list');
+  const instructionNameInput = document.getElementById('instruction-name');
+  const instructionPromptInput = document.getElementById('instruction-prompt');
+  const instructionEditIdInput = document.getElementById('instruction-edit-id');
+
+  function openInstructionsModal() {
+    closeAllPopovers();
+    if (instructionsModalOverlay) {
+      instructionsModalOverlay.classList.remove('hidden');
+      renderInstructions();
+    }
+  }
+
+  function closeInstructionsModal() {
+    if (instructionsModalOverlay) {
+      instructionsModalOverlay.classList.add('hidden');
+      if (addInstructionForm) addInstructionForm.classList.add('hidden');
+      if (addNewInstructionBtn) addNewInstructionBtn.classList.remove('hidden');
+    }
+  }
+
+  if (showHideInstructionsBtn) showHideInstructionsBtn.addEventListener('click', openInstructionsModal);
+  if (closeInstructionsBtn) closeInstructionsBtn.addEventListener('click', closeInstructionsModal);
+  if (instructionsModalOverlay) {
+    instructionsModalOverlay.addEventListener('click', (e) => {
+      if (e.target === instructionsModalOverlay) closeInstructionsModal();
+    });
+  }
+
+  if (addNewInstructionBtn) {
+    addNewInstructionBtn.addEventListener('click', () => {
+      addInstructionForm.classList.remove('hidden');
+      addNewInstructionBtn.classList.add('hidden');
+      instructionNameInput.value = '';
+      instructionPromptInput.value = '';
+      instructionEditIdInput.value = '';
+    });
+  }
+
+  if (cancelAddInstructionBtn) {
+    cancelAddInstructionBtn.addEventListener('click', () => {
+      addInstructionForm.classList.add('hidden');
+      addNewInstructionBtn.classList.remove('hidden');
+    });
+  }
+
+  if (saveInstructionBtn) {
+    saveInstructionBtn.addEventListener('click', () => {
+      const name = instructionNameInput.value.trim();
+      const prompt = instructionPromptInput.value.trim();
+      const editId = instructionEditIdInput.value;
+
+      if (!name) { showToast('请输入指令名称'); return; }
+      if (!prompt) { showToast('请输入指令内容'); return; }
+
+      chrome.storage.local.get({ customInstructions: [] }, (data) => {
+        let list = data.customInstructions || [];
+        if (editId) {
+          const item = list.find(i => i.id === editId);
+          if (item) { item.name = name; item.prompt = prompt; }
+        } else {
+          list.push({ id: 'instr_' + Date.now(), name, prompt });
+        }
+        chrome.storage.local.set({ customInstructions: list }, () => {
+          renderInstructions();
+          addInstructionForm.classList.add('hidden');
+          addNewInstructionBtn.classList.remove('hidden');
+          showToast('指令已保存');
+        });
+      });
+    });
+  }
+
+  function renderInstructions() {
+    if (!instructionsList) return;
+    chrome.storage.local.get({ customInstructions: [], activeInstructionId: null }, (data) => {
+      const { customInstructions, activeInstructionId } = data;
+      instructionsList.innerHTML = '';
+
+      // 无指令选项
+      const noneDiv = document.createElement('div');
+      noneDiv.className = 'instruction-item';
+      noneDiv.innerHTML = `
+        <input type="radio" id="instr-none" name="active-instr" value="none" ${!activeInstructionId ? 'checked' : ''}>
+        <label for="instr-none">默认人设（无特殊设定）</label>
+      `;
+      noneDiv.querySelector('input').addEventListener('change', () => {
+        chrome.storage.local.set({ activeInstructionId: null }, () => {
+          showToast('已切回默认人设');
+          closeInstructionsModal();
+        });
+      });
+      instructionsList.appendChild(noneDiv);
+
+      customInstructions.forEach(instr => {
+        const item = document.createElement('div');
+        item.className = 'instruction-item';
+        item.innerHTML = `
+          <input type="radio" id="${instr.id}" name="active-instr" value="${instr.id}" ${instr.id === activeInstructionId ? 'checked' : ''}>
+          <label for="${instr.id}">${instr.name}</label>
+          <div class="instruction-buttons">
+            <button type="button" class="edit-btn" title="编辑">✏️</button>
+            <button type="button" class="delete-btn" title="删除">
+              <span class="material-icons">delete</span>
+            </button>
+          </div>
+        `;
+
+        item.querySelector('input').addEventListener('change', () => {
+          chrome.storage.local.set({ activeInstructionId: instr.id }, () => {
+            showToast(`已激活: ${instr.name}`);
+            closeInstructionsModal();
+          });
+        });
+
+        item.querySelector('.edit-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          addInstructionForm.classList.remove('hidden');
+          addNewInstructionBtn.classList.add('hidden');
+          instructionNameInput.value = instr.name;
+          instructionPromptInput.value = instr.prompt;
+          instructionEditIdInput.value = instr.id;
+        });
+
+        item.querySelector('.delete-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`确定删除指令 "${instr.name}" 吗？`)) {
+            const updated = customInstructions.filter(i => i.id !== instr.id);
+            const newActive = activeInstructionId === instr.id ? null : activeInstructionId;
+            chrome.storage.local.set({ customInstructions: updated, activeInstructionId: newActive }, () => {
+              renderInstructions();
             });
           }
         });
-        
-        // 鏄剧ず妯℃€佹
-        historyModal.style.display = 'flex';
-      }
-    });
-  }
 
-  // 鍒犻櫎鍘嗗彶璁板綍浼氳瘽
-  function deleteHistorySession(sessionId) {
-    // 鏄剧ず纭瀵硅瘽妗?
-    if (confirm('确定要删除这条聊天记录吗？删除后无法恢复。')) {
-      // 浠庡瓨鍌ㄤ腑鍒犻櫎
-      chrome.storage.local.get(['chatSessions'], (result) => {
-        const sessions = result.chatSessions || [];
-        const updatedSessions = sessions.filter(s => s.id !== sessionId);
-        
-        chrome.storage.local.set({ chatSessions: updatedSessions }, () => {
-          // 浠庡綋鍓嶄細璇濆垪琛ㄤ腑鍒犻櫎
-          const sessionIndex = chatSessions.findIndex(s => s.id === sessionId);
-          if (sessionIndex !== -1) {
-            chatSessions.splice(sessionIndex, 1);
-          }
-          
-          // 閲嶆柊鍔犺浇鍘嗗彶璁板綍鍒楄〃
-          refreshHistoryList();
-          showToast('聊天记录已删除');
-          console.log('[DEBUG] 鍒犻櫎浼氳瘽鍚庡啓鍏hatSessions:', updatedSessions.length, updatedSessions.map(s => ({id: s.id, messages: s.messages.length})));
-        });
-      });
-    }
-  }
-
-  // 鍒锋柊鍘嗗彶璁板綍鍒楄〃
-  function renameHistorySession(sessionId, currentTitle) {
-    const nextTitle = prompt('请输入新的对话标题', currentTitle || '');
-    if (nextTitle === null) {
-      return;
-    }
-
-    const trimmedTitle = nextTitle.trim();
-    if (!trimmedTitle) {
-      showToast('标题不能为空');
-      return;
-    }
-
-    chrome.storage.local.get(['chatSessions'], (result) => {
-      const sessions = result.chatSessions || [];
-      const updatedSessions = sessions.map(session => (
-        session.id === sessionId
-          ? { ...session, title: trimmedTitle }
-          : session
-      ));
-
-      chrome.storage.local.set({ chatSessions: updatedSessions }, () => {
-        const sessionIndex = chatSessions.findIndex(s => s.id === sessionId);
-        if (sessionIndex !== -1) {
-          chatSessions[sessionIndex].title = trimmedTitle;
-        }
-
-        refreshHistoryList();
-        showToast('标题已重命名');
+        instructionsList.appendChild(item);
       });
     });
   }
 
-  function refreshHistoryList() {
-    const historyList = document.getElementById('historyList');
-    if (!historyList) return;
-    
-    // 娓呯┖鍘嗗彶鍒楄〃
-    historyList.innerHTML = '';
-    
-    // 閲嶆柊鍔犺浇鍘嗗彶璁板綍
-    chrome.storage.local.get(['chatSessions'], (result) => {
-      let sessions = result.chatSessions || [];
-      
-      // 娓呯悊绌虹殑鍘嗗彶璁板綍
-      const validSessions = sessions.filter(session => {
-        // 杩囨护鎺夌郴缁熸彁绀烘秷鎭紝寰楀埌鏈夋晥娑堟伅
-        const validMessages = (session.messages || []).filter(msg => 
-          msg.role && msg.content && msg.content.trim() && 
-          !(msg.role === 'assistant' && 
-             (msg.content === '欢迎使用AI助手，请输入您的问题。' || 
-             msg.content === '正在思考...' ||
-             msg.content === '正在总结内容...' ||
-             msg.content === '正在生成爆款标题，请稍候...' ||
-             msg.content === '正在将内容改写为小红书笔记，请稍候...' ||
-             msg.content === '发送消息失败，请重试' ||
-             msg.content.startsWith('未检测到') ||
-             msg.content.startsWith('欢迎使用AI助手')))
-        );
-        
-        // 妫€鏌ユ槸鍚︽湁鏈夋晥鐨勫璇濆唴瀹?
-        const hasValidConversation = validMessages.length >= 2 && 
-                                    validMessages.some(msg => msg.role === 'user') && 
-                                    validMessages.some(msg => msg.role === 'assistant');
-        
-        // 妫€鏌ユ槸鍚︽湁椤甸潰鍐呭
-        const hasPageContent = session.pageContent && 
-                              session.pageContent.content && 
-                              session.pageContent.content.trim();
-        
-        return hasValidConversation || hasPageContent;
-      });
-      
-      // 濡傛灉娓呯悊鍚庣殑浼氳瘽鍒楄〃涓庡師鏉ヤ笉鍚岋紝鏇存柊瀛樺偍
-      if (validSessions.length !== sessions.length) {
-        chrome.storage.local.set({ chatSessions: validSessions });
-        console.log('清理了', sessions.length - validSessions.length, '个空对话');
-      }
-      
-      if (validSessions.length === 0) {
-        historyList.innerHTML = '<div class="no-history">暂无聊天历史</div>';
-      } else {
-        validSessions.forEach(session => {
-          const sessionDiv = document.createElement('div');
-          sessionDiv.className = 'history-item';
-          sessionDiv.innerHTML = `
-            <div class="history-content">
-              <div class="history-title">${session.title}</div>
-              <div class="history-date">${session.created}</div>
-            </div>
-            <button class="delete-btn" title="删除此对话">
-              <span class="material-icons">delete</span>
-            </button>
-          `;
-
-          const titleElement = sessionDiv.querySelector('.history-title');
-          if (titleElement) {
-            titleElement.textContent = session.title || '未命名对话';
-          }
-
-          const dateElement = sessionDiv.querySelector('.history-date');
-          if (dateElement) {
-            dateElement.textContent = session.created || '';
-          }
-
-          const deleteActionBtn = sessionDiv.querySelector('.delete-btn');
-          const actionsDiv = document.createElement('div');
-          actionsDiv.className = 'history-actions';
-
-          const renameBtn = document.createElement('button');
-          renameBtn.className = 'history-action-btn rename-btn';
-          renameBtn.type = 'button';
-          renameBtn.title = '重命名此对话';
-          renameBtn.innerHTML = '<span class="material-icons">edit</span>';
-
-          if (deleteActionBtn) {
-            sessionDiv.appendChild(actionsDiv);
-            actionsDiv.appendChild(renameBtn);
-            actionsDiv.appendChild(deleteActionBtn);
-          }
-          
-          // 鐐瑰嚮鍘嗗彶璁板綍椤瑰姞杞藉璇?
-          const historyContent = sessionDiv.querySelector('.history-content');
-          historyContent.addEventListener('click', () => {
-            loadChatSession(session);
-            const historyModal = document.getElementById('historyModal');
-            if (historyModal) {
-              historyModal.style.display = 'none';
-            }
-          });
-
-          renameBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            renameHistorySession(session.id, session.title || '');
-          });
-          
-          // 鐐瑰嚮鍒犻櫎鎸夐挳鍒犻櫎瀵硅瘽
-          const deleteBtn = sessionDiv.querySelector('.delete-btn');
-          deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // 闃绘浜嬩欢鍐掓场
-            deleteHistorySession(session.id);
-          });
-          
-          historyList.appendChild(sessionDiv);
-        });
-      }
-    });
-  }
-
-  // 鍔犺浇鑱婂ぉ浼氳瘽
-  function loadChatSession(session) {
-    // 鍏堝湪chatSessions閲屾煡鎵?
-    let targetSession = chatSessions.find(s => s.id === session.id);
-    if (!targetSession) {
-      // 娌℃湁灏辨彃鍏?
-      chatSessions.unshift(session);
-      targetSession = session;
-    }
-    // 鎵€鏈変細璇漜urrentSession璁句负false
-    chatSessions.forEach(s => s.currentSession = false);
-    // 鍙粰鐩爣浼氳瘽璁句负true
-    targetSession.currentSession = true;
-
-    // 娓呯┖褰撳墠鑱婂ぉ
-    chatMessages.innerHTML = '';
-    // 鍔犺浇鍘嗗彶娑堟伅
-    if (targetSession.messages && targetSession.messages.length > 0) {
-      targetSession.messages.forEach(msg => {
-        addMessage(msg.content, msg.role === 'user', true);
-      });
-    }
-    showToast('历史对话已加载');
-  }
-
-  // 鍘嗗彶璁板綍妯℃€佹鍏抽棴浜嬩欢
-  if (closeHistoryModal) {
-    closeHistoryModal.addEventListener('click', () => {
-      if (historyModal) {
-        historyModal.style.display = 'none';
-      }
-    });
-  }
-
-  // 鐐瑰嚮妯℃€佹澶栭儴鍏抽棴
-  if (historyModal) {
-    historyModal.addEventListener('click', (event) => {
-      if (event.target === historyModal) {
-        historyModal.style.display = 'none';
-      }
-    });
-  }
-
-  // 鍦ㄧ獥鍙ｅ叧闂椂淇濆瓨浼氳瘽鍘嗗彶
-  window.addEventListener('unload', () => {
-    saveSessionsToStorage();
-  });
-  
-  // 淇濆瓨浼氳瘽鍒板瓨鍌ㄧ殑鍑芥暟
-  function saveSessionsToStorage() {
-    chrome.storage.local.get(['chatSessions'], (result) => {
-      const existingSessions = result.chatSessions || [];
-      
-      const sessionsToSave = chatSessions.filter(session => {
-        // 棣栧厛杩囨护鎺夌郴缁熸彁绀烘秷鎭紝寰楀埌鏈夋晥娑堟伅
-        const validMessages = (session.messages || []).filter(msg => 
-          msg.role && msg.content && msg.content.trim() && 
-          !(msg.role === 'assistant' && 
-            (msg.content === '欢迎使用AI助手，请输入您的问题。' || 
-             msg.content === '正在思考...' ||
-             msg.content === '正在总结内容...' ||
-             msg.content === '正在生成爆款标题，请稍候...' ||
-             msg.content === '正在将内容改写为小红书笔记，请稍候...' ||
-             msg.content === '发送消息失败，请重试' ||
-             msg.content.startsWith('未检测到') ||
-             msg.content.startsWith('欢迎使用AI助手')))
-        );
-        
-        // 妫€鏌ユ槸鍚︽湁鏈夋晥鐨勫璇濆唴瀹?
-        const hasValidConversation = validMessages.length >= 2 && // 鑷冲皯鏈変竴杞璇濓紙鐢ㄦ埛+AI锛?
-                                    validMessages.some(msg => msg.role === 'user') && 
-                                    validMessages.some(msg => msg.role === 'assistant');
-        
-        // 妫€鏌ユ槸鍚︽湁椤甸潰鍐呭锛堝嵆浣挎病鏈夊璇濅篃鍙互淇濆瓨锛?
-        const hasPageContent = session.pageContent && 
-                              session.pageContent.content && 
-                              session.pageContent.content.trim();
-        
-        // 濡傛灉鏄复鏃朵細璇濅笖娌℃湁鍐呭锛屼笉淇濆瓨
-        if (session.isTemporary && !hasValidConversation && !hasPageContent) {
-          return false;
-        }
-        
-        // 鍙繚鐣欐湁鍐呭鐨勪細璇濓紝涓嶅啀鍥犱负saveToHistory涓簍rue鑰屼繚瀛?
-        return hasValidConversation || hasPageContent;
-      }).map(session => {
-        const sessionCopy = JSON.parse(JSON.stringify(session));
-        
-        // 绉婚櫎涓存椂鏍囪锛屽洜涓轰竴鏃︿繚瀛樺氨涓嶅啀鏄复鏃朵細璇濅簡
-        delete sessionCopy.isTemporary;
-        
-        // 娓呯悊娑堟伅鏁扮粍锛岀Щ闄ょ郴缁熸彁绀?
-        if (sessionCopy.messages && sessionCopy.messages.length > 0) {
-          sessionCopy.messages = sessionCopy.messages.filter(msg => 
-            msg.role && msg.content && msg.content.trim() &&
-            !(msg.role === 'assistant' && 
-              (msg.content === '欢迎使用AI助手，请输入您的问题。' || 
-               msg.content === '正在思考...' ||
-               msg.content === '正在总结内容...' ||
-               msg.content === '正在生成爆款标题，请稍候...' ||
-               msg.content === '正在将内容改写为小红书笔记，请稍候...' ||
-               msg.content === '发送消息失败，请重试' ||
-               msg.content.startsWith('未检测到') ||
-               msg.content.startsWith('欢迎使用AI助手')))
-          );
-        }
-        
-        // 淇濈暀椤甸潰鍐呭
-        if (session.pageContent) {
-          sessionCopy.pageContent = session.pageContent;
-        }
-        
-        return sessionCopy;
-      });
-      
-      // 杩涗竴姝ヨ繃婊わ細纭繚淇濆瓨鐨勪細璇濈‘瀹炴湁鍐呭
-      sessionsToSave.forEach(session => {
-        if (session.messages && session.messages.length > MAX_MESSAGES_PER_SESSION) {
-          session.messages = session.messages.slice(-MAX_MESSAGES_PER_SESSION);
-        }
-      });
-
-      const finalSessionsToSave = sessionsToSave.filter(session => {
-        const hasMessages = session.messages && session.messages.length > 0;
-        const hasPageContent = session.pageContent && session.pageContent.content;
-        return hasMessages || hasPageContent;
-      });
-      
-      if (finalSessionsToSave.length > 0) {
-        const currentIds = finalSessionsToSave.map(s => s.id);
-        const filteredExisting = existingSessions.filter(s => !currentIds.includes(s.id));
-        const updatedSessions = [...finalSessionsToSave, ...filteredExisting].slice(0, MAX_CHAT_SESSIONS);
-        
-        chrome.storage.local.set({ chatSessions: updatedSessions });
-        console.log('[DEBUG] saveSessionsToStorage鍐欏叆chatSessions:', updatedSessions.length, updatedSessions.map(s => ({id: s.id, messages: s.messages.length})));
-        
-        console.log('保存会话到历史记录:', finalSessionsToSave.length, '个有效会话');
-      } else {
-        console.log('没有有效会话需要保存');
-      }
-    });
-  }
-  
-  // 娣诲姞鎬濊€冨姩鐢绘秷鎭?
-  function addThinkingMessage() {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message ai-message thinking-message';
-    
-    // 鍒涘缓鎬濊€冩枃鏈拰鍔ㄧ敾鍏冪礌
-    const thinkingContainer = document.createElement('div');
-    thinkingContainer.innerHTML = `
-      <span class="thinking-text">正在思考...</span>
-      <span class="thinking-dots">
-        <span></span>
-        <span></span>
-        <span></span>
-      </span>
-      <div class="thinking-shimmer"></div>
-    `;
-    
-    messageDiv.appendChild(thinkingContainer);
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // 淇濇寔"姝ｅ湪鎬濊€?鏂囨湰涓嶅彉锛屽彧鏄剧ず鍔ㄧ敾鏁堟灉
-  }
-
-  // 娣诲姞娑堟伅鍒拌亰澶╃獥鍙?
-  function addMessage(message, isUser, onlyUI = false) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-    if (!isUser) {
-      messageDiv.setAttribute('data-raw-content', message);
-      // 浣跨敤鏀硅繘鐨刴arkdown瑙ｆ瀽鍑芥暟
-      if (typeof window.parseMarkdown === 'function') {
-        messageDiv.innerHTML = window.parseMarkdown(message);
-      } else {
-        // 闄嶇骇鏂规锛氱洿鎺ヤ娇鐢╩arked
-        messageDiv.innerHTML = marked(String(message).trim());
-      }
-      
-      // 涓篈I娑堟伅娣诲姞澶嶅埗鎸夐挳锛堟帓闄ょ郴缁熸彁绀烘秷鎭級
-      if (!message.startsWith('欢迎使用AI助手') && !message.startsWith('正在思考...') && !message.startsWith('正在总结内容') && !message.startsWith('正在生成爆款标题') && !message.startsWith('正在将内容改写为小红书笔记') && !message.startsWith('发送消息失败')) {
-        const copyButton = document.createElement('button');
-        copyButton.className = 'copy-button';
-        copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-        copyButton.addEventListener('click', async () => {
-          try {
-            // 浼樺厛鑾峰彇娓叉煋鍚庣殑绾枃鏈唴瀹?
-            let textToCopy = message;
-            
-            // 灏濊瘯浠庡綋鍓嶆秷鎭殑娓叉煋鍐呭涓彁鍙栫函鏂囨湰
-            const messageContent = messageDiv.querySelector('.markdown-body');
-            if (messageContent) {
-              textToCopy = messageContent.innerText || messageContent.textContent || message;
-            } else {
-              // 濡傛灉娌℃湁markdown-body锛岀洿鎺ヤ粠messageDiv鑾峰彇鏂囨湰
-              const textContent = messageDiv.textContent || messageDiv.innerText;
-              if (textContent && textContent !== '复制') {
-                // 绉婚櫎澶嶅埗鎸夐挳鐨勬枃鏈?
-                textToCopy = textContent.replace(/复制$/, '').replace(/已复制/, '').trim();
-              }
-            }
-            
-            await navigator.clipboard.writeText(textToCopy);
-            copyButton.innerHTML = '<span class="material-icons">check</span>已复制';
-            copyButton.classList.add('copy-success');
-            setTimeout(() => {
-              copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-              copyButton.classList.remove('copy-success');
-            }, 2000);
-          } catch (err) {
-            console.error('复制失败:', err);
-            // 闄嶇骇鏂规锛氫娇鐢╡xecCommand
-            let textToCopy = message;
-            
-            // 鍚屾牱灏濊瘯鑾峰彇娓叉煋鍚庣殑鏂囨湰鍐呭
-            const messageContent = messageDiv.querySelector('.markdown-body');
-            if (messageContent) {
-              textToCopy = messageContent.innerText || messageContent.textContent || message;
-            } else {
-              const textContent = messageDiv.textContent || messageDiv.innerText;
-              if (textContent && textContent !== '复制') {
-                textToCopy = textContent.replace(/复制$/, '').replace(/已复制/, '').trim();
-              }
-            }
-            
-            const textArea = document.createElement('textarea');
-            textArea.value = textToCopy;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-              document.execCommand('copy');
-              copyButton.innerHTML = '<span class="material-icons">check</span>已复制';
-              copyButton.classList.add('copy-success');
-              setTimeout(() => {
-                copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-                copyButton.classList.remove('copy-success');
-              }, 2000);
-            } catch (fallbackErr) {
-              console.error('降级复制也失败:', fallbackErr);
-              showToast('复制失败，请手动选择文本复制');
-            }
-            document.body.removeChild(textArea);
-          }
-        });
-        messageDiv.appendChild(copyButton);
-      }
-      
-      // 鍙湪涓嶆槸UI鎻愮ず鏃跺啓鍏essages
-      if (!onlyUI && !message.startsWith('欢迎使用AI助手') && !message.startsWith('正在思考...') && !message.startsWith('正在总结内容') && !message.startsWith('正在生成爆款标题') && !message.startsWith('正在将内容改写为小红书笔记') && !message.startsWith('发送消息失败')) {
-        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-        if (currentSessionIndex !== -1) {
-          chatSessions[currentSessionIndex].messages.push({ role: "assistant", content: message });
-        } else if (chatSessions.length > 0) {
-          chatSessions[0].messages.push({ role: "assistant", content: message });
-        }
-      }
-    } else {
-      messageDiv.textContent = message;
-      if (!onlyUI) {
-        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-        if (currentSessionIndex !== -1) {
-          chatSessions[currentSessionIndex].messages.push({ role: "user", content: message });
-          chatSessions[currentSessionIndex].hasUserMessage = true;
-          // 濡傛灉鏄复鏃朵細璇濓紝绉婚櫎涓存椂鏍囪
-          if (chatSessions[currentSessionIndex].isTemporary) {
-            delete chatSessions[currentSessionIndex].isTemporary;
-          }
-        } else if (chatSessions.length > 0) {
-          chatSessions[0].messages.push({ role: "user", content: message });
-          chatSessions[0].hasUserMessage = true;
-          // 濡傛灉鏄复鏃朵細璇濓紝绉婚櫎涓存椂鏍囪
-          if (chatSessions[0].isTemporary) {
-            delete chatSessions[0].isTemporary;
-          }
-        }
-      }
-    }
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-  
-  // 灏嗗彂閫侀€昏緫灏佽鎴愪竴涓嚱鏁?
-  function handleSendMessage() {
-    const rawMessage = messageInput.value.trim();
-    if (!rawMessage || isStreaming) return;
-
-    // 纭畾褰撳墠浼氳瘽骞跺垽鏂槸鍚︿负鏂板璇濈殑绗竴鏉℃秷鎭?
-    let currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-    if (currentSessionIndex === -1 && chatSessions.length > 0) {
-      currentSessionIndex = 0;
-    }
-    const isFirstMessage = (currentSessionIndex !== -1) ? !chatSessions[currentSessionIndex].hasUserMessage : true;
-
-    // 鏃犺绗嚑鏉℃秷鎭紝閮介渶瑕佽幏鍙栬嚜瀹氫箟鎸囦护骞朵紶閫掔粰AI
-    chrome.storage.local.get(['activeInstructionId', 'customInstructions'], (data) => {
-      let finalMessage = rawMessage;
-      let customInstructionPrompt = '';
-
-      console.log('从 storage 读取自定义指令数据:', {
-        activeInstructionId: data.activeInstructionId,
-        customInstructionsCount: data.customInstructions ? data.customInstructions.length : 0
-      });
-
-      // 鑾峰彇婵€娲荤殑鑷畾涔夋寚浠?
-      if (data.activeInstructionId && Array.isArray(data.customInstructions)) {
-        const activeInstr = data.customInstructions.find(instr => instr.id === data.activeInstructionId);
-        if (activeInstr && activeInstr.prompt && activeInstr.prompt.trim()) {
-          customInstructionPrompt = activeInstr.prompt.trim();
-          console.log('找到激活的自定义指令:', activeInstr.name, '| 指令长度:', customInstructionPrompt.length);
-          console.log('自定义指令内容预览:', customInstructionPrompt.substring(0, 100) + (customInstructionPrompt.length > 100 ? '...' : ''));
-        } else {
-          console.log('activeInstructionId 存在但未找到对应指令:', data.activeInstructionId);
-        }
-      } else {
-        if (!data.activeInstructionId) {
-          console.log('ℹ️ 未设置自定义指令(activeInstructionId为空)，使用默认系统提示');
-        } else if (!Array.isArray(data.customInstructions)) {
-          console.log('customInstructions 不是数组:', typeof data.customInstructions);
-        }
-      }
-
-      console.log('准备发送消息给 AI，自定义指令长度:', customInstructionPrompt.length);
-      sendToAI(finalMessage, rawMessage, customInstructionPrompt);
-      messageInput.value = '';
-      autoResizeMessageInput();
-    });
-  }
-
-  // 鍋滄娴佸紡杈撳嚭
-  function handleStopStreaming() {
-    if (isStreaming) {
-      shouldStopStreaming = true;
-      chrome.runtime.sendMessage({ action: 'stopStreaming' });
-      isStreaming = false;
-      toggleSendStopButton(false);
-      
-      // 绉婚櫎鎬濊€冨姩鐢绘秷鎭?
-      const thinkingMessage = document.querySelector('.thinking-message');
-      if (thinkingMessage) {
-        thinkingMessage.remove();
-      }
-      
-      // 涓嶆樉绀?宸插仠姝㈢敓鎴?娑堟伅
-    }
-  }
-
-  // 涓哄彂閫佹寜閽坊鍔犱簨浠剁洃鍚?
-  if (sendMessageBtn) {
-    sendMessageBtn.addEventListener('click', function() {
-      if (isStreaming) {
-        handleStopStreaming();
-      } else {
-        handleSendMessage();
-      }
-    });
-  }
-
-  // 涓鸿緭鍏ユ娣诲姞閿洏浜嬩欢鐩戝惉
-  if (messageInput) {
-    messageInput.addEventListener('input', function() {
-      autoResizeMessageInput();
-    });
-    autoResizeMessageInput();
-    messageInput.addEventListener('keydown', function(event) {
-      if (event.isComposing || event.keyCode === 229) {
-        return;
-      }
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault(); // 阻止默认回车换行，改为发送消息
-        handleSendMessage();
-      }
-    });
-  }
-
-  // 鍙戦€佹秷鎭埌AI
-  function sendToAI(message, displayMessage = null, customInstructionPrompt = '') {
-    const uiMessage = displayMessage !== null ? displayMessage : message;
-
-    console.log('sendToAI 函数被调用，参数:', {
-      messageLength: message.length,
-      hasDisplayMessage: displayMessage !== null,
-      customInstructionPromptLength: customInstructionPrompt.length
-    });
-
-    // 濡傛灉鏈変笂浼犵殑鏂囦欢锛屽湪鑱婂ぉ妗嗕腑鏄剧ず鏂囦欢淇℃伅
-    if (uploadedFileContent) {
-      const fileInfoText = `已上传文件：${uploadedFileContent.fileName} (${formatFileSize(uploadedFileContent.fileSize)})`;
-      addMessage(fileInfoText, true, true);
-      
-      // 闅愯棌搴曢儴鐨勬枃浠舵彁绀?
-      if (fileInfo) {
-        fileInfo.style.display = 'none';
-      }
-    }
-    
-    // 绔嬪嵆鍦║I涓婃樉绀虹敤鎴锋秷鎭?
-    addMessage(uiMessage, true, true);
-
-    const modelSwitcher = document.getElementById('modelSwitcher');
-    const activeModel = modelSwitcher ? modelSwitcher.value : 'deepseek'; 
-    const isDataAnalysis = uploadedFileContent && uploadedFileContent.isData;
-
-    try {
-      isStreaming = true;
-      toggleSendStopButton(true);
-
-      // ... session handling ...
-      let currentSession = chatSessions.find(s => s.currentSession === true);
-      if (!currentSession && chatSessions.length > 0) currentSession = chatSessions[0];
-      // ... more session handling if not found ...
-
-      // 淇濆瓨鐢ㄦ埛娑堟伅鍒板巻鍙茶褰?
-      currentSession.messages.push({ role: "user", content: uiMessage });
-      currentSession.hasUserMessage = true; 
-      if (!currentSession.title || currentSession.title === currentSession.created) {
-        // 淇鏍囬鐢熸垚閫昏緫
-        const titleText = uiMessage.substring(0, 20);
-        currentSession.title = titleText.length < uiMessage.length ? titleText + '...' : titleText;
-      }
-      saveSessionsToStorage();
-      
-      addThinkingMessage();
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      
-      // 鍑嗗鍙戦€佺粰AI鐨勫唴瀹?
-      let content = '';
-      if (uploadedFileContent) {
-        content = `===== 文件内容开始 =====\n${uploadedFileContent.content}\n===== 文件内容结束 =====\n\n用户问题：${message}`;
-      } else if (pageContentLoaded && currentPageContent) {
-        if (currentPageContent) {
-          const pageInfo = `\n标题：${currentPageContent.title}\n来源：${currentPageContent.source || '未知来源'}\n作者：${currentPageContent.author || '未知作者'}\n链接：${currentPageContent.url || '未知'}\n\n内容：\n${currentPageContent.content}\n`;
-          content = `===== 网页内容开始 =====\n${pageInfo}\n===== 网页内容结束 =====\n\n用户问题：${message}`;
-        }
-      } else {
-        content = message;
-      }
-      
-      const allMessages = currentSession.messages || [];
-      const filteredHistory = allMessages.slice(0, -1).filter(msg => {
-        if (!msg.role || !msg.content) return false;
-        if (msg.role === 'assistant' && (
-          msg.content === '欢迎使用AI助手，请输入您的问题。' ||
-          msg.content === '正在思考...' ||
-          msg.content === '正在总结内容...' ||
-          msg.content === '正在生成爆款标题，请稍候...' ||
-          msg.content === '正在将内容改写为小红书笔记，请稍候...')) {
-          return false;
-        }
-        return true;
-      });
-
-      console.log('鉁夛笍 鍗冲皢鍙戦€佹秷鎭粰background.js:', {
-        action: 'analyzeContent',
-        contentLength: content.length,
-        isChat: true,
-        isDataAnalysis: isDataAnalysis,
-        chatHistoryLength: filteredHistory.length,
-        hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
-        model: activeModel,
-        customInstructionPromptLength: customInstructionPrompt.length,
-        customInstructionPromptPreview: customInstructionPrompt ? customInstructionPrompt.substring(0, 50) + '...' : '(empty)'
-      });
-
-      chrome.runtime.sendMessage({
-        action: 'analyzeContent',
-        content: content,
-        isChat: true,
-        isDataAnalysis: isDataAnalysis,
-        chatHistory: filteredHistory,
-        hasFile: !!uploadedFileContent || (pageContentLoaded && !!currentPageContent),
-        model: activeModel,
-        customInstructionPrompt: customInstructionPrompt
-      });
-    } catch (error) {
-      console.error('鍙戦€佹秷鎭け璐?', error);
-      const thinkingMessage = document.querySelector('.thinking-message');
-      if (thinkingMessage) {
-        thinkingMessage.remove();
-      }
-      
-      const errorMessage = error.message || '发送消息失败，请重试';
-      addMessage(`错误：${errorMessage}`, false);
-      
-      isStreaming = false;
-      toggleSendStopButton(false);
-      
-      const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-      if (currentSessionIndex !== -1 && chatSessions[currentSessionIndex]?.messages) {
-        chatSessions[currentSessionIndex].messages.pop();
-      } else if (chatSessions.length > 0 && chatSessions[0]?.messages) {
-        chatSessions[0].messages.pop();
-      }
-    }
-  }
-  
-  // 鍒囨崲鍙戦€?鍋滄鎸夐挳鐘舵€?
-  function toggleSendStopButton(isStop) {
-    const sendIcon = sendMessageBtn.querySelector('.material-icons');
-    
-    if (isStop) {
-      if (sendIcon) sendIcon.textContent = 'stop';
-      sendMessageBtn.classList.add('stop-mode');
-      sendMessageBtn.title = '停止生成';
-    } else {
-      if (sendIcon) sendIcon.textContent = 'send';
-      sendMessageBtn.classList.remove('stop-mode');
-      sendMessageBtn.title = '发送';
-    }
-  }
-
-  // 娣诲姞娓呴櫎鏂囦欢鐨勫姛鑳?
-  function clearUploadedFile() {
-    uploadedFileContent = null;
-    fileInput.value = '';
-    fileInfo.textContent = '支持 TXT 文件，最大 10MB';
-    fileInfo.className = 'monica-file-info';
-    fileInfo.style.display = 'none';
-  }
-  
-  // 澶勭悊鏂囦欢涓婁紶
-  fileInput.addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) {
-      clearUploadedFile();
-      return;
-    }
-    
-    if (file.type !== 'text/plain') {
-      clearUploadedFile();
-      fileInfo.textContent = '只支持 TXT 文件';
-      fileInfo.className = 'monica-file-info';
-      fileInfo.style.display = 'flex';
-      setTimeout(() => {
-        fileInfo.style.display = 'none';
-      }, 3000);
-      return;
-    }
-    
-    if (file.size > 10 * 1024 * 1024) {
-      clearUploadedFile();
-      fileInfo.textContent = '文件大小不能超过 10MB';
-      fileInfo.className = 'monica-file-info';
-      fileInfo.style.display = 'flex';
-      setTimeout(() => {
-        fileInfo.style.display = 'none';
-      }, 3000);
-      return;
-    }
-    
-    try {
-      const content = await readFileContent(file);
-      uploadedFileContent = {
-        content: content,
-        fileName: file.name,
-        fileSize: file.size
-      };
-      
-      fileInfo.textContent = `已上传：${file.name} (${formatFileSize(file.size)})`;
-      fileInfo.className = 'monica-file-info';
-      fileInfo.style.display = 'flex';
-      
-    } catch (error) {
-      console.error('读取文件失败:', error);
-      clearUploadedFile();
-      fileInfo.textContent = '读取文件失败';
-      fileInfo.className = 'monica-file-info';
-      fileInfo.style.display = 'flex';
-      setTimeout(() => {
-        fileInfo.style.display = 'none';
-      }, 3000);
-    }
-  });
-  
-  // 娣诲姞绉婚櫎鏂囦欢鐨勪簨浠剁洃鍚櫒
-  const removeFileBtn = document.getElementById('removeFile');
-  if (removeFileBtn) {
-    removeFileBtn.addEventListener('click', function() {
-      clearUploadedFile();
-    });
-  }
-  
-  // 娣诲姞鏂囦欢澶у皬鏍煎紡鍖栧嚱鏁?
-  function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + 'B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + 'KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
-  }
-  
-  // 璇诲彇鏂囦欢鍐呭
-  function readFileContent(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = (e) => reject(e);
-      reader.readAsText(file);
-    });
-  }
-  
-  // 閲嶆瀯娴佸紡杈撳嚭鍜屾秷鎭洃鍚?  let streamingBuffer = '';
-  let streamingMessageDiv = null;
-  let streamingRenderScheduled = false;
-
-  function scheduleStreamingRender() {
-    if (streamingRenderScheduled) return;
-    streamingRenderScheduled = true;
-    requestAnimationFrame(() => {
-      streamingRenderScheduled = false;
-      if (!streamingMessageDiv) return;
-      streamingMessageDiv.setAttribute('data-raw-content', streamingBuffer);
-      if (typeof window.parseMarkdown === 'function') {
-        streamingMessageDiv.innerHTML = window.parseMarkdown(streamingBuffer, true);
-      } else {
-        streamingMessageDiv.innerHTML = marked(String(streamingBuffer).trim());
-      }
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-  }
+  // ==========================================================================
+  // 16. Background 消息监听 (Streaming & Collection)
+  // ==========================================================================
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'apiKeyRequired') {
-      chrome.storage.local.get(['deepseekApiKey'], (result) => {
-        if (result.deepseekApiKey && result.deepseekApiKey.trim() !== '') {
-          console.log('已设置API密钥，忽略提示');
-          sendResponse();
-          return;
-        }
-        console.log('鏀跺埌API瀵嗛挜缂哄け鎻愮ず:', message.message);
-        addMessage(message.message, false, true);
-        if (settingsModal) {
-          loadSettings(); 
-          settingsModal.style.display = 'block';
-        }
-        sendResponse();
-      });
+      addMessage(message.message || '请先在设置中配置您的 API 密钥。', false, true);
+      openSettingsModal();
       return true;
-    } else if (message.type === 'streamResponse' && message.isChat === true) {
+    } else if (message.type === 'deepseekThinkingStarted') {
       isStreaming = true;
       toggleSendStopButton(true);
-      // 绉婚櫎鎬濊€冨姩鐢绘秷鎭?
-      const thinkingMessage = document.querySelector('.thinking-message');
-      if (thinkingMessage) {
-        thinkingMessage.remove();
-      }
-      if (!streamingMessageDiv) {
-        streamingBuffer = '';
-        streamingMessageDiv = document.createElement('div');
-        streamingMessageDiv.className = 'message ai-message streaming';
-        streamingMessageDiv.setAttribute('data-raw-content', '');
-        chatMessages.appendChild(streamingMessageDiv);
-      }
-      streamingBuffer += message.content || '';
-      scheduleStreamingRender();
+      const thinking = document.querySelector('.thinking-message');
+      if (thinking) thinking.remove();
+      ensureReasoningMessage();
+      scheduleReasoningRender();
       return false;
-    } else if (message.type === 'streamSummaryResponse') {
-      // 澶勭悊涓€閿€荤粨/鐖嗘鏍囬绛夎烦杩囩敤鎴锋秷鎭殑娴佸紡杈撳嚭
+    } else if (message.type === 'streamReasoningResponse') {
       isStreaming = true;
       toggleSendStopButton(true);
-      // 绉婚櫎鎬濊€冨姩鐢绘秷鎭?
-      const thinkingMessage = document.querySelector('.thinking-message');
-      if (thinkingMessage) {
-        thinkingMessage.remove();
+      const thinking = document.querySelector('.thinking-message');
+      if (thinking) thinking.remove();
+      ensureReasoningMessage();
+      reasoningBuffer += message.content || '';
+      scheduleReasoningRender();
+      return false;
+    } else if (message.type === 'streamResponse' || message.type === 'streamSummaryResponse') {
+      isStreaming = true;
+      toggleSendStopButton(true);
+      const thinking = document.querySelector('.thinking-message');
+      if (thinking) thinking.remove();
+
+      // 思考内容输出完成，进入正式回复时，自动将思考内容折叠收起（仅在首个回复数据包到达时触发一次）
+      if (!hasAutoCollapsedReasoning) {
+        hasAutoCollapsedReasoning = true;
+        if (reasoningMessageDiv && !reasoningMessageDiv.classList.contains('collapsed')) {
+          reasoningMessageDiv.classList.add('collapsed');
+          const icon = reasoningMessageDiv.querySelector('.deepseek-reasoning-toggle .material-icons');
+          if (icon) icon.textContent = 'expand_more';
+        }
       }
+
       if (!streamingMessageDiv) {
         streamingBuffer = '';
         streamingMessageDiv = document.createElement('div');
         streamingMessageDiv.className = 'message ai-message streaming';
-        streamingMessageDiv.setAttribute('data-raw-content', '');
+        streamingMessageDiv.innerHTML = `
+          <div class="ai-message-header">
+            <span class="material-icons">auto_awesome</span>
+            <span>AI 助手</span>
+          </div>
+          <div class="markdown-body"></div>
+        `;
         chatMessages.appendChild(streamingMessageDiv);
       }
       streamingBuffer += message.content || '';
@@ -1786,722 +1811,109 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (message.type === 'analysisComplete') {
       isStreaming = false;
       shouldStopStreaming = false;
-      window.newSessionCreated = false;
-      const streamingMessages = document.querySelectorAll('.streaming');
-      streamingMessages.forEach(msg => {
-        msg.classList.remove('streaming');
-        
-        // 涓烘祦寮忓搷搴旂殑AI娑堟伅娣诲姞澶嶅埗鎸夐挳
-        if (streamingBuffer.trim()) {
-          const copyButton = document.createElement('button');
-          copyButton.className = 'copy-button';
-          copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-          copyButton.addEventListener('click', async () => {
-            try {
-              // 浼樺厛鑾峰彇娓叉煋鍚庣殑绾枃鏈唴瀹?
-              let textToCopy = streamingBuffer;
-              
-              // 灏濊瘯浠庡綋鍓嶆秷鎭殑娓叉煋鍐呭涓彁鍙栫函鏂囨湰
-              const messageContent = msg.querySelector('.markdown-body');
-              if (messageContent) {
-                textToCopy = messageContent.innerText || messageContent.textContent || streamingBuffer;
-              } else {
-                // 濡傛灉娌℃湁markdown-body锛岀洿鎺ヤ粠msg鑾峰彇鏂囨湰
-                const textContent = msg.textContent || msg.innerText;
-                if (textContent && textContent !== '复制') {
-                  // 绉婚櫎澶嶅埗鎸夐挳鐨勬枃鏈?
-                  textToCopy = textContent.replace(/复制$/, '').replace(/已复制/, '').trim();
-                }
-              }
-              
-              await navigator.clipboard.writeText(textToCopy);
-              copyButton.innerHTML = '<span class="material-icons">check</span>已复制';
-              copyButton.classList.add('copy-success');
-              setTimeout(() => {
-                copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-                copyButton.classList.remove('copy-success');
-              }, 2000);
-            } catch (err) {
-              console.error('复制失败:', err);
-              // 闄嶇骇鏂规锛氫娇鐢╡xecCommand
-              let textToCopy = streamingBuffer;
-              
-              // 鍚屾牱灏濊瘯鑾峰彇娓叉煋鍚庣殑鏂囨湰鍐呭
-              const messageContent = msg.querySelector('.markdown-body');
-              if (messageContent) {
-                textToCopy = messageContent.innerText || messageContent.textContent || streamingBuffer;
-              } else {
-                const textContent = msg.textContent || msg.innerText;
-                if (textContent && textContent !== '复制') {
-                  textToCopy = textContent.replace(/复制$/, '').replace(/已复制/, '').trim();
-                }
-              }
-              
-              const textArea = document.createElement('textarea');
-              textArea.value = textToCopy;
-              document.body.appendChild(textArea);
-              textArea.select();
-              try {
-                document.execCommand('copy');
-                copyButton.innerHTML = '<span class="material-icons">check</span>已复制';
-                copyButton.classList.add('copy-success');
-                setTimeout(() => {
-                  copyButton.innerHTML = '<span class="material-icons">content_copy</span>复制';
-                  copyButton.classList.remove('copy-success');
-                }, 2000);
-              } catch (fallbackErr) {
-                console.error('降级复制也失败:', fallbackErr);
-                showToast('复制失败，请手动选择文本复制');
-              }
-              document.body.removeChild(textArea);
-            }
-          });
-          msg.appendChild(copyButton);
+
+      if (streamingMessageDiv && streamingBuffer.trim()) {
+        streamingMessageDiv.classList.remove('streaming');
+        const contentDiv = streamingMessageDiv.querySelector('.markdown-body');
+        const textToSave = streamingBuffer;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-button';
+        copyBtn.innerHTML = '<span class="material-icons">content_copy</span>复制';
+        copyBtn.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(contentDiv ? contentDiv.innerText : textToSave);
+          copyBtn.innerHTML = '<span class="material-icons">check</span>已复制';
+          copyBtn.classList.add('copy-success');
+          setTimeout(() => {
+            copyBtn.innerHTML = '<span class="material-icons">content_copy</span>复制';
+            copyBtn.classList.remove('copy-success');
+          }, 1800);
+        });
+        streamingMessageDiv.appendChild(copyBtn);
+
+        const currentSession = chatSessions.find(s => s.currentSession === true) || chatSessions[0];
+        if (currentSession) {
+          currentSession.messages.push({ role: 'assistant', content: textToSave });
+          saveSessionsToStorage();
         }
-      });
-      
-      // 鍙繚瀛樺埌浼氳瘽鍘嗗彶锛屼笉鍒涘缓鏂扮殑UI鍏冪礌锛堝洜涓烘祦寮忚緭鍑哄凡缁忔樉绀轰簡锛?
-      if (streamingBuffer.trim()) {
-        // 鍙皢娑堟伅鍐呭淇濆瓨鍒颁細璇濆巻鍙蹭腑
-        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-        if (currentSessionIndex !== -1) {
-          chatSessions[currentSessionIndex].messages.push({ role: "assistant", content: streamingBuffer });
-        } else if (chatSessions.length > 0) {
-          chatSessions[0].messages.push({ role: "assistant", content: streamingBuffer });
-        }
+
+        // 自动添加快捷后续动作
+        appendFollowUpPills(chatMessages);
       }
-      
+
       streamingBuffer = '';
       streamingMessageDiv = null;
-      streamingRenderScheduled = false;
-      if (chatSessions.length > 0) {
-        const currentSessionIndex = chatSessions.findIndex(s => s.currentSession === true);
-        let currentSession = currentSessionIndex !== -1 ? chatSessions[currentSessionIndex] : chatSessions[0];
-        currentSession.messages.forEach(msg => { if (msg.role === 'assistant' && msg.streaming) delete msg.streaming; });
-        saveSessionsToStorage();
-      }
+      reasoningBuffer = '';
+      reasoningMessageDiv = null;
+      hasAutoCollapsedReasoning = false;
       toggleSendStopButton(false);
       return false;
     } else if (message.type === 'updateStatus') {
-      // 鏇存柊閲囬泦鐘舵€佹樉绀?
-      const statusElement = document.getElementById('status');
-      const statusTextElement = statusElement.querySelector('span:last-child');
-      statusTextElement.textContent = message.text;
-      statusElement.style.display = 'flex';
+      if (capsuleStatusText) capsuleStatusText.textContent = message.text || '采集进行中...';
       return false;
     } else if (message.type === 'collectionComplete') {
-      console.log('鏀跺埌閲囬泦瀹屾垚娑堟伅:', message.text, '鏁版嵁鏉℃暟:', message.data?.length || 0);
-      
-      // 閲嶇疆閲囬泦鎸夐挳鐘舵€?
       updateCollectButtonState(false);
-      closeCollectToolPanel();
-      
-      // 鑷姩鍒囨崲鍒癆I鍔╂墜鐣岄潰
-      switchTab('aiAssistant');
-      
-      // 绛夊緟鐣岄潰鍒囨崲瀹屾垚鍚庯紝妫€鏌ユ槸鍚︽湁閲囬泦鏁版嵁锛岀劧鍚庡紑濮婣I鍒嗘瀽
-      setTimeout(() => {
-        // 妫€鏌ユ槸鍚﹀凡缁忔湁AI鍒嗘瀽鍦ㄨ繘琛屼腑
-        if (!isStreaming) {
-          if (message.data && message.data.length > 0) {
-            // 鏄剧ず閲囬泦瀹屾垚鎻愮ず
-            showToast(`笔记采集完成，正在分析 ${message.data.length} 篇笔记...`, 3000);
-            
-            // 鏈夐噰闆嗘暟鎹紝杩涜鏁版嵁鍒嗘瀽
-            const analysisPrompt = `作为一个小红书运营专家，请分析本次采集到的爆款笔记共同点。先写约200字总结，然后从以下维度拆解：\n1. 选题角度与用户痛点：这个选题击中了什么需求或痛点？\n2. 标题特点：标题用了哪些吸引点击的技巧（如数字、反差、提问、身份带入等）？\n3. 基于以上分析，给我推荐5个爆款选题。`;
-            
-            // 鍒涘缓鏂扮殑浼氳瘽鐢ㄤ簬鍒嗘瀽閲囬泦鏁版嵁
-            createNewChatSession(`笔记分析 - ${new Date().toLocaleString()}`);
-            
-            // 灏嗛噰闆嗘暟鎹缃负椤甸潰鍐呭锛屼娇鐢ㄦ牸寮忓寲鐨勬枃鏈唴瀹?
-            const analysisContent = message.formattedContent || 
-              `采集到 ${message.data.length} 篇笔记数据：\n\n` + 
-              message.data.map((item, index) => 
-                `${index + 1}. 标题：${item.title}\n` +
-                `   作者：${item.author}\n` +
-                `   点赞：${item.likes} | 收藏：${item.collects} | 评论：${item.comments}\n` +
-                `   内容：${item.content}\n`
-              ).join('\n----------------------------------------\n\n');
-            
-            currentPageContent = {
-              title: `小红书笔记采集数据分析`,
-              content: analysisContent,
-              source: '笔记采集',
-              author: '系统采集',
-              url: window.location.href
-            };
-            pageContentLoaded = true;
-            
-            sendToAI(analysisPrompt);
-          } else {
-            // 娌℃湁閲囬泦鏁版嵁锛屽彧鏄剧ず瀹屾垚娑堟伅
-            showToast('笔记采集完成', 2000);
-            addMessage(`${message.text}。如需AI分析，请手动输入问题。`, false, true);
-          }
-        }
-      }, 500); // 寤惰繜500ms纭繚鐣岄潰鍒囨崲瀹屾垚
-      
+      if (message.data && message.data.length > 0) {
+        showToast(`采集完成，共抓取 ${message.data.length} 篇爆款笔记`, 2500);
+        const analysisPrompt = `作为一个资深小红书爆款操盘手，请深度分析本次采集到的 ${message.data.length} 篇爆款笔记：\n1. 爆款规律总结：提炼这些笔记共同打中了什么痛点或情绪？\n2. 标题吸睛公式：拆解高频词与标题句式套路；\n3. 落地建议：基于以上分析，生成 3 个当下可立即执行的全新爆款选题与切入点。`;
+        createNewChatSession(`爆款分析 · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+        sendToAI(analysisPrompt, '⚡ 已自动开始深度分析本次采集的爆款数据');
+      } else {
+        showToast('笔记采集完成');
+      }
       return false;
     } else if (message.type === 'error') {
-      // 閲嶇疆閲囬泦鎸夐挳鐘舵€侊紙鍦ㄩ敊璇儏鍐典笅锛?
       updateCollectButtonState(false);
-      
-      // 绉婚櫎鎬濊€冨姩鐢绘秷鎭?
-      const thinkingMessage = document.querySelector('.thinking-message');
-      if (thinkingMessage) {
-        thinkingMessage.remove();
-      }
-      
-      // 鏄剧ず鍏蜂綋鐨勯敊璇俊鎭?
-      const errorMessage = message.error || '发送消息失败，请重试';
-      addMessage(`错误：${errorMessage}`, false, true);
-      
-      // 閲嶇疆娴佸紡杈撳嚭鐘舵€?      isStreaming = false;
+      isStreaming = false;
       toggleSendStopButton(false);
-      streamingBuffer = '';
-      streamingMessageDiv = null;
-      streamingRenderScheduled = false;
-      
+      const thinking = document.querySelector('.thinking-message');
+      if (thinking) thinking.remove();
+      addMessage(`错误：${message.error || '请求失败，请检查网络或 API Key'}`, false, true);
       return false;
     }
-    // 鍏朵粬鎵€鏈夊垎鏀?return false
-    return false;
   });
-  
-  // 绉婚櫎鑱婂ぉ妗嗕腑鐨凙PI瀵嗛挜鎻愮ず娑堟伅
-  function removeApiKeyNotices() {
-    const chatMessages = document.getElementById('chatMessages');
-    if (!chatMessages) return;
-    
-    const apiKeyMessages = chatMessages.querySelectorAll('.message.system:not(.user)');
-    apiKeyMessages.forEach(msg => {
-      if (msg.textContent.includes('API密钥') || 
-          msg.textContent.includes('设置') || 
-          msg.textContent.includes('DeepSeek')) {
-        msg.remove();
-      }
-    });
-    
-    if (chatMessages.children.length === 0) {
-      addMessage('欢迎使用AI助手，请输入您的问题。', false);
-    }
-  }
 
-  // 妫€鏌PI瀵嗛挜鐘舵€?
-  function checkApiKeyStatus() {
-    chrome.storage.local.get(['deepseekApiKey'], (result) => {
-      const hasApiKey = result.deepseekApiKey && result.deepseekApiKey.trim() !== '';
-      console.log('检查API密钥状态:', hasApiKey ? '已设置' : '未设置');
-
-      removeApiKeyNotices();
-
-      if (!hasApiKey) {
-        addMessage('未检测到 DeepSeek API 密钥，部分 AI 功能不可用。请点击右下角设置图标填写后再试。', false);
-      }
-    });
-  }
-
-  // 瀹氭湡妫€鏌ユ爣绛鹃〉鐘舵€?
-  async function checkXhsTab() {
-    // 濡傛灉姝ｅ湪閲囬泦锛屼繚鎸?currentXhsTab 涓嶅彉锛岄伩鍏嶅仠姝㈡寚浠ゅ彂閿欑洰鏍?
-    if (isCollecting) {
-      return;
-    }
-    const tab = await findXhsTabs();
-    if (!tab) {
-      collectBtn.disabled = true;
-    } else {
-      hasShownOpenPageMessage = false;
-      try {
-        if (!status.textContent.includes('成功采集') && 
-            !status.textContent.includes('开始采集') && 
-            !status.textContent.includes('停止采集')) {
-          const statusElement = document.getElementById('status');
-          const statusTextElement = statusElement.querySelector('span:last-child');
-          statusTextElement.textContent = '准备就绪';
-          statusElement.style.display = 'flex';
-        }
-        if (collectBtn.disabled && !isCollecting) {
-          collectBtn.disabled = false;
-        }
-      } catch (error) {
-        console.error('妫€鏌ラ〉闈㈠氨缁姸鎬佹椂鍑洪敊:', error);
-        if (!status.textContent.includes('成功采集')) {
-          const statusElement = document.getElementById('status');
-          const statusTextElement = statusElement.querySelector('span:last-child');
-          statusTextElement.textContent = '请刷新页面';
-          statusElement.style.display = 'flex';
-        }
-        collectBtn.disabled = true;
-      }
-    }
-  }
-  
-  // 鏌ユ壘鎵€鏈夌洰鏍囨爣绛鹃〉
-  async function findXhsTabs() {
-    try {
-      const tabs = await chrome.tabs.query({url: ["*://*.xiaohongshu.com/*", "*://docs.qq.com/*", "*://*.feishu.cn/*", "*://*.aliyun.com/*", "*://*.baidu.com/*"]});
-      if (tabs.length === 0) {
-        const statusElement = document.getElementById('status');
-        const statusTextElement = statusElement.querySelector('span:last-child');
-        statusTextElement.textContent = '未检测到可用页面';
-        statusElement.style.display = 'flex';
-        collectBtn.disabled = true;
-        currentXhsTab = null;
-        return null;
-      }
-      const activeTab = tabs.find(tab => tab.active);
-      if (activeTab) {
-        currentXhsTab = activeTab;
-        collectBtn.disabled = isCollecting;
-        return activeTab;
-      }
-      currentXhsTab = tabs[0];
-      collectBtn.disabled = isCollecting;
-      return tabs[0];
-    } catch (error) {
-      const errorMessage = '查找目标页面失败';
-      console.error(errorMessage + ':', error);
-      const statusElement = document.getElementById('status');
-      const statusTextElement = statusElement.querySelector('span:last-child');
-      statusTextElement.textContent = errorMessage;
-      statusElement.style.display = 'flex';
-      collectBtn.disabled = true;
-      currentXhsTab = null;
-      return null;
-    }
-  }
-  
-  // 妫€鏌ラ〉闈㈡槸鍚﹀噯澶囧ソ
-  async function checkPageReady(tabId) {
-    return new Promise((resolve) => {
-      chrome.tabs.sendMessage(tabId, { action: 'checkReady' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log('椤甸潰鏈噯澶囧ソ:', chrome.runtime.lastError.message);
-          resolve(false);
-        } else {
-          resolve(!!response);
-        }
-      });
-    });
-  }
-
-  // 鍔ㄦ€佹敞鍏ontent script
+  // ==========================================================================
+  // 17. 动态脚本注入工具
+  // ==========================================================================
   async function injectContentScript(tabId) {
     try {
-      console.log('寮€濮嬪姩鎬佹敞鍏ontent script鍒皌ab:', tabId);
-      
-      // 鍏堟敞鍏onfig.js
       await chrome.scripting.executeScript({
         target: { tabId: tabId },
-        files: ['config.js']
+        files: ['config.js', 'content.js']
       });
-      
-      // 鍐嶆敞鍏ontent.js
-      await chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        files: ['content.js']
-      });
-      
-      console.log('Content script娉ㄥ叆鎴愬姛');
-      
-      // 绛夊緟涓€涓嬭script鍒濆鍖?
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return true;
-    } catch (error) {
-      console.error('娉ㄥ叆content script澶辫触:', error);
-      return false;
+    } catch (e) {
+      console.warn('Script injection notice:', e);
     }
   }
 
-  // 绛夊緟椤甸潰鍑嗗濂?
-  async function waitForPageReady(tabId, maxAttempts = 3) {
-    for (let i = 0; i < maxAttempts; i++) {
-      if (await checkPageReady(tabId)) {
-        return true;
-      }
-      await new Promise(resolve => setTimeout(resolve, 500));
+  // ==========================================================================
+  // 18. 初始加载会话
+  // ==========================================================================
+  chrome.storage.local.get(['chatSessions'], (result) => {
+    const existing = result.chatSessions || [];
+    const now = new Date();
+    const newSession = {
+      id: 'session_' + now.getTime(),
+      title: '新建对话',
+      created: now.toLocaleString(),
+      messages: [],
+      hasUserMessage: false,
+      currentSession: true,
+      isTemporary: true,
+      titlePending: true
+    };
+
+    chatSessions = [newSession, ...existing];
+
+    const fixed = backfillSessionTitles(chatSessions);
+    if (fixed > 0) {
+      console.log(`📝 已为 ${fixed} 条历史对话回填标题`);
+      saveSessionsToStorage();
     }
-    return false;
-  }
 
-  // 閲囬泦鎸夐挳鐐瑰嚮浜嬩欢澶勭悊
-  if (collectBtn) {
-  collectBtn.addEventListener('click', async () => {
-    console.log('采集按钮点击，当前状态:', isCollecting);
-    
-    if (isCollecting) {
-      // 鍋滄閲囬泦
-      console.log('执行停止采集');
-      
-      if (currentXhsTab) {
-        const statusElement = document.getElementById('status');
-        const statusTextElement = statusElement.querySelector('span:last-child');
-        statusTextElement.textContent = '正在停止采集...';
-        statusElement.style.display = 'flex';
-        
-        // 鍏堟洿鏂癠I鐘舵€?
-        updateCollectButtonState(false);
-        
-        // 鍙戦€佸仠姝㈡秷鎭?
-        chrome.tabs.sendMessage(currentXhsTab.id, {
-          type: 'stopCollecting'
-        }, (response) => {
-          console.log('停止采集响应:', response);
-          if (chrome.runtime.lastError) {
-            console.error('鍋滄閲囬泦澶辫触:', chrome.runtime.lastError);
-          }
-        });
-      }
-    } else {
-      // 寮€濮嬮噰闆?
-      console.log('🚀 执行开始采集');
-      
-      const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-      const tab = tabs[0];
-      
-      if (!tab.url.includes('xiaohongshu.com')) {
-        alert('请在小红书页面使用此功能');
-        return;
-      }
-      
-      currentXhsTab = tab;
-      
-      // 妫€鏌ラ〉闈㈡槸鍚﹀噯澶囧ソ
-      let pageReady = false;
-      let attempts = 0;
-      const maxAttempts = 3;
-      
-      while (!pageReady && attempts < maxAttempts) {
-        try {
-          const response = await chrome.tabs.sendMessage(tab.id, {type: 'ping'});
-          pageReady = true;
-        } catch (error) {
-          attempts++;
-          if (attempts >= maxAttempts) {
-            console.log('椤甸潰鏈噯澶囧ソ锛屽姩鎬佹敞鍏ontent script');
-            await injectContentScript(tab.id);
-            pageReady = true;
-          }
-        }
-      }
-      
-      if (pageReady) {
-        console.log('页面准备就绪，开始采集');
-        
-        // 鑾峰彇閲囬泦鍙傛暟
-        const maxNotes = parseInt(document.getElementById('maxNotes').value) || 10;
-        const minLikes = parseInt(document.getElementById('minLikes').value) || 0;
-        const downloadCover = document.getElementById('downloadCover').checked;
-
-        console.log('是否下载封面图:', downloadCover);
-
-        // 鏇存柊UI鐘舵€?
-        updateCollectButtonState(true);
-
-        // 鍙戦€侀噰闆嗗懡浠?
-        const result = await chrome.tabs.sendMessage(tab.id, {
-          type: 'startCollecting',
-          maxNotes: maxNotes,
-          minLikes: minLikes,
-          downloadCover: downloadCover
-        });
-        
-        console.log('閲囬泦鍛戒护鍙戦€佺粨鏋?', result);
-      }
-    }
+    updateHeaderSessionTitle(newSession.title);
+    renderWelcomeScreen();
+    autoResizeMessageInput();
   });
-  
-  // 姣忕妫€鏌ヤ竴娆℃爣绛鹃〉鐘舵€?
-  }
-
-  setInterval(checkXhsTab, 1000);
-
-  // 妫€鏌PI瀵嗛挜鐘舵€?
-  checkApiKeyStatus(); 
-
-  // 鍒濆鍖栭粯璁ゆ樉绀虹涓€涓猼ab
-  console.log('鍒濆鍖栭粯璁ab鏄剧ず');
-  setTimeout(() => {
-    switchTab('aiAssistant');
-  }, 100);
-
-  // 娣诲姞椤甸潰鍏抽棴浜嬩欢鐩戝惉鍣?
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      chrome.runtime.sendMessage({ action: 'cancelPendingRequests' });
-    }
-  });
-
-  window.addEventListener('beforeunload', () => {
-    chrome.runtime.sendMessage({ action: 'cancelPendingRequests' });
-  });
-
-  // --- 鑷畾涔夋寚浠ゅ姛鑳?---
-  const showHideBtn = document.getElementById('show-hide-instructions-btn');
-  const instructionsContainer = document.getElementById('instructions-container');
-  const instructionsList = document.getElementById('instructions-list');
-  const addNewBtn = document.getElementById('add-new-instruction-btn');
-  const addForm = document.getElementById('add-instruction-form');
-  const saveBtn = document.getElementById('save-instruction-btn');
-  const cancelBtn = document.getElementById('cancel-add-btn');
-  const instructionNameInput = document.getElementById('instruction-name');
-  const instructionPromptInput = document.getElementById('instruction-prompt');
-  const instructionEditIdInput = document.getElementById('instruction-edit-id');
-  const instructionsModalOverlay = document.getElementById('instructions-modal-overlay');
-  const closeInstructionsBtn = document.getElementById('close-instructions-btn');
-
-  const MAX_INSTRUCTIONS = 10;
-
-  // --- 鏂板锛氭洿鏂版寚浠ゆ寜閽姸鎬?---
-  function updateInstructionButtonState(isActive) {
-    if (showHideBtn) {
-      if (isActive) {
-        showHideBtn.classList.add('active');
-      } else {
-        showHideBtn.classList.remove('active');
-      }
-    }
-  }
-
-  // 鍒囨崲鎸囦护鐣岄潰鐨勬樉绀?闅愯棌
-  showHideBtn.addEventListener('click', () => {
-      if (instructionsModalOverlay) {
-        instructionsModalOverlay.classList.remove('hidden');
-      }
-  });
-
-  // 鍏抽棴鎸囦护寮圭獥鐨勫嚱鏁?
-  function closeInstructionsModal() {
-    if (instructionsModalOverlay) {
-      instructionsModalOverlay.classList.add('hidden');
-      // 濡傛灉娣诲姞/缂栬緫琛ㄥ崟鏄墦寮€鐨勶紝灏卞彇娑堝畠
-      if (!addForm.classList.contains('hidden')) {
-        cancelBtn.click();
-      }
-    }
-  }
-
-  // 涓哄脊绐楃殑鍏抽棴鎸夐挳鍜岄伄缃╁眰娣诲姞浜嬩欢
-  if (closeInstructionsBtn) {
-    closeInstructionsBtn.addEventListener('click', closeInstructionsModal);
-  }
-  if (instructionsModalOverlay) {
-    instructionsModalOverlay.addEventListener('click', (e) => {
-      if (e.target === instructionsModalOverlay) {
-        closeInstructionsModal();
-      }
-    });
-  }
-
-  // 鏄剧ず娣诲姞琛ㄥ崟
-  addNewBtn.addEventListener('click', () => {
-      addForm.classList.remove('hidden');
-      addNewBtn.classList.add('hidden');
-  });
-
-  // 鍙栨秷娣诲姞鎴栫紪杈?
-  cancelBtn.addEventListener('click', () => {
-      addForm.classList.add('hidden');
-      addNewBtn.classList.remove('hidden');
-      instructionNameInput.value = '';
-      instructionPromptInput.value = '';
-      instructionEditIdInput.value = ''; // 閲嶇疆缂栬緫ID
-      saveBtn.textContent = '保存'; // 鎭㈠鎸夐挳鏂囨湰
-  });
-
-  // 淇濆瓨鏂版寚浠ゆ垨鏇存柊鐜版湁鎸囦护
-  saveBtn.addEventListener('click', () => {
-      const name = instructionNameInput.value.trim();
-      const prompt = instructionPromptInput.value.trim();
-      const editId = instructionEditIdInput.value;
-
-      if (!name) {
-          alert('指令名称不能为空！');
-          return;
-      }
-      if (prompt.length > 10000) {
-          alert('指令内容不能超过10000字！');
-          return;
-      }
-
-      chrome.storage.local.get({ customInstructions: [] }, (data) => {
-          let instructions = data.customInstructions;
-          
-          if (editId) { // --- 鏇存柊閫昏緫 ---
-              const instructionToUpdate = instructions.find(instr => instr.id === editId);
-              if (instructionToUpdate) {
-                  instructionToUpdate.name = name;
-                  instructionToUpdate.prompt = prompt;
-              }
-          } else { // --- 鏂板閫昏緫 ---
-              if (instructions.length >= MAX_INSTRUCTIONS) {
-                  alert(`最多只能添加 ${MAX_INSTRUCTIONS} 条指令。`);
-                  return;
-              }
-              const newInstruction = {
-                  id: `instr_${Date.now()}`,
-                  name: name,
-                  prompt: prompt,
-              };
-              instructions.push(newInstruction);
-          }
-
-          chrome.storage.local.set({ customInstructions: instructions }, () => {
-              renderInstructions();
-              cancelBtn.click(); // 鍏抽棴骞堕噸缃〃鍗?
-          });
-      });
-  });
-
-  // 娓叉煋鎸囦护鍒楄〃
-  function renderInstructions() {
-      chrome.storage.local.get({ customInstructions: [], activeInstructionId: null }, (data) => {
-          const { customInstructions, activeInstructionId } = data;
-          
-          // 鏇存柊鎸夐挳鐘舵€?
-          updateInstructionButtonState(activeInstructionId);
-
-          instructionsList.innerHTML = ''; // 娓呯┖鍒楄〃
-
-          // 娣诲姞 "鏃犳寚浠? 閫夐」
-          const noneOptionItem = document.createElement('div');
-          noneOptionItem.className = 'instruction-item';
-          noneOptionItem.innerHTML = `
-              <input type="radio" id="instr-none" name="active-instruction" value="none" ${!activeInstructionId ? 'checked' : ''}>
-              <label for="instr-none">无预设指令</label>
-          `;
-          instructionsList.appendChild(noneOptionItem);
-
-          // 娓叉煋姣忎釜鎸囦护
-          customInstructions.forEach(instr => {
-              const item = document.createElement('div');
-              item.className = 'instruction-item';
-              item.dataset.id = instr.id;
-
-              const isChecked = instr.id === activeInstructionId;
-
-              item.innerHTML = `
-                  <input type="radio" id="${instr.id}" name="active-instruction" value="${instr.id}" ${isChecked ? 'checked' : ''}>
-                  <label for="${instr.id}">${instr.name}</label>
-                  <div class="instruction-buttons">
-                    <button class="edit-btn" title="编辑指令">✏️</button>
-                    <button class="delete-btn" title="删除指令">
-                      <span class="material-icons">delete</span>
-                    </button>
-                  </div>
-              `;
-              instructionsList.appendChild(item);
-          });
-      });
-  }
-
-  // 浜嬩欢濮旀墭澶勭悊閫夋嫨銆佺紪杈戝拰鍒犻櫎
-  instructionsList.addEventListener('click', (e) => {
-      const target = e.target;
-      const item = target.closest('.instruction-item');
-      if (!item) return;
-
-      const instructionId = item.dataset.id;
-
-      // 缂栬緫鎸囦护
-      if (target.classList.contains('edit-btn')) {
-          startEditInstruction(instructionId);
-      }
-      // 鍒犻櫎鎸囦护 - 妫€鏌ョ偣鍑荤殑鏄垹闄ゆ寜閽垨鍏跺瓙鍏冪礌
-      if (target.classList.contains('delete-btn') || target.closest('.delete-btn')) {
-          if (confirm('确定要删除这条指令吗？')) {
-              deleteInstruction(instructionId);
-          }
-      }
-      // 閫夋嫨鎸囦护
-      if (target.type === 'radio') {
-          const selectedId = target.value;
-          const idToSave = selectedId === 'none' ? null : selectedId;
-
-          // 鑾峰彇鎸囦护鍚嶇О鐢ㄤ簬鏃ュ織
-          let instructionName = '无预设指令';
-          if (idToSave) {
-              chrome.storage.local.get({ customInstructions: [] }, (data) => {
-                  const selectedInstr = data.customInstructions.find(instr => instr.id === idToSave);
-                  if (selectedInstr) {
-                      instructionName = selectedInstr.name;
-                  }
-                  console.log(`正在保存激活的自定义指令: ${instructionName} (ID: ${idToSave})`);
-              });
-          } else {
-              console.log('🎯 正在清除激活的自定义指令');
-          }
-
-          chrome.storage.local.set({ activeInstructionId: idToSave }, () => {
-              if (chrome.runtime.lastError) {
-                  console.error('保存自定义指令 ID 失败:', chrome.runtime.lastError);
-              } else {
-                  console.log('鉁?鑷畾涔夋寚浠D宸叉垚鍔熶繚瀛樺埌storage:', idToSave);
-                  // 绔嬪嵆楠岃瘉淇濆瓨缁撴灉
-                  chrome.storage.local.get(['activeInstructionId'], (verifyData) => {
-                      console.log('验证 storage 中的 activeInstructionId:', verifyData.activeInstructionId);
-                  });
-              }
-          });
-
-          // 绔嬪嵆鏇存柊UI浠ヨ幏寰楁渶浣崇敤鎴蜂綋楠?
-          updateInstructionButtonState(idToSave);
-          // 閫夋嫨鎸囦护鍚庤嚜鍔ㄥ叧闂脊绐?
-          closeInstructionsModal();
-      }
-  });
-
-  function startEditInstruction(id) {
-      chrome.storage.local.get({ customInstructions: [] }, (data) => {
-          const instructionToEdit = data.customInstructions.find(instr => instr.id === id);
-          if (instructionToEdit) {
-              addForm.classList.remove('hidden');
-              addNewBtn.classList.add('hidden');
-
-              instructionNameInput.value = instructionToEdit.name;
-              instructionPromptInput.value = instructionToEdit.prompt;
-              instructionEditIdInput.value = instructionToEdit.id;
-              
-              saveBtn.textContent = '保存更改';
-          }
-      });
-  }
-  
-  function deleteInstruction(id) {
-      chrome.storage.local.get({ customInstructions: [], activeInstructionId: null }, (data) => {
-          const newInstructions = data.customInstructions.filter(instr => instr.id !== id);
-          let newActiveId = data.activeInstructionId;
-          // 濡傛灉鍒犻櫎鐨勬槸褰撳墠婵€娲荤殑鎸囦护锛屽垯閲嶇疆婵€娲荤姸鎬?
-          if (newActiveId === id) {
-              newActiveId = null;
-          }
-          chrome.storage.local.set({ customInstructions: newInstructions, activeInstructionId: newActiveId }, () => {
-              renderInstructions();
-          });
-      });
-  }
-
-  // 鍒濆鍔犺浇
-  renderInstructions();
-
-  function closeSettingsModal() {
-    if (settingsModalOverlay) settingsModalOverlay.classList.add('hidden');
-  }
-
-  if (closeSettingsBtn) {
-    closeSettingsBtn.addEventListener('click', closeSettingsModal);
-  }
-  if (settingsModalOverlay) {
-    settingsModalOverlay.addEventListener('click', (e) => {
-      if (e.target === settingsModalOverlay) closeSettingsModal();
-    });
-  }
-
-  if (cancelSettingsBtn) {
-    cancelSettingsBtn.addEventListener('click', function() {
-      settingsModalOverlay.classList.add('hidden');
-    });
-  }
 });

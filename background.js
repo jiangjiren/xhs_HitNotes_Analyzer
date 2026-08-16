@@ -4,6 +4,10 @@
 importScripts('config.js');
 importScripts('xlsx.full.min.js');
 
+// service worker 会缓存旧脚本，重载后看这行就知道跑的是不是最新代码
+const BUILD_TAG = 'build-2026-08-16-vision';
+console.log(`🚀 background.js 已启动 [${BUILD_TAG}]`);
+
 // 全局变量，用于控制流式输出
 let shouldStopStreaming = false;
 
@@ -327,7 +331,11 @@ function getFriendlyErrorMessage(error) {
 }
 
 // 使用DeepSeek API分析内容
-async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, hasFile = false, customInstructionPrompt = '') {
+async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, hasFile = false, customInstructionPrompt = '', deepseekModel = config.DEEPSEEK_MODEL, thinkingType = config.DEEPSEEK_THINKING_TYPE, reasoningEffort = config.DEEPSEEK_REASONING_EFFORT) {
+    if (deepseekModel === 'deepseek') {
+        deepseekModel = config.DEEPSEEK_MODEL;
+    }
+
     // 重置停止流式输出标志
     shouldStopStreaming = false;
     
@@ -374,7 +382,9 @@ async function analyzeWithDeepSeek(content, tabId, isChat = false, isDataAnalysi
         apiKey: config.DEEPSEEK_API_KEY ? '已设置' : '未设置',
         skipUserMessage: skipUserMessage,
         createNewSession: createNewSession,
-        customInstructionPrompt: customInstructionPrompt ? `已设置 (${customInstructionPrompt.length}字符)` : '未设置'
+        customInstructionPrompt: customInstructionPrompt ? `已设置 (${customInstructionPrompt.length}字符)` : '未设置',
+        thinkingType: thinkingType,
+        reasoningEffort: reasoningEffort
     });
     
     try {
@@ -433,20 +443,49 @@ ${content}
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
         
+        const requestBody = {
+            model: deepseekModel,
+            messages: messages,
+            max_tokens: 2000,
+            stream: true,
+            createNewSession: createNewSession,
+            thinking: { type: thinkingType === 'disabled' ? 'disabled' : 'enabled' }
+        };
+
+        if (requestBody.thinking.type === 'enabled') {
+            const effMap = {
+                'low': 'low',
+                'mid': 'medium',
+                'medium': 'medium',
+                'high': 'high',
+                'max': 'max'
+            };
+            requestBody.reasoning_effort = effMap[reasoningEffort] || 'high';
+            console.log('DeepSeek思考模式已开启:', {
+                model: requestBody.model,
+                thinking: requestBody.thinking,
+                reasoning_effort: requestBody.reasoning_effort
+            });
+            chrome.runtime.sendMessage({
+                type: 'deepseekThinkingStarted',
+                model: requestBody.model,
+                reasoningEffort: requestBody.reasoning_effort,
+                isSummary: skipUserMessage,
+                createNewSession: createNewSession
+            }).catch(err => {
+                console.error('发送DeepSeek思考开始消息失败:', err);
+            });
+        } else {
+            requestBody.temperature = 1.5;
+        }
+
         const response = await fetch(config.DEEPSEEK_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${config.DEEPSEEK_API_KEY}`
             },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: messages,
-                temperature: 1.5,
-                max_tokens: 2000,
-                stream: true,
-                createNewSession: createNewSession
-            }),
+            body: JSON.stringify(requestBody),
             signal: controller.signal
         });
         
@@ -517,8 +556,20 @@ ${content}
 
                     try {
                         const parsed = JSON.parse(data);
-                        if (parsed.choices && parsed.choices[0].delta && parsed.choices[0].delta.content) {
-                            const content = parsed.choices[0].delta.content;
+                        const delta = parsed.choices && parsed.choices[0] && parsed.choices[0].delta;
+                        const reasoningContent = delta ? (delta.reasoning_content ?? delta.reasoningContent ?? delta.reasoning) : undefined;
+                        if (reasoningContent !== undefined && reasoningContent !== null) {
+                            chrome.runtime.sendMessage({
+                                type: 'streamReasoningResponse',
+                                content: String(reasoningContent),
+                                isChat: isChat,
+                                isSummary: skipUserMessage,
+                                createNewSession: createNewSession
+                            }).catch(err => {
+                                console.error('发送思考过程到popup失败:', err);
+                            });
+                        } else if (delta && delta.content) {
+                            const content = delta.content;
 
                             // 发送消息到popup
                             if (!skipUserMessage) {
@@ -583,7 +634,13 @@ ${content}
 }
 
 // 使用Gemini API分析内容（流式输出）
-async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-3-flash-preview', hasFile = false, customInstructionPrompt = '') {
+async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis = false, chatHistory = [], skipUserMessage = false, createNewSession = false, model = 'gemini-3.7-flash', hasFile = false, customInstructionPrompt = '', attachments = [], thinkingType = 'enabled', reasoningEffort = 'high') {
+    console.log('🔬 analyzeWithGemini 入口检查 attachments:', {
+        count: attachments ? attachments.length : 0,
+        hasData: attachments && attachments.length > 0 ? !!attachments[0].data : false,
+        dataLen: attachments && attachments.length > 0 && attachments[0].data ? attachments[0].data.length : 0,
+        mimeType: attachments && attachments.length > 0 ? attachments[0].mimeType : 'N/A'
+    });
     shouldStopStreaming = false;
     const apiKeyResult = await chrome.storage.local.get(['geminiApiKey']);
     if (apiKeyResult.geminiApiKey && apiKeyResult.geminiApiKey.trim() !== '') {
@@ -608,31 +665,79 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
                 "你是一个资深的内容分析专家，擅长分析文本内容并回答相关问题。")) :
         "你是一个专业的小红书内容分析师，擅长分析笔记内容特点和趋势。";
 
+    // 带图片时使用视觉分析专业系统指令
+    if (attachments && attachments.length > 0) {
+        systemMessage = "你是一个资深的小红书内容专家，擅长看图并给出可直接使用的小红书视觉与文案创作建议。请仔细观察用户上传的图片细节、主体、色调与排版，再针对性地回答用户的问题。";
+    }
+
     // 如果有自定义指令，将其合并到系统消息中
     if (customInstructionPrompt && customInstructionPrompt.trim()) {
         systemMessage = customInstructionPrompt.trim() + '\n\n' + systemMessage;
         console.log('✅ Gemini: 自定义指令已合并到系统消息中');
         console.log('📝 Gemini: 自定义指令长度:', customInstructionPrompt.trim().length);
-        console.log('📝 Gemini: 自定义指令预览:', customInstructionPrompt.trim().substring(0, 100) + '...');
-        console.log('📋 Gemini: 最终系统消息长度:', systemMessage.length);
-    } else {
-        console.log('ℹ️ Gemini: 未设置自定义指令或自定义指令为空，使用默认系统消息');
-        console.log('📝 Gemini: customInstructionPrompt值:', customInstructionPrompt);
     }
 
-    contents.push({ role: "user", parts: [{ text: systemMessage }] });
+    // 将多轮对话历史压入 contents
     for (const msg of chatHistory) {
-        if (msg.role && msg.content) {
+        if (msg.role && (msg.content || (msg.attachments && msg.attachments.length > 0))) {
             let role = msg.role === 'user' ? 'user' : 'model';
-            contents.push({ role, parts: [{ text: msg.content }] });
+            const parts = [];
+            if (msg.attachments && msg.attachments.length > 0) {
+                for (const att of msg.attachments) {
+                    if (att && att.data) {
+                        let mime = att.mimeType || att.mime_type || 'image/jpeg';
+                        if (mime === 'image/jpg') mime = 'image/jpeg';
+                        parts.push({
+                            inlineData: {
+                                mimeType: mime,
+                                data: att.data
+                            }
+                        });
+                    }
+                }
+            }
+            if (msg.content) {
+                parts.push({ text: msg.content });
+            }
+            if (parts.length > 0) {
+                contents.push({ role, parts });
+            }
         }
     }
-    if (content && content.trim()) {
-        contents.push({ role: "user", parts: [{ text: content }] });
+
+    // 当前用户输入 Parts（包含图片和文本）
+    const userParts = [];
+
+    // 转换所有图像附件为标准 Gemini inlineData 结构
+    if (attachments && attachments.length > 0) {
+        for (const att of attachments) {
+            if (att && att.data) {
+                let mime = att.mimeType || att.mime_type || 'image/jpeg';
+                if (mime === 'image/jpg') mime = 'image/jpeg';
+                userParts.push({
+                    inlineData: {
+                        mimeType: mime,
+                        data: att.data
+                    }
+                });
+            }
+        }
+        console.log(`Gemini: 已成功挂载 ${userParts.length} 张图片到 inlineData`);
     }
+
+    if (content && content.trim()) {
+        userParts.push({ text: content.trim() });
+    } else if (userParts.length > 0) {
+        userParts.push({ text: "请分析这张图片，提炼视觉亮点，并给出适合的小红书爆款选题与文案创作建议。" });
+    }
+
+    contents.push({ role: "user", parts: userParts });
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${config.GEMINI_API_KEY}`;
     const payload = { 
+        systemInstruction: {
+            parts: [{ text: systemMessage }]
+        },
         contents,
         generationConfig: {
             temperature: 0.7,
@@ -641,17 +746,38 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
             maxOutputTokens: 8192
         }
     };
-    console.log('Gemini 流式API请求:', JSON.stringify(payload));
+
+    // 配置 Gemini 思考预算 (thinkingConfig / thinkingBudget)
+    if (thinkingType === 'disabled' || reasoningEffort === 'disabled' || reasoningEffort === 'off') {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    } else if (reasoningEffort === 'low') {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 1024 };
+    } else if (reasoningEffort === 'mid' || reasoningEffort === 'medium') {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 2048 };
+    } else if (reasoningEffort === 'high') {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 4096 };
+    } else if (reasoningEffort === 'max') {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 8192 };
+    } else {
+        payload.generationConfig.thinkingConfig = { thinkingBudget: 2048 };
+    }
+
+    const hasImages = attachments && attachments.length > 0;
+    console.log('Gemini 流式API请求:', hasImages
+        ? `${contents.length} 条消息，含 ${attachments.length} 张图片`
+        : JSON.stringify(payload));
     console.log('Gemini API端点:', endpoint);
+    console.log('Gemini 思考模式配置:', payload.generationConfig.thinkingConfig);
     console.log('Gemini API密钥长度:', config.GEMINI_API_KEY ? config.GEMINI_API_KEY.length : 0);
     console.log('Gemini自定义指令状态:', customInstructionPrompt ? `已设置 (${customInstructionPrompt.length}字符)` : '未设置');
     
     let reader = null;
     try {
-        // 设置30秒超时
+        // 带图请求要上传数 MB 的 base64 并等模型读图，30 秒不够，放宽到 120 秒
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
+        const timeoutMs = hasImages ? 120000 : 30000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -713,14 +839,27 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
             if (nonStreamResponse.ok) {
                 const result = await nonStreamResponse.json();
                 console.log('非流式Gemini API成功:', result);
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                    chrome.runtime.sendMessage({
-                        type: 'streamResponse',
-                        content: text,
-                        isChat: isChat,
-                        createNewSession: createNewSession
-                    });
+                const parts = result.candidates?.[0]?.content?.parts || [];
+                let hasText = false;
+                for (const p of parts) {
+                    if (p.thought) {
+                        chrome.runtime.sendMessage({
+                            type: 'streamReasoningResponse',
+                            content: p.text,
+                            isChat: isChat,
+                            createNewSession: createNewSession
+                        });
+                    } else if (p.text) {
+                        chrome.runtime.sendMessage({
+                            type: 'streamResponse',
+                            content: p.text,
+                            isChat: isChat,
+                            createNewSession: createNewSession
+                        });
+                        hasText = true;
+                    }
+                }
+                if (hasText) {
                     chrome.runtime.sendMessage({ type: 'analysisComplete' });
                     return;
                 }
@@ -810,17 +949,35 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
                             throw new Error(`Gemini API错误: ${data.error.message || JSON.stringify(data.error)}`);
                         }
                         
-                        // 提取文本内容
-                        const part = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (part) {
-                            console.log('Gemini发送内容片段:', part);
-                            chrome.runtime.sendMessage({
-                                type: 'streamResponse',
-                                content: part,
-                                isChat: isChat,
-                                createNewSession: createNewSession
-                            });
-                        } else {
+                        // 提取文本内容与思考内容 (Gemini Thinking parts)
+                        const parts = data.candidates?.[0]?.content?.parts || [];
+                        let hasContent = false;
+
+                        for (const p of parts) {
+                            if (p.thought) {
+                                // 思考过程片段
+                                hasContent = true;
+                                console.log('Gemini发送思考片段:', p.text);
+                                chrome.runtime.sendMessage({
+                                    type: 'streamReasoningResponse',
+                                    content: p.text,
+                                    isChat: isChat,
+                                    createNewSession: createNewSession
+                                });
+                            } else if (p.text) {
+                                // 正常正文片段
+                                hasContent = true;
+                                console.log('Gemini发送内容片段:', p.text);
+                                chrome.runtime.sendMessage({
+                                    type: 'streamResponse',
+                                    content: p.text,
+                                    isChat: isChat,
+                                    createNewSession: createNewSession
+                                });
+                            }
+                        }
+
+                        if (!hasContent) {
                             console.log('Gemini数据中没有文本内容，完整结构:', JSON.stringify(data, null, 2));
                             
                             // 检查完成原因
@@ -849,7 +1006,7 @@ async function analyzeWithGemini(content, tabId, isChat = false, isDataAnalysis 
         
         let friendlyErrorMessage;
         if (error.name === 'AbortError') {
-            friendlyErrorMessage = 'Gemini API请求超时（30秒），请检查网络连接或稍后重试。';
+            friendlyErrorMessage = `Gemini API请求超时（${hasImages ? 120 : 30}秒），请检查网络连接或稍后重试。`;
         } else if (error.message.includes('Gemini API错误') && error.message.includes('💡 解决方案')) {
             // 如果错误信息已经包含了详细的解决方案，直接使用
             friendlyErrorMessage = error.message;
@@ -885,28 +1042,72 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             hasFile: request.hasFile,
             skipUserMessage: request.skipUserMessage,
             createNewSession: request.createNewSession,
-            model: request.model || 'deepseek' // 默认使用DeepSeek模型
+            model: request.model || config.DEEPSEEK_MODEL, // 默认使用DeepSeek模型
+            deepseekThinkingType: request.deepseekThinkingType || config.DEEPSEEK_THINKING_TYPE,
+            deepseekReasoningEffort: request.deepseekReasoningEffort || config.DEEPSEEK_REASONING_EFFORT
         });
         // 获取当前活动标签页
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             if (tabs.length > 0) {
                 console.log('background.js 收到的模型参数:', request.model);
-      if (request.model === 'gemini-3-flash-preview' || request.model === 'gemini-3.1-pro-preview') {
-                    console.log('调用Gemini API，模型:', request.model);
-                    analyzeWithGemini(
-                        request.content,
-                        tabs[0].id,
-                        request.isChat,
-                        request.isDataAnalysis,
-                        request.chatHistory || [],
-                        request.skipUserMessage || false,
-                        request.createNewSession || false,
-                        request.model, // 传递具体的模型名称
-                        request.hasFile || false, // 传递hasFile参数
-                        request.customInstructionPrompt || ''
-                    );
+                // 按前缀路由，新增 Gemini 模型时只要改 popup.html 的 option 即可
+                if (typeof request.model === 'string' && request.model.startsWith('gemini')) {
+                    console.log('调用Gemini API，模型:', request.model, '思考设置:', request.thinkingType, request.reasoningEffort);
+                    
+                    // 检查是否需要从 storage 中读取大型图片附件
+                    const rawAttachments = request.attachments || [];
+                    const needsStorageResolve = rawAttachments.length > 0 && rawAttachments[0] && rawAttachments[0]._fromStorage;
+                    
+                    const launchGemini = (resolvedAttachments) => {
+                        console.log('🖼️ Gemini 收到附件数量:', resolvedAttachments.length,
+                            resolvedAttachments.length > 0 ? `首张 mimeType=${resolvedAttachments[0].mimeType}, data长度=${resolvedAttachments[0].data?.length || 0}` : '');
+                        analyzeWithGemini(
+                            request.content,
+                            tabs[0].id,
+                            request.isChat,
+                            request.isDataAnalysis,
+                            request.chatHistory || [],
+                            request.skipUserMessage || false,
+                            request.createNewSession || false,
+                            request.model,
+                            request.hasFile || false,
+                            request.customInstructionPrompt || '',
+                            resolvedAttachments,
+                            request.thinkingType || 'enabled',
+                            request.reasoningEffort || 'high'
+                        );
+                    };
+                    
+                    if (needsStorageResolve) {
+                        chrome.storage.local.get(['_pendingImageAttachments'], (storageResult) => {
+                            const realAttachments = storageResult._pendingImageAttachments || [];
+                            console.log('📸 从 storage 中读取到图片附件:', realAttachments.length, '张');
+                            // 中转约定了有图，却读不出来 —— 不能静默当无图继续，
+                            // 否则 AI 会照常作答，用户完全看不出图片已经丢了
+                            if (realAttachments.length === 0) {
+                                console.error('📸 图片中转失败：storage 中没有 _pendingImageAttachments');
+                                chrome.runtime.sendMessage({
+                                    type: 'error',
+                                    error: '图片传递失败，未能送达模型。请重试；若反复出现，请在设置中清空历史会话后再试。'
+                                });
+                                return;
+                            }
+                            // 清理暂存数据
+                            chrome.storage.local.remove('_pendingImageAttachments');
+                            launchGemini(realAttachments);
+                        });
+                    } else {
+                        launchGemini(rawAttachments);
+                    }
                 } else {
-                    console.log('调用DeepSeek API，模型:', request.model);
+                    // 兜底：非 deepseek-* 的模型名不能原样透传给 DeepSeek，否则会返回 400
+                    const deepseekModel = (typeof request.model === 'string' && request.model.startsWith('deepseek'))
+                        ? request.model
+                        : config.DEEPSEEK_MODEL;
+                    if (request.model && request.model !== deepseekModel) {
+                        console.warn('未知模型名，已回退到默认 DeepSeek 模型:', request.model, '->', deepseekModel);
+                    }
+                    console.log('调用DeepSeek API，模型:', deepseekModel);
                     analyzeWithDeepSeek(
                         request.content,
                         tabs[0].id,
@@ -916,7 +1117,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         request.skipUserMessage || false,
                         request.createNewSession || false,
                         request.hasFile || false, // 传递hasFile参数
-                        request.customInstructionPrompt || ''
+                        request.customInstructionPrompt || '',
+                        deepseekModel,
+                        request.deepseekThinkingType || config.DEEPSEEK_THINKING_TYPE,
+                        request.deepseekReasoningEffort || config.DEEPSEEK_REASONING_EFFORT
                     );
                 }
                 // 发送确认响应，表示已开始处理

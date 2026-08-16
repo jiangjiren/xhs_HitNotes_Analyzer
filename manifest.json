@@ -21,6 +21,7 @@
     "system.display",
     "sidePanel",
     "storage",
+    "unlimitedStorage",
     "scripting",
     "alarms",
     "clipboardWrite"

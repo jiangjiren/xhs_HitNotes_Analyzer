@@ -169,6 +169,24 @@
         }
       }
 
+      // 引用块（连续的 > 行合并为一个 blockquote）
+      if (/^\s{0,3}>\s?/.test(line)) {
+        closeList();
+        closeTable();
+        const quoteLines = [];
+        while (i < lines.length && /^\s{0,3}>\s?/.test(lines[i])) {
+          quoteLines.push(lines[i].replace(/^\s{0,3}>\s?/, ''));
+          i++;
+        }
+        i--; // 回退一行，交还给外层 for 的 i++
+        const inner = quoteLines
+          .filter(l => l.trim() !== '')
+          .map(l => `<p>${inlineFormat(l)}</p>`)
+          .join('');
+        html += `<blockquote>${inner}</blockquote>`;
+        continue;
+      }
+
       // 列表项
       const ulMatch = line.match(/^([*+-]|\s*•)\s+(.*)/);
       const olMatch = line.match(/^(\d+)\.\s+(.*)/);

@@ -1,2952 +1,2107 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>AI创作助手</title>
+  <title>AI创作助手 · Apple HIG Edition</title>
   <script src="marked.js" defer></script>
   <script src="markdown.js" defer></script>
   <script src="xlsx.full.min.js" defer></script>
   <link rel="stylesheet" href="material-icons.css">
   <style>
-    /* 妯″瀷閫夋嫨鏍峰紡 */
-    .model-selection {
-      display: flex;
-      align-items: center;
-      padding: 8px 15px;
-      background-color: #f5f5f7;
-      border-radius: 8px;
-      margin-bottom: 10px;
+    /* ==========================================================================
+       Apple Human Interface Guidelines (HIG) Design System
+       纯粹质感 · 磨砂通透 · 精致微交互 · 内容退后
+       ========================================================================== */
+    :root {
+      /* 核心品牌色（小红书珊瑚朱红，克制使用） */
+      --brand:          #ff2442;
+      --brand-hover:    #e5102e;
+      --brand-soft:     rgba(255, 36, 66, 0.08);
+      --brand-border:   rgba(255, 36, 66, 0.20);
+      --brand-ring:     rgba(255, 36, 66, 0.18);
+
+      /* Apple Cupertino 调色板 - 浅色 */
+      --bg-base:        #f5f5f7;
+      --surface:        #ffffff;
+      --surface-2:      #f0f0f4;
+      --surface-3:      #e5e5ea;
+      --surface-glass:  rgba(255, 255, 255, 0.85);
+      
+      --line:           rgba(0, 0, 0, 0.07);
+      --line-subtle:    rgba(0, 0, 0, 0.04);
+      --line-bold:      rgba(0, 0, 0, 0.12);
+
+      --ink:            #1d1d1f;
+      --ink-2:          #48484a;
+      --ink-3:          #86868b;
+      --ink-4:          #c7c7cc;
+
+      /* 语义色 */
+      --apple-blue:     #0071e3;
+      --apple-blue-soft:rgba(0, 113, 227, 0.09);
+      --ok:             #34c759;
+      --ok-soft:        rgba(52, 199, 89, 0.10);
+      --warn:           #ff9500;
+      --warn-soft:      rgba(255, 149, 0, 0.10);
+      --danger:         #ff3b30;
+      --danger-soft:    rgba(255, 59, 48, 0.10);
+
+      /* 圆角规范 */
+      --r-xs:           6px;
+      --r-sm:           10px;
+      --r-md:           14px;
+      --r-lg:           18px;
+      --r-xl:           24px;
+      --r-full:         999px;
+
+      /* 阴影 */
+      --sh-sm:          0 1px 3px rgba(0, 0, 0, 0.04);
+      --sh-md:          0 4px 16px -4px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+      --sh-lg:          0 12px 36px -8px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
+      --sh-float:       0 18px 48px -10px rgba(0, 0, 0, 0.20), 0 4px 14px rgba(0, 0, 0, 0.06);
+
+      /* 动效 */
+      --ease-apple:     cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-spring:    cubic-bezier(0.175, 0.885, 0.32, 1.2);
+
+      /* 字体 */
+      --font-sans:      -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+                        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", sans-serif;
+      --font-mono:      "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
     }
-    
-    .model-selection-label {
-      font-size: 14px;
-      color: #333;
-      margin-right: 10px;
-      white-space: nowrap;
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --brand:          #ff375f;
+        --brand-hover:    #ff5c7c;
+        --brand-soft:     rgba(255, 55, 95, 0.14);
+        --brand-border:   rgba(255, 55, 95, 0.28);
+        --brand-ring:     rgba(255, 55, 95, 0.22);
+
+        --bg-base:        #000000;
+        --surface:        #1c1c1e;
+        --surface-2:      #2c2c2e;
+        --surface-3:      #3a3a3c;
+        --surface-glass:  rgba(28, 28, 30, 0.88);
+
+        --line:           rgba(255, 255, 255, 0.09);
+        --line-subtle:    rgba(255, 255, 255, 0.05);
+        --line-bold:      rgba(255, 255, 255, 0.16);
+
+        --ink:            #f5f5f7;
+        --ink-2:          #aeaeb2;
+        --ink-3:          #8e8e93;
+        --ink-4:          #48484a;
+
+        --apple-blue:     #0a84ff;
+        --apple-blue-soft:rgba(10, 132, 255, 0.16);
+        --ok:             #30d158;
+        --ok-soft:        rgba(48, 209, 88, 0.16);
+        --warn:           #ffd60a;
+        --warn-soft:      rgba(255, 214, 10, 0.16);
+        --danger:         #ff453a;
+        --danger-soft:    rgba(255, 69, 58, 0.16);
+
+        --sh-sm:          0 1px 3px rgba(0, 0, 0, 0.4);
+        --sh-md:          0 4px 16px -4px rgba(0, 0, 0, 0.6);
+        --sh-lg:          0 12px 36px -8px rgba(0, 0, 0, 0.75);
+        --sh-float:       0 18px 48px -10px rgba(0, 0, 0, 0.85);
+      }
     }
-    
-    .model-select {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background-color: white;
-      font-size: 14px;
-      color: #333;
-      cursor: pointer;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    
-    .model-select:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-    }
-    
-    /* 鍏ㄥ眬鏍峰紡 */
-    body {
-      width: 100%;
-      height: 100vh;
+
+    /* ---------- 全局重置与排版 ---------- */
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
-      box-sizing: border-box;
-      overflow: hidden;
-      display: flex;
-      flex-direction: row; /* 淇敼涓簉ow锛屽洜涓簃ain-content鍜宻idebar鏄按骞虫帓鍒?*/
-      background-color: #f5f5f7;
-    }
-    
-    /* 涓诲唴瀹瑰尯鍩?*/
-    .main-content {
-      flex: 1;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      padding: 15px 15px 2px 15px;
-      /* 涓轰簡閬垮厤琚彸渚у浐瀹氬鑸爮閬尅锛岀粰涓诲唴瀹瑰尯鍩熻缃槑纭搴?*/
-      width: calc(100% - 50px);
-      /* 缁欏彸渚ч鐣欎笌渚ц竟鏍忕浉鍚岀殑闂磋窛锛岀‘淇濅笉浼氳鍥哄畾瀵艰埅鏍忛伄鎸?*/
-      margin-right: 50px;
-      max-width: calc(100% - 50px); /* 纭繚涓诲唴瀹瑰尯鍩熶笉浼氳秴杩囬櫎瀵艰埅鏍忓鐨勫搴?*/
-    }
-    
-    /* 鍙充晶瀵艰埅鏍?*/
-    .sidebar, .right-sidebar {
-      width: 50px;
-      height: 100vh;
-      background-color: #f8f8f8;
-      border-left: 1px solid #e0e0e0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex-shrink: 0; /* 闃叉渚ц竟鏍忚鎸ゅ帇 */
-      position: fixed;
-      right: 0;
-      top: 0;
-      z-index: 1001;
-      justify-content: space-between; /* 鏍稿績锛氬皢椤堕儴鍜屽簳閮ㄥ垎寮€ */
-      padding: 10px 0;
     }
 
-    .sidebar-top {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px; /* 娣诲姞闂磋窛 */
-    }
-
-    .sidebar-bottom {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    
-    .sidebar-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s;
-      padding: 4px 2px;
-    }
-    
-    .sidebar-icon:hover {
-      background-color: #e0e0e0;
-    }
-    
-    .sidebar-icon.active {
-      background-color: #e3f2fd;
-    }
-    
-    .sidebar-icon svg {
-      width: 18px;
-      height: 18px;
-      margin-bottom: 2px;
-    }
-    
-    #aiAssistantTabBtn svg path {
-      fill: #666;
-    }
-    
-    .sidebar-icon.active svg {
-      /* 璁㏒VG涓昏壊鍙樹负钃濊壊 */
-      filter: drop-shadow(0 0 0 #1976d2) brightness(0) saturate(100%) invert(33%) sepia(77%) saturate(7493%) hue-rotate(191deg) brightness(93%) contrast(101%);
-    }
-    
-    .sidebar-icon .material-icons {
-      font-size: 18px;
-      color: #666;
-      margin-bottom: 2px;
-    }
-    
-    .sidebar-icon.active .material-icons {
-      color: #1976d2;
-    }
-    
-    .sidebar-label {
-      font-size: 10px;
-      color: #666;
-      text-align: center;
-      line-height: 1;
-      margin-top: 2px;
-    }
-    
-    .sidebar-icon.active .sidebar-label {
-      color: #1976d2;
-      font-weight: 500;
-    }
-    
-    .sidebar-spacer {
-      flex: 1;
-      min-height: 20px;
-    }
-    
-    /* Tab椤垫牱寮?*/
-    .tab-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: calc(100% - 15px);
-      gap: 0;
-      overflow: hidden;
-    }
-    
-    .tab-content {
-      flex: 1;
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    
-    .tab-content.active {
-      display: flex;
-    }
-    
-    .container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      height: calc(100% - 15px);
-      gap: 0;
-      overflow: hidden;
-    }
-    
-    .input-group {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    button {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    button .material-icons {
-      font-size: 20px;
-    }
-    
-    #startBtn {
-      background-color: #4CAF50;
-      color: white;
-    }
-    
-    #stopBtn {
-      background-color: #f44336;
-      color: white;
-    }
-    
-    #status {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 4px;
-      background-color: #f5f5f5;
-    }
-    
-    /* 閲囬泦鎺у埗鍖哄煙鏍峰紡 - 鑻规灉椋庢牸 */
-    .collection-section {
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      margin-bottom: 15px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-    
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      background-color: #f9f9f9;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    
-    .section-title {
-      font-weight: 500;
-      color: #333;
-      font-size: 15px;
-    }
-    
-    .toggle-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-    }
-    
-    .toggle-btn:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    .toggle-btn.collapsed {
-      transform: rotate(180deg);
-    }
-    
-    .section-content {
-      padding: 15px;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    
-    .section-content.collapsed {
-      max-height: 0;
-      padding: 0 15px;
-    }
-    
-    /* 杈撳叆鎺у埗缁?- 鑻规灉椋庢牸 */
-    .input-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 0;
-    }
-
-    .input-control {
-      flex: 1;
-      min-width: 140px;
-    }
-
-    .input-control label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: #555;
-      font-weight: 500;
-    }
-
-    .input-control input {
+    html, body {
       width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 14px;
-      background-color: #fafafa;
-      transition: all 0.2s ease;
-      box-sizing: border-box;
-    }
-
-    .input-control input:hover {
-      border-color: #9ca3af;
-    }
-
-    .input-control input:focus {
-      outline: none;
-      border-color: #007aff;
-      background-color: #fff;
-      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-    }
-    
-    /* 鎸夐挳缁?- 鑻规灉椋庢牸 */
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .apple-btn {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
-    }
-
-    .apple-btn .material-icons {
-      font-size: 20px;
-    }
-
-    .apple-btn-primary {
-      background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-      color: white;
-    }
-
-    .apple-btn-primary:hover {
-      background: linear-gradient(135deg, #0069d9 0%, #0040a8 100%);
-      box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
-      transform: translateY(-1px);
-    }
-
-    .apple-btn-primary:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
-    }
-    
-    .apple-btn-danger {
-      background-color: #ff3b30;
-      color: white;
-    }
-    
-    .apple-btn-danger:hover {
-      background-color: #dc3545;
-    }
-    
-    /* 閲囬泦鎸夐挳鐨勯噰闆嗕腑鐘舵€佹牱寮?*/
-    .apple-btn-collecting {
-      background-color: #ff3b30;
-      color: white;
-      animation: pulse 1.5s infinite;
-    }
-    
-    .apple-btn-collecting:hover {
-      background-color: #dc3545;
-    }
-    
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4);
-      }
-      70% {
-        box-shadow: 0 0 0 6px rgba(255, 59, 48, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(255, 59, 48, 0);
-      }
-    }
-    
-    /* 鐘舵€佹樉绀?- 鑻规灉椋庢牸 */
-    .status-display {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background-color: #e8f4fd;
-      border-left: 3px solid #007aff;
-      font-size: 13px;
-      color: #555;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .status-display .material-icons {
-      font-size: 18px;
-      color: #007aff;
-    }
-
-    /* 澶嶉€夋缁?- 鑻规灉椋庢牸 */
-    .checkbox-group {
-      margin: 12px 0;
-      padding: 10px 12px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      border: 1px solid #e5e5e5;
-    }
-
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-base);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       user-select: none;
     }
 
-    .custom-checkbox {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #d1d5db;
-      border-radius: 5px;
-      margin-right: 10px;
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      outline: none;
+      border: none;
+      background: none;
+    }
+
+    button {
       cursor: pointer;
-      position: relative;
-      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a {
+      color: var(--brand);
+      text-decoration: none;
+      transition: color 0.14s var(--ease-apple);
+    }
+    a:hover { text-decoration: underline; }
+
+    ::selection {
+      background: var(--brand-ring);
+      color: var(--ink);
+    }
+
+    /* ---------- 极简苹果滚动条 ---------- */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border-radius: var(--r-full);
+      transition: background-color 0.2s var(--ease-apple);
+    }
+    *:hover::-webkit-scrollbar-thumb {
+      background-color: var(--ink-4);
+    }
+
+    /* ==========================================================================
+       1. 顶栏：极简会话导航 (Apple Minimal Header)
+       ========================================================================== */
+    .app-header {
       flex-shrink: 0;
-    }
-
-    .custom-checkbox:checked {
-      background-color: #007aff;
-      border-color: #007aff;
-    }
-
-    .custom-checkbox:checked::after {
-      content: '';
-      position: absolute;
-      left: 5px;
-      top: 2px;
-      width: 5px;
-      height: 10px;
-      border: solid white;
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
-    }
-
-    .custom-checkbox:hover {
-      border-color: #007aff;
-    }
-
-    .checkbox-text {
-      font-size: 14px;
-      color: #333;
-      font-weight: 400;
-    }
-
-    /* 鑱婂ぉ鐣岄潰鏍峰紡 */
-    .chat-container {
-      flex: 1;
+      height: 42px;
       display: flex;
-      flex-direction: column;
-      min-height: 0;
-      transition: all 0.3s ease;
-      margin-top: 0;
-      width: 100%; /* 纭繚鍗犳嵁鍏ㄩ儴瀹藉害 */
-    }
-    
-    .chat-title-container {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 5px;
-      padding: 2px 0;
+      justify-content: space-between;
+      padding: 0 12px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      z-index: 50;
     }
-    
-    .chat-title {
-      font-weight: bold;
-      margin-bottom: 0;
-      color: #333;
-      flex-shrink: 0;
-    }
-    
-    .chat-controls {
+
+    .header-left {
       display: flex;
+      align-items: center;
+      min-width: 0;
+      flex: 1;
+    }
+
+    /* 当前会话胶囊 */
+    .session-pill-btn {
+      display: inline-flex;
       align-items: center;
       gap: 5px;
-      margin-left: auto;
+      padding: 4px 9px;
+      border-radius: var(--r-full);
+      background: var(--surface-2);
+      font-size: 12.5px;
+      font-weight: 550;
+      color: var(--ink);
+      max-width: 220px;
+      transition: all 0.16s var(--ease-apple);
     }
-    
-    .new-chat-icon {
+
+    .session-pill-btn:hover {
+      background: var(--surface-3);
+    }
+
+    .session-pill-btn:active {
+      transform: scale(0.97);
+    }
+
+    .session-pill-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .session-pill-btn .material-icons {
+      font-size: 15px;
+      color: var(--ink-3);
+      flex-shrink: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* 苹果级图标按钮 */
+    .apple-icon-btn {
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--r-sm);
+      color: var(--ink-2);
+      background: transparent;
+      transition: all 0.15s var(--ease-apple);
+    }
+
+    .apple-icon-btn:hover {
+      background-color: var(--surface-2);
+      color: var(--ink);
+    }
+
+    .apple-icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    .apple-icon-btn .material-icons {
+      font-size: 18px;
+    }
+
+    .apple-icon-btn svg {
+      width: 17px;
+      height: 17px;
+      display: block;
+    }
+
+    /* ==========================================================================
+       2. 主视口与容器
+       ========================================================================== */
+    .app-viewport {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 42px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chat-scroll-area {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px 14px 16px;
+      scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      user-select: text;
+    }
+
+    /* ==========================================================================
+       3. 智能情境横幅 (Context-Aware Intelligence Banner)
+       ========================================================================== */
+    .context-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      box-shadow: var(--sh-sm);
+      animation: bannerSlideIn 0.35s var(--ease-spring) both;
+    }
+
+    .context-banner.show {
+      display: flex;
+    }
+
+    @keyframes bannerSlideIn {
+      from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .context-banner-main {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .context-banner-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--r-xs);
+      background: var(--brand-soft);
+      color: var(--brand);
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      transition: background-color 0.2s;
+      flex-shrink: 0;
     }
-    
-    .new-chat-icon:hover {
-      background-color: rgba(0, 0, 0, 0.05);
+
+    .context-banner-icon .material-icons {
+      font-size: 17px;
     }
-    
-    .new-chat-icon img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
+
+    .context-banner-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
     }
-    
-    .chat-messages {
+
+    .context-banner-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .context-banner-desc {
+      font-size: 11px;
+      color: var(--ink-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .context-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .context-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--r-full);
+      font-size: 11.5px;
+      font-weight: 600;
+      background: var(--brand);
+      color: #ffffff;
+      transition: all 0.16s var(--ease-apple);
+    }
+
+    .context-action-btn:hover {
+      background: var(--brand-hover);
+      transform: translateY(-0.5px);
+    }
+
+    .context-action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .context-dismiss-btn {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--r-full);
+      color: var(--ink-4);
+      transition: all 0.15s var(--ease-apple);
+    }
+
+    .context-dismiss-btn:hover {
+      color: var(--ink-2);
+      background: var(--surface-2);
+    }
+
+    .context-dismiss-btn .material-icons { font-size: 15px; }
+
+    /* ==========================================================================
+       4. 灵动采集进度胶囊 (Dynamic Island Collection Indicator)
+       ========================================================================== */
+    .collect-progress-capsule {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      margin-bottom: 12px;
+      border-radius: var(--r-full);
+      background: var(--ink);
+      color: var(--bg-base);
+      box-shadow: var(--sh-md);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      animation: capsuleIn 0.3s var(--ease-spring) both;
+    }
+
+    .collect-progress-capsule.active {
+      display: flex;
+    }
+
+    @keyframes capsuleIn {
+      from { opacity: 0; transform: scale(0.94) translateY(-10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .capsule-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
       flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #fff;
-      min-height: 0;
-      width: calc(100% - 22px); /* 鑰冭檻padding鍜宐order鐨勫搴?*/
     }
-    
+
+    .capsule-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand);
+      animation: capsuleBreathe 1.5s infinite ease-in-out;
+      flex-shrink: 0;
+    }
+
+    @keyframes capsuleBreathe {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.4); opacity: 0.5; }
+    }
+
+    .capsule-text {
+      font-size: 12px;
+      font-weight: 550;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .capsule-stop-btn {
+      padding: 2px 8px;
+      border-radius: var(--r-full);
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: background 0.15s var(--ease-apple);
+    }
+
+    .capsule-stop-btn:hover {
+      background: rgba(255, 255, 255, 0.32);
+    }
+
+    /* ==========================================================================
+       5. 欢迎引导屏 (Welcome Empty State)
+       ========================================================================== */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      padding: 18px 2px 10px;
+    }
+
+    .welcome-badge {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--brand);
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-border);
+      padding: 3px 9px;
+      border-radius: var(--r-full);
+      margin-bottom: 12px;
+    }
+
+    .welcome-title {
+      margin: 0 0 6px;
+      font-size: 21px;
+      line-height: 1.25;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+    }
+
+    .welcome-sub {
+      margin: 0 0 16px;
+      font-size: 12.5px;
+      color: var(--ink-3);
+    }
+
+    .welcome-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .welcome-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: var(--r-md);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--sh-sm);
+      transition: all 0.18s var(--ease-apple);
+    }
+
+    .welcome-card:hover {
+      border-color: var(--brand-border);
+      transform: translateY(-1px);
+      box-shadow: var(--sh-md);
+    }
+
+    .welcome-card:active {
+      transform: scale(0.985);
+    }
+
+    .welcome-card .material-icons {
+      font-size: 18px;
+      color: var(--brand);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .welcome-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .welcome-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .welcome-card-desc {
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: var(--ink-3);
+    }
+
+    /* 入场动画 */
+    .welcome > * { animation: riseUp 0.35s var(--ease-apple) both; }
+    .welcome > *:nth-child(1) { animation-delay: 0.02s; }
+    .welcome > *:nth-child(2) { animation-delay: 0.05s; }
+    .welcome > *:nth-child(3) { animation-delay: 0.08s; }
+    .welcome-card:nth-child(1) { animation-delay: 0.12s; }
+    .welcome-card:nth-child(2) { animation-delay: 0.16s; }
+    .welcome-card:nth-child(3) { animation-delay: 0.20s; }
+    .welcome-card:nth-child(4) { animation-delay: 0.24s; }
+
+    @keyframes riseUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       6. 消息流与卡片 (Messages & Streaming)
+       ========================================================================== */
     .message {
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 4px;
-      /* 璁╂秷鎭皵娉″搴︽牴鎹唴瀹硅嚜鍔ㄤ几缂╋紝涓斾笉浼氳秴鍑哄鍣?*/
+      margin-bottom: 16px;
       box-sizing: border-box;
-      width: auto;
-      max-width: calc(100% - 16px); /* 棰勭暀鍐呰竟璺濆搴︼紝閬垮厤瓒呭嚭 */
-      word-wrap: break-word; /* 鍏佽闀垮崟璇嶆崲琛?*/
-      word-break: break-word; /* 寮哄埗闀垮崟璇嶆崲琛?*/
-      overflow-wrap: break-word; /* 鐜颁唬娴忚鍣ㄧ殑鎹㈣灞炴€?*/
-      white-space: pre-wrap; /* 淇濈暀鎹㈣绗︼紝鍚屾椂鍏佽鑷姩鎹㈣ */
-      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
+      max-width: 100%;
+      word-wrap: break-word;
+      word-break: break-word;
+      animation: msgIn 0.28s var(--ease-apple) both;
     }
-    
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 用户气泡 */
     .user-message {
-      background-color: #e3f2fd;
-      margin-left: 20px;
-      max-width: calc(100% - 20px); /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
+      width: fit-content;
+      max-width: 88%;
+      margin-left: auto;
+      margin-right: 0;
+      padding: 9px 13px;
+      background: var(--brand);
+      color: #ffffff;
+      border-radius: var(--r-lg) var(--r-lg) 4px var(--r-lg);
+      font-size: 13.5px;
+      white-space: pre-wrap;
+      box-shadow: 0 1px 3px rgba(255, 36, 66, 0.22);
     }
-    
+
+    /* AI 回答 */
     .ai-message {
-      background-color: #f5f5f5;
       margin-left: 0;
+      margin-right: 0;
+      padding: 0;
+      background: none;
+      color: var(--ink);
+      font-size: 13.5px;
+      white-space: normal;
       position: relative;
-      max-width: 100%; /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
     }
-    
+
+    .ai-message-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+      color: var(--brand);
+    }
+
+    .ai-message-header .material-icons { font-size: 14px; }
+
+    /* 复制按钮 */
     .copy-button {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      margin-top: 10px;
-      padding: 4px 8px;
-      background-color: transparent;
-      color: #666;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: background-color 0.2s;
+      margin-top: 8px;
+      padding: 3px 8px;
+      background-color: var(--surface);
+      color: var(--ink-3);
+      border: 1px solid var(--line);
+      border-radius: var(--r-full);
+      font-size: 11px;
+      opacity: 0;
+      transition: all 0.16s var(--ease-apple);
     }
-    
+
+    .ai-message:hover .copy-button,
+    .copy-button:focus-visible { opacity: 1; }
+
     .copy-button:hover {
-      background-color: rgba(0, 0, 0, 0.05);
+      background-color: var(--surface-2);
+      color: var(--ink);
     }
-    
+
+    .copy-button .material-icons { font-size: 13px; }
+
     .copy-success {
-      color: #4CAF50 !important;
+      opacity: 1 !important;
+      color: var(--ok) !important;
+      border-color: var(--ok) !important;
     }
-    
-    .copy-button .material-icons {
-      font-size: 16px;
-    }
-    
-    /* 鎬濊€冨姩鐢绘牱寮?*/
+
+    /* 思考中占位 */
     .thinking-message {
-      background-color: #f0f8ff !important;
-      border-left: 3px solid #8b5cf6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      width: fit-content;
       position: relative;
       overflow: hidden;
     }
-    
-    .thinking-message > div {
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-    }
-    
-    .thinking-text {
-      display: inline-block;
-      position: relative;
-      vertical-align: middle;
-    }
-    
 
-    
-    .thinking-dots {
-      display: inline-block;
-      margin-left: 5px;
-      white-space: nowrap;
-      vertical-align: middle;
+    .thinking-text {
+      font-size: 12.5px;
+      color: var(--ink-2);
     }
-    
+
+    .thinking-dots {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 4px;
+    }
+
     .thinking-dots span {
-      display: inline-block;
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background-color: #8b5cf6;
-      margin: 0 1px;
-      animation: bounce 1.4s infinite ease-in-out both;
+      background-color: var(--brand);
+      margin: 0 1.5px;
+      animation: bounceDot 1.4s infinite ease-in-out both;
     }
-    
+
     .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
     .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
     .thinking-dots span:nth-child(3) { animation-delay: 0s; }
-    
 
-    
-    @keyframes bounce {
-      0%, 80%, 100% {
-        transform: scale(0);
-      }
-      40% {
-        transform: scale(1);
-      }
+    @keyframes bounceDot {
+      0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
+      40%           { transform: scale(1);   opacity: 1; }
     }
-    
-    .thinking-shimmer {
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(139, 92, 246, 0.1),
-        transparent
-      );
-      animation: shimmer 2s infinite;
-    }
-    
-    @keyframes shimmer {
-      0% { left: -100%; }
-      100% { left: 100%; }
-    }
-    
-    .ai-message p {
-      margin: 0.5em 0;
-      line-height: 1.5;
-    }
-    
-    .ai-message strong {
-      color: #333;
-    }
-    
-    .ai-message h1, .ai-message h2, .ai-message h3 {
-      margin: 0.5em 0;
-      color: #333;
-    }
-    
-    .ai-message h1 {
-      font-size: 1.5em;
-      margin: 0.5em 0;
-    }
-    
-    .ai-message h2 {
-      font-size: 1.3em;
-      margin: 0.5em 0;
-    }
-    
-    .ai-message h3 {
-      font-size: 1.1em;
-      margin: 0.5em 0;
-    }
-    
-    .ai-message ul, .ai-message ol {
-      margin: 0.5em 0;
-      padding-left: 1.5em;
-    }
-    
-    .ai-message li {
-      margin: 0.3em 0;
-    }
-    
-    .ai-message code {
-      background-color: #f0f0f0;
-      padding: 0.2em 0.4em;
-      border-radius: 3px;
-      font-family: monospace;
-      font-size: 0.9em;
-    }
-    
-    .ai-message pre {
-      background-color: #f0f0f0;
-      padding: 1em;
-      border-radius: 5px;
-      overflow-x: auto;
-      margin: 0.5em 0;
-    }
-    
-    .ai-message pre code {
-      background-color: transparent;
-      padding: 0;
-      border-radius: 0;
-    }
-    
-    .ai-message blockquote {
-      border-left: 3px solid #ddd;
-      margin: 0.5em 0;
-      padding-left: 1em;
-      color: #555;
-    }
-    
-    .ai-message table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 0.5em 0;
-    }
-    
-    .ai-message th, .ai-message td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    
-    .ai-message th {
-      background-color: #f2f2f2;
-    }
-    
-    .chat-input {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-    }
-    
-    .chat-input input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .chat-input button {
-      background-color: #2196F3;
-      color: white;
-      padding: 8px;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    
-    .chat-input button.stop-mode {
-      background-color: #f44336; /* 绾㈣壊鑳屾櫙 */
-      transition: background-color 0.3s ease;
-    }
-    
-    .chat-input button:hover {
-      background-color: #1976D2;
-    }
-    
-    .chat-input button.stop-mode:hover {
-      background-color: #d32f2f;
-    }
-    
-    .send-icon, .stop-icon {
-      font-size: 16px !important;
-    }
-    
-    .file-upload {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    
-    .file-upload label {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
-      transition: background-color 0.2s;
-    }
-    
-    .file-upload label:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    .file-upload input[type="file"] {
-      display: none;
-    }
-    
-    .file-info {
-      position: absolute;
-      bottom: 45px;
-      right: 15px;
-      color: #666;
+
+    /* DeepSeek 推理过程折叠块 */
+    .deepseek-reasoning-message {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      color: var(--ink-2);
       font-size: 12px;
-      background-color: rgba(255, 255, 255, 0.9);
-      padding: 5px;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      display: none;
+      line-height: 1.55;
+      padding: 8px 10px;
+      margin-bottom: 10px;
     }
-    
-    .file-upload:hover .file-info {
-      display: block;
-    }
-    
-    /* 妯℃€佺獥鍙ｆ牱寮?*/
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-    
-    .modal-content {
-      background-color: #fff;
-      margin: 10% auto;
-      padding: 20px;
-      border-radius: 8px;
-      width: 80%;
-      max-width: 500px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    .modal-header {
+
+    .deepseek-reasoning-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
-    }
-    
-    .modal-header h3 {
-      margin: 0;
-      color: #333;
-    }
-    
-    .close-modal {
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    
-    .modal-body {
-      margin-bottom: 20px;
-    }
-    
-    .setting-item {
-      margin-bottom: 15px;
-    }
-    
-    .setting-item label {
-      display: block;
+      justify-content: space-between;
+      gap: 8px;
       margin-bottom: 5px;
-      font-weight: bold;
-    }
-    
-    .setting-item input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    
-    .setting-item small {
-      display: block;
-      margin-top: 5px;
-      color: #666;
-      font-size: 12px;
-    }
-    
-    .modal-footer {
-      text-align: right;
-    }
-    
-    .save-btn {
-      background-color: #4CAF50;
-      color: white;
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
+      user-select: none;
     }
-    
-    .save-btn:hover {
-      background-color: #45a049;
+
+    .deepseek-reasoning-title {
+      color: var(--ink-3);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
     }
-    
-    /* 鎶樺彔鍖哄煙鏍峰紡 */
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      cursor: pointer;
-    }
-    
-    .section-title {
-      font-weight: bold;
-      color: #333;
-    }
-    
-    .toggle-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s;
-    }
-    
-    .toggle-btn.collapsed {
-      transform: rotate(180deg);
-    }
-    
-    .section-content {
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    
-    .section-content.collapsed {
-      max-height: 0;
-    }
-    
-    /* 璁剧疆鍥炬爣鏍峰紡 */
-    .settings-icon {
-      position: relative;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 1000;
-      color: #666;
-      background-color: transparent;
-      border-radius: 50%;
-      overflow: visible;
-    }
-    
-    .settings-icon .material-icons {
-      font-size: 24px !important;
-      width: 24px !important;
-      height: 24px !important;
-      display: block;
-    }
-    
-    .settings-icon:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    /* 鑾峰彇椤甸潰鍐呭鎸夐挳鏍峰紡 */
-    .page-content-btn {
-      position: relative;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 1000;
-      color: #666;
-      background-color: transparent;
-      border-radius: 50%;
-      overflow: visible;
-    }
-    
-    .page-content-btn .material-icons {
-      font-size: 24px !important;
-      width: 24px !important;
-      height: 24px !important;
-      display: block;
-      color: #666 !important;
-    }
-    
-    .page-content-btn:hover {
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-    
-    .page-content-btn:hover .material-icons {
-      color: #333 !important;
-    }
-    
-    .history-icon svg, .new-chat-icon svg {
-      width: 24px !important;
-      height: 24px !important;
-    }
-    
-    /* 鍙戦€佹寜閽牱寮?*/
-    .send-icon, .stop-icon {
-      font-size: 20px !important;
-    }
-    
-    /* 鍙戦€佹寜閽仠姝㈡ā寮忔牱寮?*/
-    #sendMessage.stop-mode {
-      background-color: #f44336; /* 绾㈣壊鑳屾櫙 */
-      transition: background-color 0.3s ease;
-    }
-    
-    #sendMessage.stop-mode .stop-icon {
-      color: white;
-    }
-    
-    /* 鍔犺浇鍔ㄧ敾 */
-    .loading-dots {
+
+    .deepseek-reasoning-toggle {
+      width: 20px;
+      height: 20px;
+      border-radius: var(--r-xs);
+      color: var(--ink-3);
       display: inline-flex;
       align-items: center;
-      height: 20px;
-    }
-    
-    .loading-dots span {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: #888;
-      margin: 0 2px;
-      animation: loading 1.4s infinite ease-in-out both;
-    }
-    
-    .loading-dots span:nth-child(1) {
-      animation-delay: -0.32s;
-    }
-    
-    .loading-dots span:nth-child(2) {
-      animation-delay: -0.16s;
-    }
-    
-    @keyframes loading {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
-    }
-    
-    /* Toast娴獥鎻愮ず鏍峰紡 */
-    .toast-notification {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(50, 50, 50, 0.9);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 4px;
-      font-size: 14px;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.3s;
-    }
-    
-    .toast-notification.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    
-    /* 涓存椂閫氱煡鏍峰紡 */
-    .temp-notification {
-      position: fixed;
-      top: -50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-      transition: top 0.3s;
-      z-index: 1100;
-    }
-    
-    .temp-notification.show {
-      top: 20px;
-    }
-    
-    /* API閿欒璀﹀憡鏍峰紡 */
-    .api-error-warning {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
-      padding: 20px;
-      background-color: #f8d7da;
-      color: #721c24;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      text-align: center;
+      transition: all 0.15s var(--ease-apple);
+      pointer-events: none;
     }
-    
-    .api-error-warning .material-icons {
-      font-size: 36px;
-      color: #721c24;
-      margin-bottom: 10px;
+
+    .deepseek-reasoning-toggle:hover {
+      background: var(--surface-3);
+      color: var(--ink);
     }
-    
-    .api-error-warning button {
-      background-color: #dc3545;
-      color: white;
-      margin-top: 10px;
+
+    .deepseek-reasoning-toggle .material-icons { font-size: 15px; }
+
+    .deepseek-reasoning-body {
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
     }
-    
-    /* API瀵嗛挜缂哄け璀﹀憡鏍峰紡 */
-    .api-key-missing {
+
+    .deepseek-reasoning-message.collapsed .deepseek-reasoning-header { margin-bottom: 0; }
+    .deepseek-reasoning-message.collapsed .deepseek-reasoning-body { display: none; }
+
+    /* 后续推荐行动胶囊 (Smart Follow-up Pills) */
+    .followup-container {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+      animation: riseUp 0.3s var(--ease-apple) both;
+    }
+
+    .followup-pill {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 15px;
-      background-color: #fff3cd;
-      color: #856404;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      text-align: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: var(--r-full);
+      background: var(--surface);
+      border: 1px solid var(--line-bold);
+      color: var(--ink-2);
+      font-size: 11.5px;
+      font-weight: 500;
+      transition: all 0.16s var(--ease-apple);
     }
-    
-    .api-key-missing .material-icons {
-      font-size: 36px;
-      color: #856404;
-      margin-bottom: 10px;
+
+    .followup-pill:hover {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--brand-soft);
+      transform: translateY(-0.5px);
     }
-    
-    .api-key-missing button {
-      background-color: #ffc107;
-      color: #212529;
-      margin-top: 10px;
-    }
-    
-    /* 椤甸潰鎿嶄綔鎸夐挳鏍峰紡 */
-    .page-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 5px;
-    }
-    
-    /* 椤甸潰鍐呭棰勮鏍峰紡 */
+
+    .followup-pill:active { transform: scale(0.96); }
+
+    /* 网页内容预览卡片 */
     .page-content-preview {
-      background-color: #f5f9ff;
-      border: 1px solid #d0e1fd;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      padding: 10px;
-      width: calc(100% - 22px); /* 鑰冭檻padding鍜宐order鐨勫搴?*/
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      margin-bottom: 16px;
+      padding: 12px;
+      box-shadow: var(--sh-sm);
+      animation: msgIn 0.28s var(--ease-apple) both;
     }
-    
+
     .page-preview-header {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       margin-bottom: 8px;
-      color: #1976d2;
-      font-weight: bold;
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
     }
-    
-    .page-preview-header .material-icons {
-      font-size: 18px;
-    }
-    
+
+    .page-preview-header .material-icons { font-size: 15px; }
+
     .page-preview-body {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      width: 100%;
+      gap: 3px;
     }
-    
-    .page-title {
-      font-weight: bold;
-      color: #333;
-      word-break: break-word; /* 鍏佽闀挎爣棰樻崲琛?*/
-    }
-    
+
     .page-title-link {
-      font-weight: bold;
-      color: #1976d2;
-      word-break: break-word; /* 鍏佽闀挎爣棰樻崲琛?*/
-      cursor: pointer;
-      text-decoration: none;
+      color: var(--ink);
+      font-weight: 600;
+      font-size: 13px;
+      transition: color 0.15s var(--ease-apple);
     }
-    
-    .page-title-link:hover {
-      text-decoration: underline;
-    }
-    
+    .page-title-link:hover { color: var(--brand); text-decoration: underline; }
+
     .page-source, .page-author {
-      color: #666;
-      font-size: 12px;
-      word-break: break-word; /* 鍏佽闀縐RL鎹㈣ */
-    }
-    
-    .page-link {
-      color: #1976d2;
-      text-decoration: none;
-      font-size: 12px;
-      max-width: 200px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: inline-block;
-    }
-    
-    .page-link:hover {
-      text-decoration: underline;
-    }
-    
-    .summarize-btn {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    
-    .summarize-btn:hover {
-      background-color: #45a049;
-    }
-    
-    /* 娣诲姞鍐欐垚绗旇鍜岀敓鎴愮垎娆炬爣棰樻寜閽牱寮?*/
-    .note-btn {
-      background-color: #FF5722;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      margin-left: 5px;
-    }
-    
-    .note-btn:hover {
-      background-color: #E64A19;
-    }
-    
-    .hot-title-btn {
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      margin-left: 5px;
-    }
-    
-    .hot-title-btn:hover {
-      background-color: #1976D2;
-    }
-    
-    /* 绯荤粺娑堟伅鏍峰紡 */
-    .system-message {
-      background-color: #f5f9ff;
-      border-left: 3px solid #1976d2;
-      width: calc(100% - 22px); /* 纭繚鍗犳嵁鍏ㄩ儴瀹藉害 */
-    }
-    
-    /* 鎬荤粨鍖哄煙鏍峰紡 */
-    .summary-section {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #f1f8e9;
-      border-radius: 4px;
-    }
-    
-    .summary-title {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-weight: bold;
-      color: #33691e;
-      margin-bottom: 8px;
-      padding-bottom: 5px;
-      border-bottom: 1px solid #c8e6c9;
-    }
-    
-    .summary-title .material-icons {
-      font-size: 18px;
-    }
-    
-    .summary-content {
-      padding: 0 5px;
-    }
-    
-    .summary-content p {
-      margin: 0.5em 0;
-    }
-    
-    /* 鑱旂郴淇℃伅鏍峰紡 */
-    .contact-info {
+      color: var(--ink-3);
       font-size: 11px;
-      color: #888;
-      text-align: center;
-      padding: 2px 0;
-      margin: 0;
-      border-top: 1px solid #eee;
-      line-height: 1;
-      height: auto;
-      min-height: 0;
     }
 
-    /* Markdown鍐呭鏍峰紡 */
+    .page-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .page-actions button {
+      background-color: var(--surface-2);
+      color: var(--ink-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r-full);
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 550;
+      transition: all 0.15s var(--ease-apple);
+    }
+
+    .page-actions button:hover {
+      background-color: var(--brand);
+      border-color: var(--brand);
+      color: #ffffff;
+      transform: translateY(-0.5px);
+    }
+
+    /* ==========================================================================
+       7. Markdown 排版
+       ========================================================================== */
     .markdown-body {
-      line-height: 1.6;
-      color: #333;
-      word-wrap: break-word; /* 鍏佽闀垮崟璇嶆崲琛?*/
-      word-break: break-word; /* 寮哄埗闀垮崟璇嶆崲琛?*/
-      overflow-wrap: break-word; /* 鐜颁唬娴忚鍣ㄧ殑鎹㈣灞炴€?*/
-      overflow-x: hidden; /* 闅愯棌姘村钩婊氬姩鏉?*/
+      line-height: 1.65;
+      color: var(--ink);
+      word-break: break-word;
     }
 
-    /* 闅愯棌绌虹殑娈佃惤鏍囩锛岄伩鍏嶅浣欑┖鐧?*/
-    .markdown-body p:empty {
-      display: none;
+    .markdown-body > *:first-child { margin-top: 0; }
+    .markdown-body > *:last-child  { margin-bottom: 0; }
+    .markdown-body p { margin: 0.5em 0; }
+
+    .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+      margin: 1.1em 0 0.4em;
+      line-height: 1.35;
+      font-weight: 680;
+      color: var(--ink);
     }
 
-    /* 鍚堢悊鐨勬钀介棿璺?*/
-    .markdown-body p {
-      margin: 0.5em 0;
-    }
+    .markdown-body h1 { font-size: 1.25em; padding-left: 8px; border-left: 3px solid var(--brand); }
+    .markdown-body h2 { font-size: 1.15em; padding-left: 8px; border-left: 3px solid var(--brand); }
+    .markdown-body h3 { font-size: 1.05em; }
 
-    .markdown-body p:first-child {
-      margin-top: 0;
+    .markdown-body ul, .markdown-body ol {
+      margin: 0.6em 0;
+      padding-left: 1.4em;
     }
-
-    .markdown-body p:last-child {
-      margin-bottom: 0;
-    }
-
-    /* 鏍囬鍜屾钀戒箣闂寸殑闂磋窛 */
-    .markdown-body h1, 
-    .markdown-body h2, 
-    .markdown-body h3, 
-    .markdown-body h4, 
-    .markdown-body h5, 
-    .markdown-body h6 {
-      margin-top: 1.2em;
-      margin-bottom: 0.6em;
-      line-height: 1.3;
-    }
-
-    .markdown-body h1:first-child,
-    .markdown-body h2:first-child,
-    .markdown-body h3:first-child,
-    .markdown-body h4:first-child,
-    .markdown-body h5:first-child,
-    .markdown-body h6:first-child {
-      margin-top: 0;
-    }
-
-    /* 鏍囬鏍峰紡 */
-    .markdown-body h1 { font-size: 1.5em; color: #2c3e50; }
-    .markdown-body h2 { font-size: 1.4em; color: #34495e; }
-    .markdown-body h3 { font-size: 1.3em; color: #555; }
-    .markdown-body h4 { font-size: 1.2em; color: #666; }
-    .markdown-body h5 { font-size: 1.1em; color: #777; }
-    .markdown-body h6 { font-size: 1em; color: #888; }
-
-    /* 鍒楄〃闂磋窛 - 缁熶竴瀹氫箟 */
-    .markdown-body ul,
-    .markdown-body ol {
-      margin: 0.8em 0;
-      padding-left: 1.8em; /* 澧炲姞鍐呰竟璺濅互瀹圭撼涓や綅鏁?*/
-    }
-
-    .markdown-body li {
-      margin: 0.3em 0;
-      line-height: 1.5;
-      min-height: 1.2em; /* 纭繚鏈€灏忛珮搴︼紝閬垮厤绌哄垪琛ㄩ」鍗犵敤杩囧绌洪棿 */
-    }
-
-    /* 绌虹殑鎴栧彧鏈夌鍙风殑鍒楄〃椤瑰簲璇ヨ闅愯棌 */
-    .markdown-body li:empty {
-      display: none;
-    }
-
-    /* 纭繚鍒楄〃绱ц窡鏍囬鏃舵湁鍚堥€傜殑闂磋窛 */
-    .markdown-body h1 + ul, .markdown-body h1 + ol,
-    .markdown-body h2 + ul, .markdown-body h2 + ol,
-    .markdown-body h3 + ul, .markdown-body h3 + ol {
-        margin-top: 0.6em;
-    }
-
-    .markdown-body p {
-      margin: 0.5em 0;
-      line-height: 1.6;
-    }
+    .markdown-body li { margin: 0.25em 0; }
+    .markdown-body li::marker { color: var(--brand); }
 
     .markdown-body code {
-      background-color: #f4f4f4;
-      padding: 0.2em 0.4em;
-      border-radius: 3px;
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 0.9em;
-      color: #e74c3c;
+      background-color: var(--surface-2);
+      border: 1px solid var(--line);
+      padding: 0.1em 0.35em;
+      border-radius: var(--r-xs);
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      color: var(--brand);
     }
 
     .markdown-body pre {
-      background-color: #f8f8f8;
-      border: 1px solid #e1e8ed;
-      border-radius: 6px;
-      padding: 1em;
-      overflow-x: auto; /* 鍙湪蹇呰鏃舵樉绀烘按骞虫粴鍔ㄦ潯 */
-      overflow-y: hidden; /* 闅愯棌鍨傜洿婊氬姩鏉?*/
-      white-space: pre-wrap; /* 淇濈暀绌烘牸鍜屾崲琛岋紝鍚屾椂鍏佽鑷姩鎹㈣ */
-      word-break: break-all; /* 寮哄埗闀垮崟璇嶆崲琛?*/
-      margin: 1em 0;
-      max-width: 100%; /* 纭繚涓嶈秴杩囧鍣ㄥ搴?*/
+      background-color: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      padding: 10px;
+      overflow-x: auto;
+      margin: 0.8em 0;
+      font-size: 12px;
     }
-
-    .markdown-body pre code {
-      background: none;
-      padding: 0;
-      color: #333;
-    }
+    .markdown-body pre code { background: none; border: none; padding: 0; color: var(--ink); }
 
     .markdown-body blockquote {
-      border-left: 4px solid #ddd;
-      margin: 1em 0;
-      padding: 0.5em 1em;
-      background-color: #f9f9f9;
-      color: #666;
+      border-left: 3px solid var(--line-bold);
+      margin: 0.8em 0;
+      padding: 0.3em 0 0.3em 0.8em;
+      color: var(--ink-2);
     }
 
     .markdown-body table {
       border-collapse: collapse;
       width: 100%;
-      margin: 1em 0;
-    }
-
-    .markdown-body th,
-    .markdown-body td {
-      border: 1px solid #ddd;
-      padding: 0.5em;
-      text-align: left;
-    }
-
-    .markdown-body th {
-      background-color: #f5f5f5;
-      font-weight: 600;
-    }
-
-    .markdown-body strong {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-
-    .markdown-body em {
-      font-style: italic;
-      color: #555;
-    }
-
-    .markdown-body a {
-      color: #3498db;
-      text-decoration: none;
-    }
-
-    .markdown-body a:hover {
-      text-decoration: underline;
-    }
-    
-    /* 椤甸潰鏍囬鏍忔牱寮?*/
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    
-    /* Toast鎻愮ず鏍峰紡 */
-    .toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 4px;
-      font-size: 14px;
-      z-index: 9999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-    
-    .toast.show {
-      opacity: 1;
-      visibility: visible;
-    }
-    
-    .header-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-    }
-    
-    /* 椤甸潰鏍囬鍜岃缃寜閽牱寮?*/
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 0 10px 0;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .page-title {
-      margin: 0;
-      font-size: 18px;
-      color: #333;
-    }
-    
-    /* 鍥剧墖鐢熸垚鍣ㄦ牱寮?*/
-    .image-generator-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-    
-    .image-generator-header {
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .image-generator-header h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-    
-    .image-generator-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px 5px; /* 鍑忓皬宸﹀彸鍐呰竟璺?*/
-      width: 100%; /* 浣跨敤鍏ㄥ */
-      box-sizing: border-box;
-    }
-    
-    .prompt-section, .image-ratio-section, .custom-size-section {
-      margin-bottom: 20px;
-    }
-    
-    .prompt-section label, .image-ratio-section label, .custom-size-section label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    
-    #promptInput {
-      width: 100%; /* 杩涗竴姝ュ噺灏忓搴︾‘淇濆彸杈圭晫瀹屽叏鍙 */
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      resize: vertical;
-      box-sizing: border-box; /* 纭繚瀹藉害鍖呭惈鍐呰竟璺濆拰杈规 */
-      display: block; /* 纭繚鍧楃骇鏄剧ず */
-      margin: 0 auto; /* 灞呬腑鏄剧ず */
-    }
-    
-    .ratio-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .aspect-ratio-btn {
-      flex: 1;
-      min-width: 60px;
-      padding: 8px 5px;
-      background-color: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-      font-weight: normal;
-    }
-    
-    .aspect-ratio-btn.active {
-      background-color: #e3f2fd;
-      border-color: #1976d2;
-      color: #1976d2;
-    }
-    
-    .size-inputs {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .size-input-group {
-      flex: 1;
-    }
-    
-    .size-input-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: normal;
-    }
-    
-    .size-input-group input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    
-    .generate-btn {
-      width: 100%;
-      padding: 12px;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-bottom: 20px;
-      justify-content: center;
-    }
-    
-    .generate-btn:hover {
-      background-color: #0069d9;
-    }
-    
-    .generate-btn:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    
-    .error-display {
-      padding: 10px;
-      background-color: #ffebee;
-      color: #c62828;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }
-    
-    .loading-indicator {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(0, 0, 0, 0.1);
-      border-radius: 50%;
-      border-top: 4px solid #3498db;
-      animation: spin 1s linear infinite;
-      margin-bottom: 10px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .image-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 15px;
-    }
-    
-    .image-container {
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-    
-    .thumbnail {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      cursor: pointer;
-      display: block;
-    }
-    
-    .download-btn {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    
-    .image-container:hover .download-btn {
-      opacity: 1;
-    }
-    
-    .download-icon {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>');
-    }
-    
-    /* 鐏鏁堟灉 */
-    .lightbox {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    
-    .lightbox img {
-      max-width: 90%;
-      max-height: 90%;
-      object-fit: contain;
-    }
-    
-    .lightbox-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 30px;
-      cursor: pointer;
-    }
-    
-    /* 鍘嗗彶璁板綍椤规牱寮?*/
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 15px;
-      border-bottom: 1px solid #eee;
-      position: relative;
-      transition: background-color 0.2s;
-    }
-    
-    .history-item:hover {
-      background-color: #f5f5f5;
-    }
-    
-    .history-content {
-      flex: 1;
-      cursor: pointer;
-      padding-right: 10px;
-    }
-    
-    .history-title {
-      font-size: 14px;
-      margin-bottom: 4px;
-      color: #333;
-      font-weight: 500;
-    }
-    
-    .history-date {
+      margin: 0.8em 0;
       font-size: 12px;
-      color: #888;
+      display: block;
+      overflow-x: auto;
     }
-    
-    /* 鍒犻櫎鎸夐挳鏍峰紡 - 榛樿闅愯棌锛屾偓鍋滄樉绀?*/
-    .history-actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      opacity: 0;
-      transition: opacity 0.2s;
+    .markdown-body th, .markdown-body td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+    }
+    .markdown-body th { background: var(--surface-2); font-weight: 600; }
+
+    .message-image {
+      max-width: 180px;
+      max-height: 180px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--line);
+      margin-top: 6px;
+      display: block;
     }
 
-    .history-action-btn,
-    .delete-btn {
-      background-color: transparent;
-      border: none;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s, color 0.2s;
-      min-width: 36px;
-      height: 36px;
+    /* ==========================================================================
+       8. 全能输入舱 (The Apple Omnibar)
+       ========================================================================== */
+    .omnibar-container {
+      flex-shrink: 0;
+      padding: 6px 10px 8px;
+      background: var(--surface-glass);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-top: 1px solid var(--line);
+      position: relative;
+      z-index: 40;
     }
 
-    .history-action-btn {
-      color: #5f6368;
-    }
-
-    .delete-btn {
-      color: #f44336;
-    }
-
-    .history-action-btn .material-icons,
-    .delete-btn .material-icons {
-      font-size: 18px;
-    }
-
-    .history-item:hover .history-actions {
-      opacity: 1;
-    }
-
-    .history-action-btn:hover {
-      background-color: rgba(95, 99, 104, 0.1);
-      color: #202124;
-    }
-
-    .delete-btn:hover {
-      background-color: rgba(244, 67, 54, 0.1);
-      color: #d32f2f;
-    }
-    
-    /* 鏃犲巻鍙茶褰曟彁绀?*/
-    .no-history {
-      text-align: center;
-      color: #888;
-      padding: 40px 20px;
-      font-size: 14px;
-    }
-    
-    .lightbox-download {
-      position: absolute;
-      bottom: 20px;
-      background-color: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    /* Monica椋庢牸鐨凙I鍔╂墜鏍峰紡 */
-    .monica-chat-container {
-      height: 100%;
+    .omnibar-card {
+      background: var(--surface);
+      border: 1.5px solid var(--line-bold);
+      border-radius: var(--r-md);
+      padding: 7px 10px 6px;
+      box-shadow: var(--sh-xs);
+      transition: all 0.2s var(--ease-apple);
       display: flex;
       flex-direction: column;
-      background: #ffffff;
-      border-radius: 16px;
-      overflow: hidden;
+      gap: 4px;
     }
-    
-    .monica-chat-messages {
-      flex: 1;
+
+    .omnibar-card:focus-within {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-ring), var(--sh-sm);
+      background: var(--surface);
+    }
+
+    /* 文本输入区域 */
+    .omnibar-textarea {
+      width: 100%;
+      min-height: 34px;
+      height: 34px;
+      max-height: 130px;
+      resize: none;
+      font-size: 13.5px;
+      line-height: 22px;
+      padding: 1px 2px;
+      color: var(--ink);
+      user-select: text;
+    }
+
+    .omnibar-textarea::placeholder {
+      color: var(--ink-4);
+    }
+
+    /* 附件悬浮展示区 (多图列表，位于 Omnibar 输入框上方) */
+    .omnibar-attachment-shelf {
+      display: flex;
+      margin-bottom: 6px;
+      animation: attachmentPop 0.22s var(--ease-apple);
+    }
+
+    @keyframes attachmentPop {
+      0% { opacity: 0; transform: translateY(6px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .attachment-list {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-height: 120px;
       overflow-y: auto;
-      padding: 20px;
-      background: #ffffff;
-      min-height: 0;
+      padding: 2px 0;
     }
-    
-    .monica-input-container {
-      border-top: 1px solid #e5e7eb;
-      background: #ffffff;
-      padding: 16px;
+
+    .attachment-item {
       position: relative;
-      z-index: 10;
-      overflow: visible;
-    }
-    
-    .monica-toolbar {
-      display: flex;
-      justify-content: space-between;
+      display: inline-flex;
       align-items: center;
-      margin-bottom: 12px;
-      position: relative;
-      z-index: 11;
     }
-    
-    .monica-toolbar-left {
-      display: flex;
+
+    .attachment-item .file-thumb {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      object-fit: cover;
+      display: block;
+      flex-shrink: 0;
+      border: 1px solid var(--line-bold);
+      box-shadow: var(--sh-xs);
+      background: var(--surface-2);
+    }
+
+    .attachment-item .attachment-text-chip {
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      flex-shrink: 1; /* 鍏佽宸︿晶鍐呭鍘嬬缉 */
-      min-width: 0; /* 鍏佽鍐呭鏀剁缉 */
+      gap: 6px;
+      padding: 5px 10px;
+      background: var(--surface);
+      border: 1px solid var(--line-bold);
+      border-radius: var(--r-md);
+      font-size: 11px;
+      color: var(--ink-2);
+      max-width: 160px;
+      box-shadow: var(--sh-xs);
     }
-    
-    .monica-model-select {
-      background-color: #f5f5f7;
-      border: none;
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 6px;
-      transition: background-color 0.2s;
-      min-width: 100px; /* 璁剧疆鏈€灏忓搴?*/
-      max-width: 150px; /* 璁剧疆鏈€澶у搴︼紝闃叉杩囬暱 */
+
+    .attachment-item .attachment-text-chip span {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    
-    .monica-model-select:hover {
-      background-color: #f3f4f6;
+
+    .attachment-item .attachment-remove-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.22);
+      transition: all 0.15s var(--ease-apple);
+      border: 1.5px solid var(--surface);
     }
-    
-    .monica-toolbar-right {
+    .attachment-item .attachment-remove-btn:hover {
+      background: var(--danger);
+      transform: scale(1.15);
+    }
+    .attachment-item .attachment-remove-btn .material-icons {
+      font-size: 12px;
+    }
+
+    /* Omnibar 底部控制栏 */
+    .omnibar-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding-top: 2px;
+    }
+
+    .omnibar-controls-left {
       display: flex;
       align-items: center;
       gap: 4px;
-      flex-shrink: 0; /* 闃叉鎸夐挳琚帇缂?*/
-      min-width: fit-content; /* 纭繚鏈夎冻澶熺┖闂存樉绀烘墍鏈夋寜閽?*/
+      min-width: 0;
+      flex: 1;
     }
-    
-    
-    .collect-tool-wrapper {
-      position: relative;
+
+    .omnibar-controls-right {
       display: flex;
       align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
     }
 
-    .collect-tool-btn.is-active {
-      color: #ef4444;
-      background-color: #fee2e2;
+    /* 胶囊控制按钮 (Pill Button) */
+    .capsule-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: var(--r-full);
+      background: var(--surface-2);
+      font-size: 11.5px;
+      font-weight: 550;
+      color: var(--ink-2);
+      transition: all 0.15s var(--ease-apple);
+      max-width: 220px;
     }
 
-    .collect-tool-btn.active {
-      color: #2563eb;
-      background-color: #e0ecff;
+    .capsule-btn:hover {
+      background: var(--surface-3);
+      color: var(--ink);
     }
 
-    .collect-tool-btn .collect-tool-icon {
-      width: 18px;
-      height: 18px;
-      display: block;
-      object-fit: contain;
+    .capsule-btn:active {
+      transform: scale(0.96);
     }
 
-    .collect-tool-panel {
-      position: absolute;
-      bottom: calc(100% + 8px);
-      top: auto;
-      right: 0;
-      width: 260px;
-      max-height: 320px;
-      overflow-y: auto;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      background: #ffffff;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
-      z-index: 1200;
+    .capsule-btn.open {
+      background: var(--surface-3);
+      color: var(--ink);
+    }
+
+    .capsule-btn-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .capsule-btn .material-icons {
+      font-size: 14px;
+      color: var(--ink-3);
+      flex-shrink: 0;
+    }
+
+    /* 思考深度小微章 */
+    .thinking-tag {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--apple-blue-soft);
+      color: var(--apple-blue);
+      letter-spacing: 0.02em;
+    }
+
+    .thinking-tag.disabled {
       display: none;
     }
 
-    .collect-tool-panel::after {
-      content: '';
-      position: absolute;
-      right: 14px;
-      bottom: -6px;
-      width: 10px;
-      height: 10px;
-      background: #ffffff;
-      border-right: 1px solid #e5e7eb;
-      border-bottom: 1px solid #e5e7eb;
-      transform: rotate(45deg);
-    }
-
-    .collect-tool-panel.open {
-      display: block;
-    }
-
-    .collect-tool-title {
-      font-size: 13px;
+    /* 采集胶囊按钮 */
+    .collect-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 8px;
+      border-radius: var(--r-full);
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-border);
+      color: var(--brand);
+      font-size: 11.5px;
       font-weight: 600;
-      color: #111827;
-      margin-bottom: 10px;
+      transition: all 0.15s var(--ease-apple);
     }
 
-    .collect-tool-fields {
+    .collect-pill-btn:hover {
+      background: var(--brand-ring);
+    }
+
+    .collect-pill-btn:active {
+      transform: scale(0.96);
+    }
+
+    .collect-pill-btn .material-icons { font-size: 15px; }
+
+    /* 圆形发送/停止按钮 */
+    .omnibar-send-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.16s var(--ease-spring);
+    }
+
+    .omnibar-send-btn:hover {
+      background: var(--brand-hover);
+      transform: scale(1.05);
+    }
+
+    .omnibar-send-btn:active {
+      transform: scale(0.92);
+    }
+
+    .omnibar-send-btn .material-icons { font-size: 16px; }
+
+    .omnibar-send-btn.stop-mode {
+      background: var(--ink);
+    }
+    .omnibar-send-btn.stop-mode:hover {
+      background: var(--ink-2);
+    }
+
+    /* ==========================================================================
+       9. 弹出菜单与气泡面板 (Apple Glass Popovers)
+       ========================================================================== */
+    .popmenu {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      min-width: 215px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 6px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+      background: var(--surface-glass);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: var(--sh-lg);
+      z-index: 100;
+      display: none;
+      animation: popoverIn 0.18s var(--ease-spring) both;
+    }
+
+    .popmenu.open { display: block; }
+
+    @keyframes popoverIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .popmenu-header-label {
+      padding: 6px 8px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ink-3);
+      text-transform: uppercase;
+    }
+
+    .popmenu-divider {
+      height: 1px;
+      margin: 4px 2px;
+      background: var(--line);
+    }
+
+    .popmenu-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+      padding: 7px 8px;
+      border-radius: var(--r-sm);
+      font-size: 12.5px;
+      color: var(--ink);
+      transition: background 0.12s var(--ease-apple);
+    }
+
+    .popmenu-option:hover {
+      background-color: var(--surface-2);
+    }
+
+    .popmenu-option .material-icons {
+      font-size: 17px;
+      color: var(--ink-3);
+      flex-shrink: 0;
+    }
+
+    .popmenu-option-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .popmenu-option-desc {
+      font-size: 10.5px;
+      color: var(--ink-3);
+    }
+
+    .popmenu-option-check {
+      font-size: 15px !important;
+      color: var(--brand) !important;
+      flex-shrink: 0;
+      visibility: hidden;
+    }
+
+    .popmenu-option.checked .popmenu-option-check {
+      visibility: visible;
+    }
+    .popmenu-option.checked {
+      font-weight: 600;
+    }
+
+    /* 采集配置快速面板 */
+    .collect-panel {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 12px;
+      width: 250px;
+      padding: 14px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+      background: var(--surface-glass);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: var(--sh-lg);
+      z-index: 100;
+      display: none;
+      animation: popoverIn 0.18s var(--ease-spring) both;
+    }
+
+    .collect-panel.open { display: block; }
+
+    .collect-panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .collect-fields-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 10px;
     }
 
-    .collect-tool-field label {
+    .collect-field label {
       display: block;
+      font-size: 11px;
+      color: var(--ink-3);
       margin-bottom: 4px;
-      font-size: 12px;
-      color: #4b5563;
     }
 
-    .collect-tool-field input {
+    .collect-field input {
       width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 13px;
-      background: #fafafa;
+      padding: 6px 8px;
+      border-radius: var(--r-xs);
+      border: 1px solid var(--line-bold);
+      background: var(--surface);
+      font-size: 12.5px;
+      color: var(--ink);
     }
 
-    .collect-tool-checkbox {
+    .collect-field input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 2px var(--brand-ring);
+    }
+
+    .collect-checkbox-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #374151;
-      margin-bottom: 10px;
-      user-select: none;
-    }
-
-    .collect-submit-btn {
-      width: 100%;
-      padding: 10px 14px;
-      font-size: 13px;
-      box-shadow: none;
-      margin-top: 2px;
-    }
-
-    .collect-tool-status {
-      margin-top: 10px;
-      padding: 8px 10px;
-      font-size: 12px;
-      line-height: 1.3;
-    }
-.monica-tool-btn {
-      background: none;
-      border: none;
-      padding: 6px;
-      border-radius: 6px;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--ink-2);
+      margin-bottom: 12px;
       cursor: pointer;
-      color: #6b7280;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
-    
-    .monica-tool-btn:hover {
-      background-color: #f3f4f6;
-      color: #374151;
-    }
-    
-    .monica-tool-btn .material-icons {
-      font-size: 18px;
-    }
-    
-    .monica-input-wrapper {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      background: #ffffff;
-      border: 2px solid #e5e7eb;
-      border-radius: 20px;
-      padding: 8px 12px;
-      transition: border-color 0.2s;
-    }
-    
-    .monica-input-wrapper:focus-within {
-      border-color: #8b5cf6;
-    }
-    
 
-    
-    .monica-input {
-      flex: 1;
-      border: none;
-      outline: none;
-      resize: none;
-      font-size: 14px;
-      line-height: 1.5;
-      min-height: 20px;
-      max-height: 120px;
-      padding: 4px 8px;
-      font-family: inherit;
-      background: transparent;
-    }
-    
-    .monica-input::placeholder {
-      color: #9ca3af;
-    }
-    
-
-    
-    .monica-send-btn {
-      background: #007aff;
-      color: white;
-      border: none;
-      padding: 6px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 32px;
-      height: 32px;
-    }
-    
-    .monica-send-btn:hover {
-      background: #0069d9;
-    }
-    
-    .monica-send-btn.stop-mode {
-      background: #ef4444;
-    }
-    
-    .monica-send-btn.stop-mode:hover {
-      background: #dc2626;
-    }
-    
-    .monica-send-btn .material-icons {
-      font-size: 18px;
-    }
-    
-    .monica-file-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      padding: 8px 12px;
-      background: #f3f4f6;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #6b7280;
-    }
-    
-    .monica-remove-file {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #6b7280;
-      padding: 2px;
+    .apple-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
       border-radius: 4px;
-      transition: all 0.2s;
-    }
-    
-    .monica-remove-file:hover {
-      background-color: #e5e7eb;
-      color: #374151;
-    }
-    
-    .monica-remove-file .material-icons {
-      font-size: 16px;
+      border: 1.5px solid var(--line-bold);
+      background: var(--surface);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.14s var(--ease-apple);
     }
 
-    /* 鍝嶅簲寮忚璁★細鍦ㄦ瀬灏忓搴︽椂浼樺寲甯冨眬 */
-    @media (max-width: 320px) {
-      .monica-toolbar-left {
-        gap: 8px;
-      }
-      
-      .monica-model-select {
-        min-width: 80px;
-        max-width: 100px;
-        font-size: 12px;
-        padding: 3px 6px;
-      }
-      
-      .monica-toolbar-right {
-        gap: 2px;
-      }
-      
-      .monica-tool-btn {
-        padding: 4px;
-      }
-      
-      .monica-tool-btn .material-icons {
-        font-size: 16px;
-      }
+    .apple-checkbox:checked {
+      background: var(--brand);
+      border-color: var(--brand);
     }
-    
-    /* 鏇存柊娑堟伅鏍峰紡浠ラ€傞厤Monica椋庢牸 */
-    .monica-chat-messages .message {
-      margin-bottom: 16px;
-      padding: 0;
-      border-radius: 0;
-      background: none;
+
+    .apple-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 4.5px;
+      top: 1.5px;
+      width: 4px;
+      height: 8px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
     }
-    
-    .monica-chat-messages .user-message {
-      background: #f0f9ff;
-      padding: 12px 16px;
-      border-radius: 16px 16px 4px 16px;
-      margin-left: 20%;
-      margin-right: 0;
-      border: 1px solid #e0f2fe;
-    }
-    
-    .monica-chat-messages .ai-message {
-      background: #f9fafb;
-      padding: 12px 16px;
-      border-radius: 16px 16px 16px 4px;
-      margin-right: 0;
-      margin-left: 0;
-      border: 1px solid #f3f4f6;
-    }
-    
-    /* 椤甸潰鍐呭鍗＄墖鏍峰紡 */
-    .page-content-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      margin: 16px 0;
-      padding: 0;
-      overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .page-card-header {
-      background: #3b82f6;
-      color: white;
-      padding: 12px 16px;
-      display: flex;
+
+    /* 按钮通用 */
+    .apple-btn {
+      padding: 8px 14px;
+      border-radius: var(--r-sm);
+      font-size: 12.5px;
+      font-weight: 600;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-    
-    .page-card-header .material-icons {
-      font-size: 18px;
-    }
-    
-    .page-card-content {
-      padding: 16px;
-    }
-    
-    .page-info-item {
-      margin-bottom: 8px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    
-    .page-info-item:last-child {
-      margin-bottom: 0;
-    }
-    
-    .page-info-item strong {
-      color: #374151;
-      margin-right: 8px;
-    }
-    
-    .page-info-item a {
-      color: #3b82f6;
-      text-decoration: none;
-      word-break: break-all;
-    }
-    
-    .page-info-item a:hover {
-      text-decoration: underline;
-    }
-    
-    .page-title-link {
-      color: #1f2937;
-      font-weight: 500;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    
-    .page-title-link:hover {
-      color: #3b82f6;
-      text-decoration: underline;
-    }
-    
-    .page-card-footer {
-      background: #f1f5f9;
-      padding: 12px 16px;
-      border-top: 1px solid #e2e8f0;
-    }
-    
-    .page-card-hint {
-      font-size: 12px;
-      color: #64748b;
-      font-style: italic;
-    }
-  </style>
-  <style>
-    .hidden {
-      display: none;
-    }
-
-    /* 鑷畾涔夋寚浠ゅ脊绐楁牱寮?*/
-    #instructions-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: calc(100% - 50px); /* 鍑忓幓瀵艰埅鏍忓搴?*/
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 1000;
-      display: flex;
       justify-content: center;
-      align-items: flex-end;
-      transition: background-color 0.3s ease;
+      gap: 5px;
+      transition: all 0.15s var(--ease-apple);
     }
 
-    #instructions-modal-overlay.hidden {
-      background-color: transparent;
+    .apple-btn-primary {
+      background: var(--brand);
+      color: #ffffff;
+    }
+    .apple-btn-primary:hover { background: var(--brand-hover); }
+    .apple-btn-primary:active { transform: scale(0.97); }
+
+    .apple-btn-secondary {
+      background: var(--surface-2);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .apple-btn-secondary:hover { background: var(--surface-3); }
+    .apple-btn-secondary:active { transform: scale(0.97); }
+
+    /* ==========================================================================
+       10. 抽屉系统 (Apple Bottom Sheets)
+       ========================================================================== */
+    .sheet-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: opacity 0.24s var(--ease-apple);
+    }
+
+    .sheet-overlay.hidden {
+      opacity: 0;
       pointer-events: none;
     }
 
-    #instructions-modal-overlay #instructions-container {
-      background-color: #fff;
+    .sheet-modal {
       width: 100%;
-      /* 淇敼锛氭渶澶у搴︾户鎵跨埗绾э紝纭繚涓庝富鍖哄煙涓€鑷?*/
-      max-width: 100%;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      padding: 16px;
-      padding-bottom: 24px;
-      box-shadow: 0 -4px R20px rgba(0, 0, 0, 0.1);
+      max-height: 85vh;
+      background: var(--surface-glass);
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+      border-top-left-radius: var(--r-xl);
+      border-top-right-radius: var(--r-xl);
+      border-top: 1px solid var(--line);
+      box-shadow: var(--sh-float);
+      padding: 14px 16px 20px;
+      display: flex;
+      flex-direction: column;
       transform: translateY(0);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.28s var(--ease-spring);
     }
 
-    #instructions-modal-overlay.hidden #instructions-container {
+    .sheet-overlay.hidden .sheet-modal {
       transform: translateY(100%);
     }
 
-    .instructions-header {
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: var(--r-full);
+      background: var(--ink-4);
+      margin: 0 auto 10px;
+      flex-shrink: 0;
+    }
+
+    .sheet-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
+      justify-content: space-between;
+      margin-bottom: 6px;
     }
 
-    .instructions-header h3 {
-      font-size: 16px;
-      font-weight: 600;
-      margin: 0;
+    .sheet-title {
+      font-size: 15px;
+      font-weight: 680;
+      color: var(--ink);
     }
 
-    /* 鑷畾涔夋寚浠よ鏄庢枃瀛?*/
-    .instructions-description {
+    .sheet-close-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--r-full);
+      background: var(--surface-2);
+      color: var(--ink-3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.15s var(--ease-apple);
+    }
+    .sheet-close-btn:hover { background: var(--surface-3); color: var(--ink); }
+
+    .sheet-desc {
+      font-size: 11.5px;
+      color: var(--ink-3);
+      margin-bottom: 12px;
+    }
+
+    .sheet-body {
+      overflow-y: auto;
+      max-height: 60vh;
+      margin: 0 -4px;
+      padding: 0 4px;
+    }
+
+    /* 设置表单 */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
       font-size: 12px;
-      color: #666;
-      margin: 4px 0 8px 0;
+      font-weight: 600;
+      color: var(--ink-2);
+      margin-bottom: 5px;
     }
 
-    #close-instructions-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: #999;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-    
-    #add-instruction-form {
-      margin-top: 10px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    #add-instruction-form input,
-    #add-instruction-form textarea {
+    .apple-input {
       width: 100%;
-      margin-bottom: 10px;
-      box-sizing: border-box;
+      padding: 8px 10px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--line-bold);
+      background: var(--surface);
+      font-size: 13px;
+      color: var(--ink);
+      transition: all 0.15s var(--ease-apple);
     }
-    #add-instruction-form textarea {
-      height: 120px;
-      resize: vertical;
+
+    .apple-input:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-ring);
     }
+
+    .form-group small {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--ink-3);
+    }
+
+    .sheet-footer {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .sheet-footer .apple-btn { flex: 1; }
+
+    /* 历史列表项 */
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: var(--r-sm);
+      border-bottom: 1px solid var(--line-subtle);
+      transition: background 0.15s var(--ease-apple);
+    }
+    .history-item:hover { background: var(--surface-2); }
+
+    .history-content {
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .history-title {
+      font-size: 12.5px;
+      font-weight: 550;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 2px;
+    }
+
+    .history-date {
+      font-size: 10.5px;
+      color: var(--ink-3);
+    }
+
+    .history-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.15s var(--ease-apple);
+    }
+    .history-item:hover .history-actions { opacity: 1; }
+
+    .history-action-btn, .delete-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--r-xs);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-3);
+      transition: all 0.15s var(--ease-apple);
+    }
+    .history-action-btn:hover { background: var(--surface-3); color: var(--ink); }
+    .delete-btn:hover { background: var(--danger-soft); color: var(--danger); }
+    .history-action-btn .material-icons, .delete-btn .material-icons { font-size: 15px; }
+
+    .no-history {
+      text-align: center;
+      color: var(--ink-4);
+      padding: 30px 10px;
+      font-size: 12.5px;
+    }
+
+    /* 指令列表项 */
     .instruction-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 5px;
-      border-bottom: 1px solid #eee;
+      gap: 8px;
+      padding: 8px 8px;
+      border-radius: var(--r-sm);
+      border-bottom: 1px solid var(--line-subtle);
+      transition: background 0.14s var(--ease-apple);
     }
+    .instruction-item:hover { background: var(--surface-2); }
+
     .instruction-item label {
-      flex-grow: 1;
-      margin-left: 8px;
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--ink);
       cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .instruction-item .delete-btn {
-      cursor: pointer;
-      color: #f44336; /* 浣跨敤涓庡巻鍙茶褰曞垹闄ゆ寜閽浉鍚岀殑绾㈣壊 */
-      font-weight: bold;
-      padding: 4px; /* 璋冩暣涓哄渾褰㈡寜閽ぇ灏?*/
-      background: none;
-      border: none;
-      font-size: 16px; /* 缁熶竴鍥炬爣澶у皬 */
-      opacity: 1; /* 瑕嗙洊閫氱敤.delete-btn鐨刼pacity: 0 */
-      border-radius: 50%; /* 娣诲姞鍦嗚浠ュ尮閰嶉€氱敤鏍峰紡 */
-      display: flex; /* 浣跨敤flex甯冨眬浠ラ€傚簲Material Icons */
-      align-items: center;
-      justify-content: center;
-      min-width: 28px; /* 璁剧疆鏈€灏忓搴?*/
-      height: 28px; /* 璁剧疆楂樺害 */
-      transition: background-color 0.2s;
-    }
-    
-    .instruction-item .delete-btn:hover {
-      background-color: rgba(244, 67, 54, 0.1);
-      color: #d32f2f;
-    }
-    
-    .instruction-item .delete-btn .material-icons {
-      font-size: 16px; /* 鍨冨溇妗跺浘鏍囧ぇ灏?*/
-    }
+
     .instruction-buttons {
       display: flex;
-      gap: 5px;
-      visibility: hidden;
+      gap: 2px;
       opacity: 0;
-      transition: opacity 0.2s ease-in-out;
+      transition: opacity 0.14s var(--ease-apple);
     }
-    .instruction-item:hover .instruction-buttons {
-      visibility: visible;
-      opacity: 1;
+    .instruction-item:hover .instruction-buttons { opacity: 1; }
+
+    .instruction-buttons button {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--r-xs);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: var(--ink-3);
     }
-    /* 纭繚"鏃犳寚浠?閫夐」涓嶆樉绀烘搷浣滄寜閽?*/
-    .instruction-item:not([data-id]) .instruction-buttons {
-      display: none;
-    }
-    .instruction-item .edit-btn {
-      cursor: pointer;
-      background: none;
-      border: none;
-      font-size: 16px;
-      padding: 0 5px;
+    .instruction-buttons button:hover { background: var(--surface-3); color: var(--ink); }
+    .instruction-buttons .delete-btn:hover { background: var(--danger-soft); color: var(--danger); }
+
+    #add-instruction-form {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: var(--r-md);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
     }
 
-    /* 鑷畾涔夋寚浠ゆ寜閽縺娲荤姸鎬?*/
-    #show-hide-instructions-btn {
-      position: relative; /* 涓虹姸鎬佺偣瀹氫綅 */
+    #add-instruction-form input, #add-instruction-form textarea {
+      margin-bottom: 8px;
+      background: var(--surface);
     }
 
-    #show-hide-instructions-btn.active .material-icons {
-      color: #007aff; /* 涓婚钃?*/
-    }
-
-    #show-hide-instructions-btn.active::after {
-      content: '';
-      position: absolute;
-      top: 2px; /* 寰皟浣嶇疆 */
-      right: 2px; /* 寰皟浣嶇疆 */
-      width: 8px;
-      height: 8px;
-      background-color: #34c759; /* 缁胯壊 */
-      border-radius: 50%;
-      border: 1px solid white;
-      box-shadow: 0 0 3px rgba(0,0,0,0.3); /* 鍔犱竴鐐归槾褰变娇鍏舵洿鏄庢樉 */
-    }
-
-    /* 娣诲姞鎸囦护鎸夐挳鏍峰紡 */
-    #add-new-instruction-btn {
-      background-color: #007aff;
-      color: #fff;
+    /* ==========================================================================
+       11. 浮动 Toast (Apple Pill Toast)
+       ========================================================================== */
+    .toast {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translate(-50%, -8px);
+      background: var(--ink);
+      color: var(--bg-base);
+      padding: 7px 14px;
+      border-radius: var(--r-full);
       font-size: 12px;
-      padding: 4px 12px;
-      border-radius: 6px;
-      line-height: 1;
-    }
-
-    /* 璁剧疆椤甸潰鏍峰紡 */
-    #settings-container {
-      width: 100%;
-      background-color: #ffffff;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      padding: 16px;
-      padding-bottom: 24px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-      transform: translateY(0);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    #settings-modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: calc(100% - 50px); /* 涓嶈鐩栧鑸爮 */
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 1000;
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      transition: background-color 0.3s ease;
-    }
-
-    #settings-modal-overlay.hidden {
-      background-color: transparent;
+      font-weight: 550;
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      box-shadow: var(--sh-md);
+      transition: all 0.22s var(--ease-spring);
       pointer-events: none;
+      max-width: 90%;
+      text-align: center;
     }
 
-    #settings-modal-overlay.hidden #settings-container {
-      transform: translateY(100%);
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
     }
 
-    .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-
-    .settings-header h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    #close-settings-btn {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: #999;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-
-    .settings-body {
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-
-    /* =============================== */
-    /* 鑱婂ぉ鍘嗗彶璁板綍寮圭獥鏍峰紡锛堜繚鎸佷笌璁剧疆寮圭獥/鑷畾涔夋寚浠ゅ脊绐椾竴鑷达級 */
-    /* =============================== */
-    #historyModal {
-      position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      max-width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-      z-index: 1000;
-      display: none;
-      justify-content: center;
-      align-items: flex-end;
-      transition: background-color 0.3s ease;
-    }
-    #historyModal.show {
-      display: flex;
-    }
-    #historyModal.hidden {
-      background-color: transparent;
-      pointer-events: none;
-    }
-    #historyModal .modal-content.history-modal-content {
-      background-color: #fff;
-      position: absolute;
-      left: 0;
-      right: 50px;
-      bottom: 0;
-      width: auto;
-      max-width: unset;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      padding: 16px;
-      padding-bottom: 24px;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-      transform: translateY(0);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      margin: 0;
-      position: absolute;
-      bottom: 0;
-      box-sizing: border-box;
-    }
-    #historyModal .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    #historyModal .modal-header h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    #closeHistoryModal {
-      background: none;
-      border: none;
-      font-size: 24px;
-      color: #999;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-    #historyModal .modal-body.history-list {
-      max-height: 70vh;
-      overflow-y: auto;
-    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <!-- 涓诲唴瀹瑰尯鍩?-->
-  <div class="main-content">
-    <div class="tab-container">
-      <!-- 閲囬泦绗旇Tab椤?-->
-      <div id="aiAssistantTab" class="tab-content active">
-        <!-- 绠€娲佺殑AI鍔╂墜鑱婂ぉ鐣岄潰 -->
-        <div class="monica-chat-container">
-          
-          <!-- 鑱婂ぉ娑堟伅鍖哄煙 -->
-          <div id="chatMessages" class="monica-chat-messages">
-            <!-- 鍒濆娆㈣繋娑堟伅 -->
-          </div>
-          
-          <!-- 搴曢儴杈撳叆鍖哄煙 -->
-          <div class="monica-input-container">
-            <!-- 鑷畾涔夋寚浠ょ鐞嗗尯鍩?-->
-            
-            <!-- 椤堕儴宸ュ叿鏍?-->
-            <div class="monica-toolbar">
-              <div class="monica-toolbar-left">
-                <select id="modelSwitcher" class="monica-model-select">
-                  <option value="deepseek">DeepSeek</option>
-                  <option value="gemini-3-flash-preview">Gemini-3-Flash-Preview</option>
-                  <option value="gemini-3.1-pro-preview">Gemini-3.1-Pro-Preview</option>
-                </select>
-              </div>
-              <div class="monica-toolbar-right">
-              <div class="collect-tool-wrapper">
-                <button id="collectToolBtn" class="monica-tool-btn collect-tool-btn" title="采集工具">
-                  <img class="collect-tool-icon" src="scratch.svg" alt="采集工具">
-                </button>
-                <div id="collectToolPanel" class="collect-tool-panel">
-                  <div class="collect-tool-title">采集工具</div>
-                  <div class="collect-tool-fields">
-                    <div class="collect-tool-field">
-                      <label for="maxNotes">采集数量</label>
-                      <input type="number" id="maxNotes" value="10" min="1">
-                    </div>
-                    <div class="collect-tool-field">
-                      <label for="minLikes">最低点赞</label>
-                      <input type="number" id="minLikes" value="500" min="0">
-                    </div>
-                  </div>
-                  <label class="collect-tool-checkbox" for="downloadCover">
-                    <input type="checkbox" id="downloadCover" class="custom-checkbox">
-                    <span>同时下载封面图</span>
-                  </label>
-                  <button id="collectBtn" class="apple-btn apple-btn-primary collect-submit-btn">
-                    <span class="material-icons">play_circle</span>
-                    开始采集
-                  </button>
-                  <div id="status" class="status-display collect-tool-status" style="display: none;">
-                    <span class="material-icons">info</span>
-                    <span>等待开始采集...</span>
-                  </div>
-                </div>
-              </div>
-                <button id="show-hide-instructions-btn" class="monica-tool-btn" title="自定义指令">
-                    <span class="material-icons">auto_awesome</span>
-                </button>
-                <label for="fileInput" class="monica-tool-btn" title="上传文件">
-                  <span class="material-icons">attach_file</span>
-                </label>
-                <button class="monica-tool-btn" id="getPageContentBtn" title="使用当前页面内容提问">
-                  <span class="material-icons">description</span>
-                </button>
-                <button class="monica-tool-btn" id="historyBtn" title="历史对话">
-                  <span class="material-icons">history</span>
-                </button>
-                <button class="monica-tool-btn" id="newChatBtn" title="新建对话">
-                  <span class="material-icons">add_circle_outline</span>
-                </button>
-              </div>
-            </div>
-            
-            <!-- 杈撳叆妗嗗尯鍩?-->
-            <div class="monica-input-wrapper">
-              <input type="file" id="fileInput" style="display: none;">
-              <textarea id="messageInput" class="monica-input"></textarea>
-              <button id="sendMessage" class="monica-send-btn">
-                <span class="material-icons">send</span>
-              </button>
-            </div>
-            
-            <!-- 鏂囦欢淇℃伅鏄剧ず -->
-            <div id="fileInfo" class="monica-file-info" style="display: none;">
-              <span id="fileName"></span>
-              <button id="removeFile" class="monica-remove-file">
-                <span class="material-icons">close</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 鍥剧墖鐢熸垚Tab椤?-->
-      <div class="tab-content" id="imageGeneratorTab">
-        <div class="image-generator-container">
-          <!-- 鍒犻櫎浜嗘爣棰?-->
-          <div class="image-generator-content">
-            <!-- 鎻愮ず璇嶈緭鍏ュ尯鍩?-->
-            <div class="prompt-section">
-              <label for="promptInput">输入提示词生成图片</label>
-              <textarea id="promptInput" placeholder="描述想要生成的图片" rows="3"></textarea>
-            </div>
-            
-            <!-- 鍥剧墖姣斾緥閫夋嫨 -->
-            <div class="image-ratio-section">
-              <label>图片比例</label>
-              <div class="ratio-buttons">
-                <button class="aspect-ratio-btn active" data-ratio="1:1" data-width="1328" data-height="1328">1:1</button>
-                <button class="aspect-ratio-btn" data-ratio="3:4" data-width="1024" data-height="1365">3:4</button>
-                <button class="aspect-ratio-btn" data-ratio="4:3" data-width="1365" data-height="1024">4:3</button>
-                <button class="aspect-ratio-btn" data-ratio="9:16" data-width="768" data-height="1365">9:16</button>
-                <button class="aspect-ratio-btn" data-ratio="16:9" data-width="1365" data-height="768">16:9</button>
-                <button class="aspect-ratio-btn" data-ratio="2:1" data-width="1365" data-height="683">2:1</button>
-              </div>
-            </div>
-            
-            <!-- 鑷畾涔夊昂瀵?-->
-            <div class="custom-size-section">
-              <label>自定义尺寸</label>
-              <div class="size-inputs">
-                <div class="size-input-group">
-                  <label for="widthInput">宽度</label>
-                  <input type="number" id="widthInput" value="1328" min="512" max="2048" step="8">
-                </div>
-                <div class="size-input-group">
-                  <label for="heightInput">高度</label>
-                  <input type="number" id="heightInput" value="1328" min="512" max="2048" step="8">
-                </div>
-              </div>
-            </div>
-            
-            <!-- 鐢熸垚鎸夐挳 -->
-            <button id="generateButton" class="generate-btn">生成图片</button>
-            
-            <!-- 閿欒鏄剧ず -->
-            <div id="errorDisplay" class="error-display" style="display: none;"></div>
-            
-            <!-- 鍔犺浇鎸囩ず鍣?-->
-            <div id="loadingIndicator" class="loading-indicator" style="display: none;">
-              <div class="spinner"></div>
-              <span>正在生成图片，请稍候...</span>
-            </div>
-            
-            <!-- 鍥剧墖鐢诲粖 -->
-            <div id="imageGallery" class="image-gallery"></div>
-          </div>
-        </div>
-      </div>
+
+  <!-- ================= 顶栏：极简会话导航 ================= -->
+  <header class="app-header">
+    <div class="header-left">
+      <!-- 当前会话选择胶囊 -->
+      <button type="button" id="sessionPillBtn" class="session-pill-btn" title="点击查看最近会话">
+        <span class="material-icons">chat_bubble_outline</span>
+        <span id="headerSessionTitle" class="session-pill-title">新建对话</span>
+        <span class="material-icons">expand_more</span>
+      </button>
     </div>
     
-    <!-- Toast鎻愮ず缁勪欢 -->
-    <div id="toast" class="toast">设置成功</div>
+    <div class="header-right">
+      <!-- 新建对话 -->
+      <button type="button" id="newChatBtn" class="apple-icon-btn" title="新建对话">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </button>
+
+      <!-- 更多操作菜单 -->
+      <div style="position: relative;">
+        <button type="button" id="moreMenuBtn" class="apple-icon-btn" title="更多选项" aria-haspopup="menu" aria-expanded="false">
+          <span class="material-icons">more_horiz</span>
+        </button>
+        <div id="moreMenu" class="popmenu" style="right: 0; left: auto; top: calc(100% + 6px); bottom: auto;" role="menu">
+          <button type="button" class="popmenu-option" id="settingsTabBtn" role="menuitem">
+            <span class="material-icons">settings</span>
+            <span class="popmenu-option-body">
+              <span>API 密钥设置</span>
+              <span class="popmenu-option-desc">配置 DeepSeek / Gemini Key</span>
+            </span>
+          </button>
+          <button type="button" class="popmenu-option" id="show-hide-instructions-btn" role="menuitem">
+            <span class="material-icons">auto_awesome</span>
+            <span class="popmenu-option-body">
+              <span>自定义人设与指令</span>
+              <span class="popmenu-option-desc">预设 System Prompt 规则</span>
+            </span>
+          </button>
+          <button type="button" class="popmenu-option" id="historyBtn" role="menuitem">
+            <span class="material-icons">history</span>
+            <span class="popmenu-option-body">
+              <span>历史对话记录</span>
+              <span class="popmenu-option-desc">查看与管理历史记录</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= 主视口 ================= -->
+  <main class="app-viewport">
+
+    <!-- 滚动消息区域 -->
+    <div id="chatMessages" class="chat-scroll-area">
+      
+      <!-- 智能情境横幅（根据当前浏览标签自动切换） -->
+      <div id="contextBanner" class="context-banner">
+        <div class="context-banner-main">
+          <div class="context-banner-icon" id="contextBannerIcon">
+            <span class="material-icons">bolt</span>
+          </div>
+          <div class="context-banner-text">
+            <div id="contextBannerTitle" class="context-banner-title">小红书爆款嗅探</div>
+            <div id="contextBannerDesc" class="context-banner-desc">检测到搜索页，可一键采集前10篇高赞笔记</div>
+          </div>
+        </div>
+        <div class="context-banner-actions">
+          <button type="button" id="contextActionBtn" class="context-action-btn">
+            <span>立即采集</span>
+          </button>
+          <button type="button" id="contextDismissBtn" class="context-dismiss-btn" title="忽略">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 灵动采集胶囊进度条 -->
+      <div id="collectCapsule" class="collect-progress-capsule">
+        <div class="capsule-left">
+          <span class="capsule-dot"></span>
+          <span id="capsuleStatusText" class="capsule-text">正在采集中...</span>
+        </div>
+        <button type="button" id="capsuleStopBtn" class="capsule-stop-btn">
+          <span class="material-icons" style="font-size:12px;">stop</span>
+          <span>停止</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ================= 8. 全能输入舱 (The Omnibar) ================= -->
+    <div class="omnibar-container">
+      
+      <!-- 隐藏状态保留项（兼容现有 background 存储结构） -->
+      <select id="modelSwitcher" hidden>
+        <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+        <option value="deepseek-v4-pro">DeepSeek V4 Pro</option>
+        <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+      </select>
+      <select id="deepseekThinkingEffort" hidden>
+        <option value="disabled">Off</option>
+        <option value="low">Low</option>
+        <option value="mid">Mid</option>
+        <option value="high" selected>High</option>
+        <option value="max">Max</option>
+      </select>
+      <input type="file" id="fileInput" multiple accept=".txt,text/plain,image/png,image/jpeg,image/webp,image/gif" style="display: none;">
+
+      <!-- 采集面板 (浮层) -->
+      <div id="collectToolPanel" class="collect-panel">
+        <div class="collect-panel-title">
+          <span class="material-icons" style="font-size:16px;">travel_explore</span>
+          <span>小红书爆款采集参数</span>
+        </div>
+        <div class="collect-fields-grid">
+          <div class="collect-field">
+            <label for="maxNotes">采集数量</label>
+            <input type="number" id="maxNotes" value="10" min="1">
+          </div>
+          <div class="collect-field">
+            <label for="minLikes">最低点赞</label>
+            <input type="number" id="minLikes" value="500" min="0">
+          </div>
+        </div>
+        <label class="collect-checkbox-row" for="downloadCover">
+          <input type="checkbox" id="downloadCover" class="apple-checkbox">
+          <span>同时下载封面大图</span>
+        </label>
+        <button id="collectBtn" class="apple-btn apple-btn-primary" style="width: 100%;">
+          <span class="material-icons" style="font-size:16px;">play_arrow</span>
+          <span>开始采集</span>
+        </button>
+        <div id="status" style="display:none; font-size:11px; color:var(--ink-3); margin-top:8px;">
+          <span></span>
+        </div>
+      </div>
+
+      <!-- 附件悬浮展示架 (支持多图与文件列表) -->
+      <div id="fileInfo" class="omnibar-attachment-shelf" style="display: none;">
+        <div id="attachmentList" class="attachment-list"></div>
+      </div>
+
+      <!-- 统一 Omnibar 卡片 -->
+      <div class="omnibar-card">
+        
+        <!-- 文本输入区 -->
+        <textarea id="messageInput" class="omnibar-textarea" rows="1"
+          placeholder="问点什么，或粘贴小红书链接 / 拖入图片..."></textarea>
+
+        <!-- 底部控制栏 -->
+        <div class="omnibar-controls">
+          <div class="omnibar-controls-left">
+            
+            <!-- 附件 + 菜单 -->
+            <div style="position: relative;">
+              <button type="button" id="attachBtn" class="apple-icon-btn" style="width:24px; height:24px;" title="添加内容" aria-haspopup="menu" aria-expanded="false">
+                <span class="material-icons" style="font-size:19px;">add_circle_outline</span>
+              </button>
+              <div id="attachMenu" class="popmenu" role="menu">
+                <button type="button" class="popmenu-option" id="attachUploadBtn" role="menuitem">
+                  <span class="material-icons">image</span>
+                  <span class="popmenu-option-body">
+                    <span>上传图片或文件</span>
+                    <span class="popmenu-option-desc">PNG / JPG / WebP / TXT</span>
+                  </span>
+                </button>
+                <button type="button" class="popmenu-option" id="getPageContentBtn" role="menuitem">
+                  <span class="material-icons">description</span>
+                  <span class="popmenu-option-body">
+                    <span>读取当前网页</span>
+                    <span class="popmenu-option-desc">将正在浏览的页面喂给 AI</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 模型与思考深度联合胶囊 -->
+            <div style="position: relative;">
+              <button type="button" id="modelMenuBtn" class="capsule-btn" aria-haspopup="menu" aria-expanded="false" title="切换模型与思考深度">
+                <span id="modelMenuLabel" class="capsule-btn-label">DeepSeek V4 Flash</span>
+                <span id="thinkingTagBadge" class="thinking-tag">High</span>
+                <span class="material-icons">expand_more</span>
+              </button>
+              
+              <!-- 联合菜单：包含模型与思考深度 -->
+              <div id="modelMenu" class="popmenu" role="menu">
+                <div class="popmenu-header-label">模型选择 (Model)</div>
+                <button type="button" class="popmenu-option" role="menuitemradio" data-model="deepseek-v4-flash">
+                  <span class="material-icons popmenu-option-check">check</span>
+                  <span class="popmenu-option-body">
+                    <span>DeepSeek V4 Flash</span>
+                  </span>
+                </button>
+                <button type="button" class="popmenu-option" role="menuitemradio" data-model="deepseek-v4-pro">
+                  <span class="material-icons popmenu-option-check">check</span>
+                  <span class="popmenu-option-body">
+                    <span>DeepSeek V4 Pro</span>
+                  </span>
+                </button>
+                <button type="button" class="popmenu-option" role="menuitemradio" data-model="gemini-3.7-flash">
+                  <span class="material-icons popmenu-option-check">check</span>
+                  <span class="popmenu-option-body">
+                    <span>Gemini 3.7 Flash</span>
+                  </span>
+                </button>
+                <button type="button" class="popmenu-option" role="menuitemradio" data-model="gemini-3.1-pro-preview">
+                  <span class="material-icons popmenu-option-check">check</span>
+                  <span class="popmenu-option-body">
+                    <span>Gemini 3.1 Pro</span>
+                  </span>
+                </button>
+
+                <!-- 思考深度分组 -->
+                <div id="thinkingSection">
+                  <div class="popmenu-divider"></div>
+                  <div class="popmenu-header-label">Thinking Effort</div>
+                  <button type="button" class="popmenu-option" role="menuitemradio" data-effort="disabled">
+                    <span class="material-icons popmenu-option-check">check</span>
+                    <span class="popmenu-option-body">
+                      <span>Off</span>
+                    </span>
+                  </button>
+                  <button type="button" class="popmenu-option" role="menuitemradio" data-effort="low">
+                    <span class="material-icons popmenu-option-check">check</span>
+                    <span class="popmenu-option-body">
+                      <span>Low</span>
+                    </span>
+                  </button>
+                  <button type="button" class="popmenu-option" role="menuitemradio" data-effort="mid">
+                    <span class="material-icons popmenu-option-check">check</span>
+                    <span class="popmenu-option-body">
+                      <span>Mid</span>
+                    </span>
+                  </button>
+                  <button type="button" class="popmenu-option" role="menuitemradio" data-effort="high">
+                    <span class="material-icons popmenu-option-check">check</span>
+                    <span class="popmenu-option-body">
+                      <span>High</span>
+                    </span>
+                  </button>
+                  <button type="button" class="popmenu-option" role="menuitemradio" data-effort="max">
+                    <span class="material-icons popmenu-option-check">check</span>
+                    <span class="popmenu-option-body">
+                      <span>Max</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 采集快捷按钮 -->
+            <button type="button" id="collectToolBtn" class="collect-pill-btn" title="采集小红书爆款笔记">
+              <span class="material-icons">travel_explore</span>
+              <span>采集</span>
+            </button>
+
+          </div>
+
+          <!-- 右侧：发送/停止按钮 -->
+          <div class="omnibar-controls-right">
+            <button type="button" id="sendMessage" class="omnibar-send-btn" title="发送 (Enter)">
+              <span class="material-icons">arrow_upward</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= 抽屉：API 密钥设置 ================= -->
+  <div id="settings-modal-overlay" class="sheet-overlay hidden">
+    <div id="settings-container" class="sheet-modal">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">API 密钥设置</div>
+        <button type="button" id="close-settings-btn" class="sheet-close-btn">&times;</button>
+      </div>
+      <div class="sheet-desc">密钥仅安全保存在本地浏览器 Storage 中，不经过任何中转服务器</div>
+      
+      <div class="sheet-body">
+        <div class="form-group">
+          <label for="apiKey">DeepSeek API Key</label>
+          <input type="password" id="apiKey" class="apple-input" placeholder="sk-..." autocomplete="off">
+          <small>用于 DeepSeek V4 Flash / Pro 模型及深度思考</small>
+        </div>
+        <div class="form-group">
+          <label for="geminiApiKey">Gemini API Key</label>
+          <input type="password" id="geminiApiKey" class="apple-input" placeholder="AIza..." autocomplete="off">
+          <small>用于 Gemini 3.7 Flash / 3.1 Pro 模型及图片分析</small>
+        </div>
+      </div>
+
+      <div class="sheet-footer">
+        <button type="button" id="cancel-settings-btn" class="apple-btn apple-btn-secondary">取消</button>
+        <button type="button" id="save-settings-btn" class="apple-btn apple-btn-primary">保存设置</button>
+      </div>
+    </div>
   </div>
-  
-  <!-- 鑷畾涔夋寚浠ゅ脊绐?-->
-  <div id="instructions-modal-overlay" class="hidden">
-    <div id="instructions-container">
-      <div class="instructions-header">
-        <h3>自定义指令</h3>
+
+  <!-- ================= 抽屉：自定义指令 ================= -->
+  <div id="instructions-modal-overlay" class="sheet-overlay hidden">
+    <div id="instructions-container" class="sheet-modal">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">自定义人设与指令</div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button id="add-new-instruction-btn" class="apple-btn">+ 添加指令</button>
-          <button id="close-instructions-btn" title="关闭">&times;</button>
+          <button type="button" id="add-new-instruction-btn" class="apple-btn apple-btn-primary" style="padding:4px 10px; font-size:11.5px;">+ 新建指令</button>
+          <button type="button" id="close-instructions-btn" class="sheet-close-btn">&times;</button>
         </div>
       </div>
-      <div class="instructions-description">AI大模型将根据自定义指令的要求进行回复</div>
-      <div id="instructions-list" style="max-height: 250px; overflow-y: auto;">
-        <!-- 鎸囦护灏嗛€氳繃 JS 鍔ㄦ€佹彃鍏ヨ繖閲?-->
-      </div>
-      <div id="add-instruction-form" class="hidden">
-        <input type="hidden" id="instruction-edit-id">
-        <input type="text" id="instruction-name" placeholder="指令名称" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box;" />
-        <textarea id="instruction-prompt" placeholder="提示词指令 (最多10000字)" maxlength="10000" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; resize: vertical; min-height: 80px;"></textarea>
-        <div style="display: flex; gap: 8px;">
-          <button id="save-instruction-btn" class="apple-btn apple-btn-primary" style="flex: 1;">保存</button>
-          <button id="cancel-add-btn" class="apple-btn" style="flex: 1;">取消</button>
+      <div class="sheet-desc">选中的指令会作为 System Prompt 注入，让 AI 按专属风格回答</div>
+
+      <div class="sheet-body">
+        <div id="instructions-list"></div>
+        <div id="add-instruction-form" class="hidden">
+          <input type="hidden" id="instruction-edit-id">
+          <input type="text" id="instruction-name" class="apple-input" placeholder="指令名称 (如: 毒舌美妆博主)">
+          <textarea id="instruction-prompt" class="apple-input" rows="4" placeholder="系统提示词内容（设定AI的语气、格式或要求）" maxlength="10000"></textarea>
+          <div style="display:flex; gap:8px; margin-top:6px;">
+            <button type="button" id="save-instruction-btn" class="apple-btn apple-btn-primary" style="flex:1;">保存</button>
+            <button type="button" id="cancel-add-btn" class="apple-btn apple-btn-secondary" style="flex:1;">取消</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 璁剧疆寮圭獥 -->
-  <div id="settings-modal-overlay" class="hidden">
-    <div id="settings-container">
-      <div class="settings-header">
-        <h3>API 设置</h3>
-        <button id="close-settings-btn" title="关闭">&times;</button>
+  <!-- ================= 抽屉：历史对话 ================= -->
+  <div id="historyModal" class="sheet-overlay hidden">
+    <div class="sheet-modal">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-title">历史对话记录</div>
+        <button type="button" id="closeHistoryModal" class="sheet-close-btn">&times;</button>
       </div>
-      <div class="settings-body" style="max-height: 400px; overflow-y: auto;">
-        <div class="setting-item">
-          <label for="apiKey">DeepSeek API密钥：</label>
-          <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
-          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-        </div>
-        <div class="setting-item">
-          <label for="geminiApiKey">Gemini API密钥：</label>
-          <input type="password" id="geminiApiKey" placeholder="输入您的Gemini API密钥" autocomplete="off">
-          <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-        </div>
-        <h4 style="margin:15px 0 10px 0;">即梦图片生成API设置</h4>
-        <div class="setting-item">
-          <label for="accessKeyId">Access Key ID：</label>
-          <input type="text" id="accessKeyId" placeholder="输入您的Access Key ID" autocomplete="off">
-        </div>
-        <div class="setting-item">
-          <label for="secretAccessKey">Secret Access Key：</label>
-          <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
-        </div>
-        <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-      </div>
-      <div class="settings-footer" style="display: flex; justify-content: center; gap: 10px; padding-top: 15px;">
-        <button id="cancel-settings-btn" class="apple-btn">取消</button>
-        <button id="save-settings-btn" class="apple-btn apple-btn-primary">保存</button>
-      </div>
+      <div class="sheet-desc">点击会话可直接切换，支持重命名与删除</div>
+      <div class="sheet-body" id="historyList"></div>
     </div>
   </div>
 
-  <!-- 鍙充晶瀵艰埅鏍?-->
-  <div class="right-sidebar">
-    <!-- 灏嗕富瑕佸浘鏍囧拰璁剧疆鍥炬爣鍒嗗紑 -->
-    <div class="sidebar-top">
-      <div class="sidebar-icon active" id="aiAssistantTabBtn" title="AI助手">
-        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M786.7392 205.4656A333.6704 333.6704 0 0 0 543.1296 102.4h-23.9616a340.6848 340.6848 0 0 0-319.7952 356.5568c-1.1264 1.0752-28.8256 37.376-50.5344 65.8432l-24.7296 32.3584a83.6608 83.6608 0 0 0-21.7088 50.8416c0.6656 44.0832 28.416 63.8464 84.0704 75.9808l20.8896 4.352 7.68 157.7984v3.7888a77.5168 77.5168 0 0 0 76.8 71.68c4.3008 0 128-15.36 187.5456-26.0096V812.032c-40.96 5.7344-132.4032 18.7392-185.4976 27.392l-9.3696-190.7712v-1.536a61.44 61.44 0 0 0-0.9216-8.6016 26.7264 26.7264 0 0 0-4.0448-10.6496 20.48 20.48 0 0 0-16.3328-9.9328Q240.64 614.4 218.112 610.56l-5.376-1.024-1.9968-0.4608a16.5888 16.5888 0 0 1-7.9872-26.2656q58.5216-71.68 65.536-78.848a43.008 43.008 0 0 0 11.9808-35.84 57.088 57.088 0 0 0-0.3584-6.6048 24.4224 24.4224 0 0 0-0.3072-3.8912A271.9232 271.9232 0 0 1 352.512 265.728a252.6208 252.6208 0 0 1 186.6752-82.6368h10.24a263.8848 263.8848 0 0 1 255.488 271.9232V460.8h81.4592v-6.656a362.8544 362.8544 0 0 0-99.5328-248.832z m54.4256 655.36l-116.0192-339.8656H655.36l-115.5584 339.6608h66.56l23.8592-80.5376h119.2448l23.808 80.5376h67.7376zM921.6 521.1648v339.6608h-60.3136v-339.8656H921.6z m-271.36 199.68q37.7344-133.8368 39.1168-139.8784 1.3824 5.9904 39.9872 139.8784z"></path></svg>
-        <span class="sidebar-label">助手</span>
-      </div>
-      <div class="sidebar-icon" id="imageGeneratorTabBtn" title="图片生成">
-        <span class="material-icons">image</span>
-        <span class="sidebar-label">画图</span>
-      </div>
-    </div>
-    <div class="sidebar-bottom">
-      <div class="sidebar-icon" id="settingsTabBtn" title="设置">
-        <span class="material-icons">settings</span>
-        <span class="sidebar-label">设置</span>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 璁剧疆Tab椤?-->
-  <div id="settingsTab" class="tab-content">
-    <div class="settings-container">
-      <div class="settings-section">
-        <div class="section-header">
-          <span class="section-title">API设置</span>
-        </div>
-        <div class="section-content">
-          <div class="setting-item">
-            <label for="apiKey">DeepSeek API密钥：</label>
-            <input type="password" id="apiKey" placeholder="输入您的DeepSeek API密钥" autocomplete="off">
-            <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-          </div>
-          
-          <div class="setting-item">
-            <label for="geminiApiKey">Gemini API密钥：</label>
-            <input type="password" id="geminiApiKey" placeholder="输入您的Gemini API密钥" autocomplete="off">
-            <small>您的API密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-          </div>
-          
-          <div class="setting-section">
-            <h4>即梦图片生成API设置</h4>
-            <div class="setting-item">
-              <label for="accessKeyId">Access Key ID：</label>
-              <input type="text" id="accessKeyId" placeholder="输入您的Access Key ID" autocomplete="off">
-            </div>
-            <div class="setting-item">
-              <label for="secretAccessKey">Secret Access Key：</label>
-              <input type="password" id="secretAccessKey" placeholder="输入您的Secret Access Key" autocomplete="off">
-            </div>
-            <small>您的密钥将安全地存储在本地，不会发送到任何第三方服务器</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 鍘嗗彶璁板綍寮圭獥 -->
-  <div id="historyModal" class="modal">
-    <div class="modal-content history-modal-content">
-      <div class="modal-header">
-        <h3>聊天历史记录</h3>
-        <span class="close-modal" id="closeHistoryModal">&times;</span>
-      </div>
-      <div class="modal-body history-list" id="historyList">
-        <!-- 鑱婂ぉ鍘嗗彶鍒楄〃鍐呭鐢盝S鍔ㄦ€佺敓鎴?-->
-      </div>
-    </div>
-  </div>
-  
-  <!-- 寮曞叆CryptoJS搴擄紝鐢ㄤ簬鐢熸垚API绛惧悕 -->  
-  <script src="crypto-js-core.js"></script>
-  <script src="image_generator.js"></script>
+  <!-- ================= Toast 浮动提示 ================= -->
+  <div id="toast" class="toast">操作成功</div>
+
   <script src="popup.js" defer></script>
-
-  <script src="crypto-js-core.js"></script>
   <script src="fixed_function.js"></script>
 </body>
 </html>
-
