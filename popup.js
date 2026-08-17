@@ -60,6 +60,11 @@ document.addEventListener('DOMContentLoaded', function () {
   let pageContentLoaded = false;
   let currentPageContent = null;
   let isCollecting = false;
+  // 本次采集结果的笔记正文上下文，绑定到自动创建的分析会话上，
+  // 让首轮分析和后续追问都能拿到真实笔记数据（只存内存，不写 storage）
+  let collectionContext = null;
+  const COLLECTION_CTX_MAX_CHARS = 30000;
+  const COLLECTION_NOTE_MAX_CHARS = 600;
   let streamingBuffer = '';
   let streamingMessageDiv = null;
   let reasoningBuffer = '';
@@ -988,6 +993,71 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // 把采集到的笔记整理成可直接投喂给模型的文本块。
+  // 逐篇截断正文并限制总长度，避免上百篇全文一次性顶爆模型上下文
+  function buildCollectionContextText(data, fallbackText) {
+    const list = Array.isArray(data) ? data : [];
+
+    if (list.length === 0) {
+      const fallback = (fallbackText || '').trim();
+      if (!fallback) return null;
+      const clipped = fallback.length > COLLECTION_CTX_MAX_CHARS
+        ? fallback.slice(0, COLLECTION_CTX_MAX_CHARS) + '\n…（内容过长已截断）'
+        : fallback;
+      return `===== 本次采集的小红书笔记数据 =====\n${clipped}\n===== 笔记数据结束 =====`;
+    }
+
+    const blocks = [];
+    let totalChars = 0;
+
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i] || {};
+      let body = (item.content || '').trim();
+      if (!body) {
+        body = '（未抓到正文）';
+      } else if (body.length > COLLECTION_NOTE_MAX_CHARS) {
+        body = body.slice(0, COLLECTION_NOTE_MAX_CHARS) + '…（正文已截断）';
+      }
+
+      const block =
+        `${i + 1}. 标题：${item.title || '无标题'}\n` +
+        `   作者：${item.author || '未知'}\n` +
+        `   点赞：${item.likes || 0} | 收藏：${item.collects || 0} | 评论：${item.comments || 0}\n` +
+        `   发布时间：${item.editDate || '未知'}\n` +
+        `   链接：${item.link || '无'}\n` +
+        `   正文：${body}`;
+
+      if (totalChars + block.length > COLLECTION_CTX_MAX_CHARS && blocks.length > 0) break;
+      blocks.push(block);
+      totalChars += block.length;
+    }
+
+    const header = blocks.length < list.length
+      ? `===== 本次采集的小红书笔记数据（共 ${list.length} 篇，因长度限制仅提供前 ${blocks.length} 篇）=====`
+      : `===== 本次采集的小红书笔记数据（共 ${list.length} 篇）=====`;
+
+    return `${header}\n${blocks.join('\n\n----------------------------------------\n\n')}\n===== 笔记数据结束 =====`;
+  }
+
+  // 单独存一份，popup 关掉再打开时追问仍能带上原始笔记（不塞进 chatSessions，避免撑爆会话存储）
+  function persistCollectionContext() {
+    if (collectionContext) {
+      chrome.storage.local.set({ collectionContext: collectionContext }, () => {
+        if (chrome.runtime.lastError) {
+          console.warn('采集上下文持久化失败:', chrome.runtime.lastError.message);
+        }
+      });
+    } else {
+      chrome.storage.local.remove('collectionContext');
+    }
+  }
+
+  // 采集上下文只对它所属的那个分析会话生效，切到别的会话不会被误带上
+  function getActiveCollectionContext(session) {
+    if (!collectionContext || !session) return '';
+    return collectionContext.sessionId === session.id ? collectionContext.text : '';
+  }
+
   // 发送消息至 AI
   function sendToAI(message, displayMessage = null, customInstructionPrompt = '') {
     const uiMessage = displayMessage !== null ? displayMessage : message;
@@ -995,6 +1065,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const imageAttachments = currentAttachments.filter(a => a.kind === 'image');
     const textAttachments = currentAttachments.filter(a => a.kind !== 'image');
     const hasCurrentPage = pageContentLoaded && !!currentPageContent;
+    const activeSession = chatSessions.find(s => s.currentSession === true) || chatSessions[0];
+    const collectionCtxText = getActiveCollectionContext(activeSession);
 
     // 清理输入框挂载的附件状态，并把附件气泡渲染到主聊天区
     if (currentAttachments.length > 0) {
@@ -1018,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (modelSwitcher) modelSwitcher.value = activeModel;
       syncModelMenuState();
     }
-    const isDataAnalysis = textAttachments.some(t => t.isData);
+    const isDataAnalysis = textAttachments.some(t => t.isData) || !!collectionCtxText;
 
     try {
       isStreaming = true;
@@ -1056,6 +1128,11 @@ document.addEventListener('DOMContentLoaded', function () {
         content = message;
       }
 
+      // 采集数据放在最前面，保证模型每一轮都能看到原始笔记
+      if (collectionCtxText) {
+        content = `${collectionCtxText}\n\n${content}`;
+      }
+
       const allMessages = currentSession.messages || [];
       const filteredHistory = allMessages.slice(0, -1).filter(m => m.role && (m.content || (m.attachments && m.attachments.length > 0)) && !m.content?.startsWith('正在'));
 
@@ -1069,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function () {
             isChat: true,
             isDataAnalysis: isDataAnalysis,
             chatHistory: filteredHistory,
-            hasFile: currentAttachments.length > 0 || hasCurrentPage,
+            hasFile: currentAttachments.length > 0 || hasCurrentPage || !!collectionCtxText,
             attachments: payloadAttachments,
             model: activeModel,
             ...getThinkingOptions(activeModel),
@@ -1099,7 +1176,7 @@ document.addEventListener('DOMContentLoaded', function () {
           isChat: true,
           isDataAnalysis: isDataAnalysis,
           chatHistory: filteredHistory,
-          hasFile: currentAttachments.length > 0 || hasCurrentPage,
+          hasFile: currentAttachments.length > 0 || hasCurrentPage || !!collectionCtxText,
           attachments: [],
           model: activeModel,
           ...getThinkingOptions(activeModel),
@@ -1855,8 +1932,17 @@ document.addEventListener('DOMContentLoaded', function () {
       updateCollectButtonState(false);
       if (message.data && message.data.length > 0) {
         showToast(`采集完成，共抓取 ${message.data.length} 篇爆款笔记`, 2500);
-        const analysisPrompt = `作为一个资深小红书爆款操盘手，请深度分析本次采集到的 ${message.data.length} 篇爆款笔记：\n1. 爆款规律总结：提炼这些笔记共同打中了什么痛点或情绪？\n2. 标题吸睛公式：拆解高频词与标题句式套路；\n3. 落地建议：基于以上分析，生成 3 个当下可立即执行的全新爆款选题与切入点。`;
-        createNewChatSession(`爆款分析 · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+        const analysisPrompt = `作为一个资深小红书爆款操盘手，请深度分析上面这 ${message.data.length} 篇爆款笔记：\n1. 爆款规律总结：提炼这些笔记共同打中了什么痛点或情绪？\n2. 标题吸睛公式：拆解高频词与标题句式套路；\n3. 落地建议：基于以上分析，生成 3 个当下可立即执行的全新爆款选题与切入点。`;
+        const session = createNewChatSession(`爆款分析 · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+
+        // 采集数据必须随请求一起发出去，否则模型只收到一句空指令，会回"没看到笔记内容"
+        const ctxText = buildCollectionContextText(message.data, message.formattedContent);
+        collectionContext = ctxText ? { sessionId: session.id, text: ctxText, count: message.data.length } : null;
+        persistCollectionContext();
+        if (!ctxText) {
+          console.warn('采集完成但未能构建笔记上下文，AI 将拿不到原始数据');
+        }
+
         sendToAI(analysisPrompt, '⚡ 已自动开始深度分析本次采集的爆款数据');
       } else {
         showToast('笔记采集完成');
@@ -1890,8 +1976,16 @@ document.addEventListener('DOMContentLoaded', function () {
   // ==========================================================================
   // 18. 初始加载会话
   // ==========================================================================
-  chrome.storage.local.get(['chatSessions'], (result) => {
+  chrome.storage.local.get(['chatSessions', 'collectionContext'], (result) => {
     const existing = result.chatSessions || [];
+    const restoredCtx = result.collectionContext;
+    // 上下文所属会话已被删除时一并丢弃，避免残留数据被塞进不相干的对话
+    if (restoredCtx && restoredCtx.sessionId && restoredCtx.text &&
+        existing.some(s => s.id === restoredCtx.sessionId)) {
+      collectionContext = restoredCtx;
+    } else if (restoredCtx) {
+      chrome.storage.local.remove('collectionContext');
+    }
     const now = new Date();
     const newSession = {
       id: 'session_' + now.getTime(),
