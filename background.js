@@ -162,6 +162,59 @@ function downloadImage(imageUrl, filename, timestamp) {
     });
 }
 
+// 下载单条笔记视频的辅助函数
+function downloadVideo(videoUrl, filename) {
+    console.log('🎬 downloadVideo开始执行:', { videoUrl: videoUrl, filename: filename });
+
+    return new Promise((resolve, reject) => {
+        try {
+            if (!videoUrl || !/^https?:\/\//i.test(videoUrl)) {
+                reject(new Error('视频地址无效'));
+                return;
+            }
+
+            // 小红书返回的是 http:// 地址，Chrome 会拦截安全上下文发起的混合内容下载。
+            // 实测 xhscdn 的签名地址与备用地址都支持 https，直接升级协议。
+            const secureUrl = videoUrl.replace(/^http:\/\//i, 'https://');
+
+            // 清理文件名：去掉路径非法字符与换行，避免下载 API 报错
+            const sanitizedFilename = (filename || '小红书视频')
+                .replace(/[<>:"/\\|?*]/g, '_')
+                .replace(/[\x00-\x1f]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 80) || '小红书视频';
+
+            // 小红书视频统一是 mp4，URL 上带扩展名时以 URL 为准
+            let extension = '.mp4';
+            const lastPart = secureUrl.split('?')[0].split('.').pop().toLowerCase();
+            if (['mp4', 'mov', 'webm', 'm4v'].includes(lastPart)) {
+                extension = '.' + lastPart;
+            }
+
+            const savePath = `小红书爆款采集/视频/${sanitizedFilename}${extension}`;
+            console.log('🎬 开始下载视频:', savePath);
+
+            chrome.downloads.download({
+                url: secureUrl,
+                filename: savePath,
+                saveAs: false
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.error('🎬 视频下载失败:', chrome.runtime.lastError);
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    console.log('🎬 视频下载已开始，ID:', downloadId);
+                    resolve(downloadId);
+                }
+            });
+        } catch (error) {
+            console.error('🎬 下载视频时出错:', error);
+            reject(error);
+        }
+    });
+}
+
 // 生成Excel文件的辅助函数
 function generateExcel(headers, data, filename, rowHeight = 20) { 
     try {
@@ -1204,6 +1257,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })
             .catch(error => {
                 console.error('📷 下载图片时出错:', error);
+                sendResponse({ status: 'error', message: error.message });
+            });
+        return true; // 保持消息通道开放以进行异步响应
+    } else if (request.action === 'downloadVideo') {
+        console.log('🎬 收到下载视频请求:', request.filename);
+        downloadVideo(request.videoUrl, request.filename)
+            .then(downloadId => {
+                sendResponse({ status: 'success', downloadId: downloadId });
+            })
+            .catch(error => {
+                console.error('🎬 下载视频时出错:', error);
                 sendResponse({ status: 'error', message: error.message });
             });
         return true; // 保持消息通道开放以进行异步响应
